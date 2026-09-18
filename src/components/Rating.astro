@@ -1,0 +1,22 @@
+---
+import Icon from './Icon.astro';
+
+interface Props {
+  value?: number;
+  class?: string;
+  showMax?: boolean;
+}
+
+const { value, class: className = '', showMax = false } = Astro.props;
+const label = value === undefined ? '' : Number.isInteger(value) ? String(value) : value.toFixed(1);
+---
+
+{
+  value !== undefined && (
+    <span class:list={['inline-flex items-center gap-1 text-amber-300', className]} title={`Rated ${label} out of 10`}>
+      <Icon name="star" solid class="size-3.5" />
+      <span class="font-semibold tabular-nums">{label}</span>
+      {showMax && <span class="text-zinc-500">/10</span>}
+    </span>
+  )
+}

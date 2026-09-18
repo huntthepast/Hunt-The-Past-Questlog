@@ -1,0 +1,26 @@
+---
+import { bar } from '../lib/ui';
+
+interface Props {
+  value: number; // 0..100
+  color?: string;
+  label?: string;
+  class?: string;
+  size?: 'sm' | 'md';
+}
+
+const { value, color = 'amber', label, class: className = '', size = 'md' } = Astro.props;
+const pct = Math.max(0, Math.min(100, Math.round(value)));
+---
+
+<div
+  class:list={['w-full overflow-hidden rounded-full bg-zinc-800', size === 'sm' ? 'h-1.5' : 'h-2.5', className]}
+  role="progressbar"
+  aria-valuenow={pct}
+  aria-valuemin="0"
+  aria-valuemax="100"
+  aria-label={label}
+  title={label ? `${label}: ${pct}%` : `${pct}%`}
+>
+  <div class:list={['h-full rounded-full transition-[width] duration-500', bar(color)]} style={`width: ${pct}%`}></div>
+</div>

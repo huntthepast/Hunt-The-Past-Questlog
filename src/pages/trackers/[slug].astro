@@ -1,0 +1,164 @@
+---
+import { getEntry } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Badge from '../../components/Badge.astro';
+import Icon from '../../components/Icon.astro';
+import Cover from '../../components/Cover.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import ProgressBar from '../../components/ProgressBar.astro';
+import { allTrackers, allGuides, guidesForGame, trackerProgress, platformOf, formatDate, site } from '../../lib/data';
+import { trackerTypeById } from '../../lib/constants.js';
+
+export async function getStaticPaths() {
+  const trackers = await allTrackers();
+  return trackers.map((tracker) => ({ params: { slug: tracker.id }, props: { tracker } }));
+}
+
+const { tracker } = Astro.props;
+const d = tracker.data;
+const type = trackerTypeById(d.type);
+const game = d.game ? await getEntry(d.game) : undefined;
+const platform = game ? platformOf(game.data.platform) : undefined;
+const relatedGuides = game ? guidesForGame(await allGuides(), game.id) : [];
+const progress = trackerProgress(tracker);
+---
+
+<Base title={d.title} description={d.summary ?? `${type.label} tracker for ${game?.data.title ?? 'the collection'}.`} image={game?.data.cover}>
+  <nav class="mb-6 text-sm text-zinc-500" aria-label="Breadcrumb">
+    <a href="/guides" class="inline-flex items-center gap-1 hover:text-amber-300"><Icon name="arrow-left" class="size-4" /> Guides &amp; Trackers</a>
+  </nav>
+
+  <div x-data={`tracker(${JSON.stringify(tracker.id)}, ${progress.total})`}>
+    <header class="mb-6">
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <Badge color={type.color} label={type.label} />
+        {game && <a href={`/games/${game.id}`} class="text-xs text-zinc-400 hover:text-amber-300">{game.data.title}</a>}
+      </div>
+      <h1 class="h-display text-4xl sm:text-5xl">{d.title}</h1>
+      {d.summary && <p class="mt-3 max-w-3xl text-lg text-zinc-400">{d.summary}</p>}
+    </header>
+
+    <!-- Progress + mode switch -->
+    <section class="card mb-8 p-4 sm:p-5">
+      <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="inline-flex rounded-lg border border-zinc-800 bg-zinc-950/60 p-1 text-sm" role="tablist" aria-label="Whose progress to show">
+          <button
+            type="button"
+            role="tab"
+            class="rounded-md px-3 py-1.5 font-medium transition"
+            :class="mode === 'owner' ? 'bg-zinc-800 text-amber-300' : 'text-zinc-400 hover:text-zinc-200'"
+            :aria-selected="mode === 'owner'"
+            @click="setMode('owner')"
+          >
+            {site.owner}'s progress
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="rounded-md px-3 py-1.5 font-medium transition"
+            :class="mode === 'mine' ? 'bg-zinc-800 text-amber-300' : 'text-zinc-400 hover:text-zinc-200'"
+            :aria-selected="mode === 'mine'"
+            @click="setMode('mine')"
+          >
+            My own progress
+          </button>
+        </div>
+        <div class="text-sm text-zinc-400">
+          <span x-show="mode === 'owner'">
+            <span class="font-semibold text-zinc-100">{progress.done}</span> / {progress.total} done &middot; <span class="tabular-nums">{progress.pct}%</span>
+          </span>
+          <span x-show="mode === 'mine'" x-cloak>
+            <span class="font-semibold text-zinc-100" x-text="myDone"></span> / {progress.total} done &middot; <span class="tabular-nums" x-text="myPct + '%'"></span>
+            <button type="button" class="ml-2 text-xs text-rose-300 hover:underline" @click="if (confirm('Clear your saved progress for this tracker?')) reset()">Reset</button>
+          </span>
+        </div>
+      </div>
+
+      <div x-show="mode === 'owner'">
+        <ProgressBar value={progress.pct} color={progress.pct === 100 ? 'emerald' : type.color} label="Owner progress" />
+      </div>
+      <div x-show="mode === 'mine'" x-cloak class="h-2.5 w-full overflow-hidden rounded-full bg-zinc-800" role="progressbar" :aria-valuenow="myPct" aria-valuemin="0" aria-valuemax="100" aria-label="My progress">
+        <div class="h-full rounded-full bg-amber-400 transition-[width] duration-300" :style="`width: ${myPct}%`"></div>
+      </div>
+
+      <p class="mt-3 text-xs text-zinc-500" x-show="mode === 'mine'" x-cloak>
+        <Icon name="info" class="mr-1 inline size-3.5 align-[-2px]" />
+        Tick items as you go. Your progress is saved in this browser only and never leaves your device.
+      </p>
+    </section>
+
+    <!-- Sections -->
+    <div class="grid gap-6">
+      {
+        d.sections.map((section, sIndex) => (
+          <section class="card overflow-hidden">
+            <h2 class="border-b border-zinc-800 bg-zinc-900/80 px-4 py-3 font-display text-xl text-zinc-100">
+              <span class="mr-2 text-zinc-600">{String(sIndex + 1).padStart(2, '0')}</span>
+              {section.title}
+            </h2>
+            <ul class="divide-y divide-zinc-800/80">
+              {section.items.map((item) => (
+                <li>
+                  <label
+                    class="flex cursor-default items-start gap-3 px-4 py-3 transition"
+                    :class="mode === 'mine' ? 'cursor-pointer hover:bg-zinc-800/40' : ''"
+                  >
+                    <span class="relative mt-0.5 shrink-0">
+                      <input
+                        type="checkbox"
+                        class="peer size-5 rounded border-zinc-600 bg-zinc-950 accent-amber-400 disabled:cursor-default"
+                        :checked={`isDone(${JSON.stringify(item.id)}, ${item.done})`}
+                        :disabled="mode === 'owner'"
+                        checked={item.done}
+                        disabled
+                        @change={`toggle(${JSON.stringify(item.id)})`}
+                        aria-label={item.label}
+                      />
+                    </span>
+                    <span class="min-w-0 flex-1">
+                      <span
+                        class="block font-medium text-zinc-100 transition"
+                        :class={`{ 'text-zinc-500 line-through': isDone(${JSON.stringify(item.id)}, ${item.done}) }`}
+                        class:list={[item.done && 'text-zinc-500 line-through']}
+                      >
+                        {item.label}
+                      </span>
+                      {item.note && <span class="mt-0.5 block text-sm text-zinc-400">{item.note}</span>}
+                    </span>
+                    <span x-show={`isDone(${JSON.stringify(item.id)}, ${item.done})`} class="mt-1 shrink-0 text-emerald-400">
+                      <Icon name="check-circle" class="size-4" />
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
+
+    <footer class="mt-8 flex flex-wrap items-center justify-between gap-4 text-xs text-zinc-500">
+      <span>Updated {formatDate(d.updatedAt)}</span>
+      {
+        (game || relatedGuides.length > 0) && (
+          <div class="flex flex-wrap items-center gap-3">
+            {game && platform && (
+              <a href={`/games/${game.id}`} class="inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 p-1.5 pr-3 hover:border-zinc-600">
+                <span class="block h-10 w-8 overflow-hidden rounded bg-zinc-800">
+                  <Cover src={game.data.cover} title={game.data.title} platformShort={platform.short} />
+                </span>
+                <span class="text-zinc-300">{game.data.title}</span>
+                <StatusBadge status={game.data.status} short />
+              </a>
+            )}
+            {relatedGuides.map((g) => (
+              <a href={`/guides/${g.id}`} class="inline-flex items-center gap-1 text-zinc-300 hover:text-amber-300">
+                <Icon name="book" class="size-4" /> {g.data.title}
+              </a>
+            ))}
+          </div>
+        )
+      }
+    </footer>
+  </div>
+</Base>

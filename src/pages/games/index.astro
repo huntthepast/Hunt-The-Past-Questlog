@@ -1,0 +1,19 @@
+---
+import Base from '../../layouts/Base.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import GameGrid from '../../components/GameGrid.astro';
+import { libraryGames, libraryStats } from '../../lib/data';
+
+const games = await libraryGames();
+const stats = libraryStats(games);
+---
+
+<Base title="Library" description="Every game in the collection, with platform, status and rating.">
+  <SectionHeading level="h1" eyebrow="Collection" title="Library">
+    <p class="mt-2 text-sm text-zinc-400">
+      {stats.owned} games across {stats.platforms} platforms. {stats.played} played, {stats.done} beaten or better.
+    </p>
+  </SectionHeading>
+
+  <GameGrid games={games} emptyTitle="The library is empty" emptyText="Add your first game from the local admin (npm run admin), then commit and push." />
+</Base>

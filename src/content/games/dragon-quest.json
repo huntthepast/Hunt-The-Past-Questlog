@@ -1,0 +1,19 @@
+{
+  "title": "Dragon Quest",
+  "platform": "nes",
+  "cover": "https://media.retroachievements.org/Images/012023.png",
+  "genres": [
+    "Turn-Based RPG"
+  ],
+  "developer": "Chunsoft",
+  "publisher": "Enix, Nintendo",
+  "releaseYear": 1986,
+  "ownership": "owned",
+  "favorite": false,
+  "status": "mastered",
+  "finishedAt": "2024-10-08",
+  "raGameId": 1471,
+  "tags": [],
+  "addedAt": "2026-09-18T07:05:46.967Z",
+  "updatedAt": "2026-09-18T07:05:46.967Z"
+}

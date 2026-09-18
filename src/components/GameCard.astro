@@ -1,0 +1,59 @@
+---
+import Cover from './Cover.astro';
+import StatusBadge from './StatusBadge.astro';
+import Rating from './Rating.astro';
+import Icon from './Icon.astro';
+import { platformOf, sortKey, type Game } from '../lib/data';
+import { STATUS_IDS } from '../lib/constants.js';
+
+interface Props {
+  game: Game;
+}
+
+const { game } = Astro.props;
+const d = game.data;
+const platform = platformOf(d.platform);
+const search = [d.title, platform.name, platform.short, d.developer, d.publisher, ...d.genres, ...d.tags].filter(Boolean).join(' ');
+---
+
+<article
+  data-item
+  data-search={search}
+  data-sort={sortKey(d.title)}
+  data-platform={d.platform}
+  data-status={d.status}
+  data-statusorder={STATUS_IDS.indexOf(d.status)}
+  data-genres={d.genres.join(',')}
+  data-favorite={d.favorite ? '1' : '0'}
+  data-rating={d.rating ?? ''}
+  data-year={d.releaseYear ?? ''}
+  data-hours={d.hoursPlayed ?? ''}
+  data-updated={d.updatedAt}
+  data-finished={d.finishedAt ?? ''}
+  class="group card card-hover relative flex flex-col overflow-hidden"
+>
+  <a href={`/games/${game.id}`} class="relative block aspect-[3/4] overflow-hidden bg-zinc-900">
+    <Cover src={d.cover} title={d.title} platformShort={platform.short} class="transition duration-300 group-hover:scale-[1.03]" />
+    <div class="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-2">
+      <StatusBadge status={d.status} short class="backdrop-blur" />
+      {
+        d.favorite && (
+          <span class="grid size-6 place-items-center rounded-full bg-zinc-950/70 text-rose-400 backdrop-blur" title="Favorite">
+            <Icon name="heart" solid class="size-3.5" />
+          </span>
+        )
+      }
+    </div>
+  </a>
+  <div class="flex flex-1 flex-col gap-1.5 p-3">
+    <h3 class="line-clamp-2 text-sm font-semibold leading-snug text-zinc-100">
+      <a href={`/games/${game.id}`} class="after:absolute after:inset-0 hover:text-amber-300">{d.title}</a>
+    </h3>
+    <div class="mt-auto flex items-center justify-between gap-2 text-xs text-zinc-400">
+      <span class="truncate" title={platform.name}>
+        {platform.short}{d.releaseYear && <span class="text-zinc-600"> &middot; {d.releaseYear}</span>}
+      </span>
+      <Rating value={d.rating} class="text-xs" />
+    </div>
+  </div>
+</article>

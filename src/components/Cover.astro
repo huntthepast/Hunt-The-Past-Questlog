@@ -1,0 +1,50 @@
+---
+/**
+ * Game cover art. Falls back to a generated placeholder when no cover is set,
+ * so the grid never has broken images.
+ */
+interface Props {
+  src?: string;
+  title: string;
+  platformShort?: string;
+  class?: string;
+  eager?: boolean;
+}
+
+const { src, title, platformShort, class: className = '', eager = false } = Astro.props;
+
+const initials = title
+  .replace(/^(the|a|an)\s+/i, '')
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((w) => w[0]?.toUpperCase() ?? '')
+  .join('');
+
+// Deterministic hue per title so placeholders vary a bit.
+let hash = 0;
+for (const ch of title) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+const hue = hash % 360;
+---
+
+{
+  src ? (
+    <img
+      src={src}
+      alt={`${title} cover art`}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+      class:list={['h-full w-full object-cover', className]}
+    />
+  ) : (
+    <div
+      class:list={['flex h-full w-full flex-col items-center justify-center gap-1 p-3 text-center', className]}
+      style={`background: linear-gradient(160deg, hsl(${hue} 30% 18%), hsl(${(hue + 40) % 360} 35% 9%));`}
+      role="img"
+      aria-label={`${title} (no cover art)`}
+    >
+      <span class="font-display text-4xl text-white/80" style={`text-shadow: 0 2px 0 hsl(${hue} 40% 5%)`}>{initials}</span>
+      {platformShort && <span class="text-[10px] font-semibold uppercase tracking-widest text-white/50">{platformShort}</span>}
+    </div>
+  )
+}

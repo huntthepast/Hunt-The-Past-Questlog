@@ -1,0 +1,16 @@
+---
+import Base from '../layouts/Base.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import GameGrid from '../components/GameGrid.astro';
+import { favoriteGames } from '../lib/data';
+
+const games = await favoriteGames();
+---
+
+<Base title="Favorites" description="The games I keep coming back to.">
+  <SectionHeading level="h1" eyebrow="All-time" title="Favorites">
+    <p class="mt-2 text-sm text-zinc-400">{games.length} games that earned a permanent spot.</p>
+  </SectionHeading>
+
+  <GameGrid games={games} showFavorite={false} emptyTitle="No favorites yet" emptyText="Toggle the heart on a game in the admin." />
+</Base>

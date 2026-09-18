@@ -1,0 +1,96 @@
+/* Tailwind source for the local admin UI. Compiled by `npm run admin:css` into admin/public/styles.css. */
+@import "tailwindcss" source(none);
+@plugin "@tailwindcss/typography";
+
+@source "../public/index.html";
+@source "../public/app.js";
+
+@theme {
+  --font-display: "Pixelify Sans Variable", ui-monospace, "Cascadia Mono", monospace;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-zinc-950);
+  }
+
+  [x-cloak] {
+    display: none !important;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-zinc-800 bg-zinc-900/60;
+  }
+
+  .btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-accent {
+    @apply border-amber-400/60 bg-amber-400 text-zinc-950 hover:border-amber-300 hover:bg-amber-300 hover:text-zinc-950;
+  }
+
+  .btn-danger {
+    @apply border-rose-500/40 text-rose-300 hover:border-rose-400 hover:bg-rose-500/10 hover:text-rose-200;
+  }
+
+  .btn-sm {
+    @apply px-2 py-1 text-xs;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/20 disabled:opacity-60;
+  }
+
+  .label {
+    @apply mb-1 block text-xs font-semibold uppercase tracking-wider text-zinc-500;
+  }
+
+  .field {
+    @apply block;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset;
+  }
+
+  .nav-link {
+    @apply flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-zinc-900 hover:text-zinc-100;
+  }
+
+  .nav-link-active {
+    @apply bg-zinc-800/80 text-amber-300;
+  }
+
+  .row {
+    @apply flex w-full cursor-pointer items-center gap-3 border-b border-zinc-800/80 px-3 py-2 text-left text-sm transition hover:bg-zinc-800/50;
+  }
+
+  .row-active {
+    @apply bg-zinc-800/70;
+  }
+
+  .h-display {
+    @apply font-display tracking-wide text-zinc-50;
+  }
+}
+
+.preview-prose {
+  @apply prose prose-invert prose-zinc max-w-none prose-headings:font-display prose-a:text-amber-400 prose-code:before:content-none prose-code:after:content-none;
+}
+
+/* Same display font as the public site, served from node_modules by the admin server. */
+@font-face {
+  font-family: "Pixelify Sans Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 700;
+  src: url("/vendor/fonts/pixelify-sans-latin-wght-normal.woff2") format("woff2-variations");
+}

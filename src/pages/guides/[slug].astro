@@ -1,0 +1,111 @@
+---
+import { render, getEntry } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Badge from '../../components/Badge.astro';
+import Icon from '../../components/Icon.astro';
+import Cover from '../../components/Cover.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import { allGuides, allTrackers, trackersForGame, platformOf, formatDate } from '../../lib/data';
+import { guideTypeById } from '../../lib/constants.js';
+
+export async function getStaticPaths() {
+  const guides = await allGuides();
+  return guides.map((guide) => ({ params: { slug: guide.id }, props: { guide } }));
+}
+
+const { guide } = Astro.props;
+const d = guide.data;
+const type = guideTypeById(d.type);
+const game = d.game ? await getEntry(d.game) : undefined;
+const platform = game ? platformOf(game.data.platform) : undefined;
+const relatedTrackers = game ? trackersForGame(await allTrackers(), game.id) : [];
+const otherGuides = game ? (await allGuides()).filter((g) => g.data.game?.id === game.id && g.id !== guide.id) : [];
+
+const { Content, headings } = await render(guide);
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+<Base title={d.title} description={d.summary ?? `${type.label} for ${game?.data.title ?? 'the collection'}.`} image={game?.data.cover}>
+  <nav class="mb-6 text-sm text-zinc-500" aria-label="Breadcrumb">
+    <a href="/guides" class="inline-flex items-center gap-1 hover:text-amber-300"><Icon name="arrow-left" class="size-4" /> Guides</a>
+  </nav>
+
+  <header class="mb-8">
+    <div class="mb-3 flex flex-wrap items-center gap-2">
+      <Badge color={type.color} label={type.label} />
+      {d.tags.map((tag) => <span class="chip bg-zinc-800 text-zinc-300 ring-zinc-700">{tag}</span>)}
+    </div>
+    <h1 class="h-display text-4xl sm:text-5xl">{d.title}</h1>
+    {d.summary && <p class="mt-3 max-w-3xl text-lg text-zinc-400">{d.summary}</p>}
+    <p class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
+      <span class="inline-flex items-center gap-1"><Icon name="calendar" class="size-3.5" /> Updated {formatDate(d.updatedAt)}</span>
+      <span class="inline-flex items-center gap-1"><Icon name="clock" class="size-3.5" /> Written {formatDate(d.createdAt)}</span>
+    </p>
+  </header>
+
+  <div class="grid gap-10 lg:grid-cols-[1fr_260px]">
+    <article class="guide-prose min-w-0">
+      <Content />
+    </article>
+
+    <aside class="space-y-6 lg:sticky lg:top-24 lg:self-start">
+      {
+        game && platform && (
+          <a href={`/games/${game.id}`} class="card card-hover flex items-center gap-3 p-3">
+            <span class="block h-16 w-12 shrink-0 overflow-hidden rounded bg-zinc-800">
+              <Cover src={game.data.cover} title={game.data.title} platformShort={platform.short} />
+            </span>
+            <span class="min-w-0">
+              <span class="eyebrow block text-[10px]">Game</span>
+              <span class="block truncate font-medium text-zinc-100">{game.data.title}</span>
+              <span class="mt-1 block">
+                <StatusBadge status={game.data.status} short />
+              </span>
+            </span>
+          </a>
+        )
+      }
+
+      {
+        toc.length > 1 && (
+          <nav class="card p-4" aria-label="Table of contents">
+            <p class="eyebrow mb-2">On this page</p>
+            <ol class="space-y-1 text-sm">
+              {toc.map((h) => (
+                <li class:list={[h.depth === 3 && 'pl-3']}>
+                  <a href={`#${h.slug}`} class="block truncate text-zinc-400 hover:text-amber-300">
+                    {h.text}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )
+      }
+
+      {
+        (relatedTrackers.length > 0 || otherGuides.length > 0) && (
+          <div class="card p-4">
+            <p class="eyebrow mb-2">Related</p>
+            <ul class="space-y-2 text-sm">
+              {relatedTrackers.map((t) => (
+                <li>
+                  <a href={`/trackers/${t.id}`} class="flex items-center gap-2 text-zinc-300 hover:text-amber-300">
+                    <Icon name="checklist" class="size-4 shrink-0 text-zinc-500" /> <span class="truncate">{t.data.title}</span>
+                  </a>
+                </li>
+              ))}
+              {otherGuides.map((g) => (
+                <li>
+                  <a href={`/guides/${g.id}`} class="flex items-center gap-2 text-zinc-300 hover:text-amber-300">
+                    <Icon name="book" class="size-4 shrink-0 text-zinc-500" /> <span class="truncate">{g.data.title}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+    </aside>
+  </div>
+</Base>

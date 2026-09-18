@@ -1,0 +1,416 @@
+[
+  {
+    "id": "nes",
+    "name": "Nintendo Entertainment System",
+    "short": "NES",
+    "raConsoleId": 7
+  },
+  {
+    "id": "snes",
+    "name": "Super Nintendo",
+    "short": "SNES",
+    "raConsoleId": 3
+  },
+  {
+    "id": "n64",
+    "name": "Nintendo 64",
+    "short": "N64",
+    "raConsoleId": 2
+  },
+  {
+    "id": "gamecube",
+    "name": "Nintendo GameCube",
+    "short": "GCN",
+    "raConsoleId": 16
+  },
+  {
+    "id": "wii",
+    "name": "Nintendo Wii",
+    "short": "Wii",
+    "raConsoleId": 19
+  },
+  {
+    "id": "wii-u",
+    "name": "Nintendo Wii U",
+    "short": "Wii U",
+    "raConsoleId": 20
+  },
+  {
+    "id": "switch",
+    "name": "Nintendo Switch",
+    "short": "Switch",
+    "raConsoleId": null
+  },
+  {
+    "id": "gb",
+    "name": "Game Boy",
+    "short": "GB",
+    "raConsoleId": 4
+  },
+  {
+    "id": "gbc",
+    "name": "Game Boy Color",
+    "short": "GBC",
+    "raConsoleId": 6
+  },
+  {
+    "id": "gba",
+    "name": "Game Boy Advance",
+    "short": "GBA",
+    "raConsoleId": 5
+  },
+  {
+    "id": "nds",
+    "name": "Nintendo DS",
+    "short": "DS",
+    "raConsoleId": 18
+  },
+  {
+    "id": "3ds",
+    "name": "Nintendo 3DS",
+    "short": "3DS",
+    "raConsoleId": null
+  },
+  {
+    "id": "virtual-boy",
+    "name": "Virtual Boy",
+    "short": "VB",
+    "raConsoleId": 28
+  },
+  {
+    "id": "ps1",
+    "name": "PlayStation",
+    "short": "PS1",
+    "raConsoleId": 12
+  },
+  {
+    "id": "ps2",
+    "name": "PlayStation 2",
+    "short": "PS2",
+    "raConsoleId": 21
+  },
+  {
+    "id": "ps3",
+    "name": "PlayStation 3",
+    "short": "PS3",
+    "raConsoleId": null
+  },
+  {
+    "id": "ps4",
+    "name": "PlayStation 4",
+    "short": "PS4",
+    "raConsoleId": null
+  },
+  {
+    "id": "ps5",
+    "name": "PlayStation 5",
+    "short": "PS5",
+    "raConsoleId": null
+  },
+  {
+    "id": "psp",
+    "name": "PlayStation Portable",
+    "short": "PSP",
+    "raConsoleId": 41
+  },
+  {
+    "id": "ps-vita",
+    "name": "PlayStation Vita",
+    "short": "Vita",
+    "raConsoleId": null
+  },
+  {
+    "id": "master-system",
+    "name": "Sega Master System",
+    "short": "SMS",
+    "raConsoleId": 11
+  },
+  {
+    "id": "genesis",
+    "name": "Sega Genesis / Mega Drive",
+    "short": "Genesis",
+    "raConsoleId": 1
+  },
+  {
+    "id": "sega-cd",
+    "name": "Sega CD",
+    "short": "Sega CD",
+    "raConsoleId": 9
+  },
+  {
+    "id": "32x",
+    "name": "Sega 32X",
+    "short": "32X",
+    "raConsoleId": 10
+  },
+  {
+    "id": "saturn",
+    "name": "Sega Saturn",
+    "short": "Saturn",
+    "raConsoleId": 39
+  },
+  {
+    "id": "dreamcast",
+    "name": "Sega Dreamcast",
+    "short": "DC",
+    "raConsoleId": 40
+  },
+  {
+    "id": "game-gear",
+    "name": "Sega Game Gear",
+    "short": "GG",
+    "raConsoleId": 15
+  },
+  {
+    "id": "xbox",
+    "name": "Xbox",
+    "short": "Xbox",
+    "raConsoleId": 22
+  },
+  {
+    "id": "xbox-360",
+    "name": "Xbox 360",
+    "short": "X360",
+    "raConsoleId": null
+  },
+  {
+    "id": "xbox-one",
+    "name": "Xbox One",
+    "short": "XB1",
+    "raConsoleId": null
+  },
+  {
+    "id": "xbox-series",
+    "name": "Xbox Series X|S",
+    "short": "XSX",
+    "raConsoleId": null
+  },
+  {
+    "id": "pc",
+    "name": "PC",
+    "short": "PC",
+    "raConsoleId": null
+  },
+  {
+    "id": "dos",
+    "name": "MS-DOS",
+    "short": "DOS",
+    "raConsoleId": 26
+  },
+  {
+    "id": "arcade",
+    "name": "Arcade",
+    "short": "Arcade",
+    "raConsoleId": 27
+  },
+  {
+    "id": "neo-geo-pocket",
+    "name": "Neo Geo Pocket",
+    "short": "NGP",
+    "raConsoleId": 14
+  },
+  {
+    "id": "tg16",
+    "name": "TurboGrafx-16 / PC Engine",
+    "short": "TG16",
+    "raConsoleId": 8
+  },
+  {
+    "id": "atari-2600",
+    "name": "Atari 2600",
+    "short": "2600",
+    "raConsoleId": 25
+  },
+  {
+    "id": "atari-lynx",
+    "name": "Atari Lynx",
+    "short": "Lynx",
+    "raConsoleId": 13
+  },
+  {
+    "id": "wonderswan",
+    "name": "WonderSwan",
+    "short": "WS",
+    "raConsoleId": 53
+  },
+  {
+    "id": "mobile",
+    "name": "Mobile",
+    "short": "Mobile",
+    "raConsoleId": null
+  },
+  {
+    "id": "atari-jaguar",
+    "name": "Atari Jaguar",
+    "short": "AJ",
+    "raConsoleId": 17
+  },
+  {
+    "id": "magnavox-odyssey-2",
+    "name": "Magnavox Odyssey 2",
+    "short": "MO2",
+    "raConsoleId": 23
+  },
+  {
+    "id": "pokemon-mini",
+    "name": "Pokemon Mini",
+    "short": "PM",
+    "raConsoleId": 24
+  },
+  {
+    "id": "msx",
+    "name": "MSX",
+    "short": "MSX",
+    "raConsoleId": 29
+  },
+  {
+    "id": "sg-1000",
+    "name": "SG-1000",
+    "short": "SG 1000",
+    "raConsoleId": 33
+  },
+  {
+    "id": "amstrad-cpc",
+    "name": "Amstrad CPC",
+    "short": "AC",
+    "raConsoleId": 37
+  },
+  {
+    "id": "apple-ii",
+    "name": "Apple II",
+    "short": "Apple II",
+    "raConsoleId": 38
+  },
+  {
+    "id": "3do-interactive-multiplayer",
+    "name": "3DO Interactive Multiplayer",
+    "short": "3IM",
+    "raConsoleId": 43
+  },
+  {
+    "id": "colecovision",
+    "name": "ColecoVision",
+    "short": "C",
+    "raConsoleId": 44
+  },
+  {
+    "id": "intellivision",
+    "name": "Intellivision",
+    "short": "I",
+    "raConsoleId": 45
+  },
+  {
+    "id": "vectrex",
+    "name": "Vectrex",
+    "short": "Vectrex",
+    "raConsoleId": 46
+  },
+  {
+    "id": "pc-8000-8800",
+    "name": "PC-8000/8800",
+    "short": "P8000880",
+    "raConsoleId": 47
+  },
+  {
+    "id": "pc-fx",
+    "name": "PC-FX",
+    "short": "PC FX",
+    "raConsoleId": 49
+  },
+  {
+    "id": "atari-7800",
+    "name": "Atari 7800",
+    "short": "A7800",
+    "raConsoleId": 51
+  },
+  {
+    "id": "neo-geo-cd",
+    "name": "Neo Geo CD",
+    "short": "NGC",
+    "raConsoleId": 56
+  },
+  {
+    "id": "fairchild-channel-f",
+    "name": "Fairchild Channel F",
+    "short": "FCF",
+    "raConsoleId": 57
+  },
+  {
+    "id": "watara-supervision",
+    "name": "Watara Supervision",
+    "short": "WS",
+    "raConsoleId": 63
+  },
+  {
+    "id": "mega-duck",
+    "name": "Mega Duck",
+    "short": "MD",
+    "raConsoleId": 69
+  },
+  {
+    "id": "arduboy",
+    "name": "Arduboy",
+    "short": "Arduboy",
+    "raConsoleId": 71
+  },
+  {
+    "id": "wasm-4",
+    "name": "WASM-4",
+    "short": "WASM 4",
+    "raConsoleId": 72
+  },
+  {
+    "id": "arcadia-2001",
+    "name": "Arcadia 2001",
+    "short": "A2001",
+    "raConsoleId": 73
+  },
+  {
+    "id": "interton-vc-4000",
+    "name": "Interton VC 4000",
+    "short": "IV4000",
+    "raConsoleId": 74
+  },
+  {
+    "id": "elektor-tv-games-computer",
+    "name": "Elektor TV Games Computer",
+    "short": "ETGC",
+    "raConsoleId": 75
+  },
+  {
+    "id": "pc-engine-cd-turbografx-cd",
+    "name": "PC Engine CD/TurboGrafx-CD",
+    "short": "PECTC",
+    "raConsoleId": 76
+  },
+  {
+    "id": "atari-jaguar-cd",
+    "name": "Atari Jaguar CD",
+    "short": "AJC",
+    "raConsoleId": 77
+  },
+  {
+    "id": "nintendo-dsi",
+    "name": "Nintendo DSi",
+    "short": "ND",
+    "raConsoleId": 78
+  },
+  {
+    "id": "uzebox",
+    "name": "Uzebox",
+    "short": "Uzebox",
+    "raConsoleId": 80
+  },
+  {
+    "id": "famicom-disk-system",
+    "name": "Famicom Disk System",
+    "short": "FDS",
+    "raConsoleId": 81
+  },
+  {
+    "id": "standalone",
+    "name": "Standalone",
+    "short": "S",
+    "raConsoleId": 102
+  }
+]

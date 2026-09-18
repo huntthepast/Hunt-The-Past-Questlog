@@ -1,0 +1,30 @@
+---
+import Icon from './Icon.astro';
+
+interface Props {
+  title: string;
+  eyebrow?: string;
+  href?: string;
+  linkLabel?: string;
+  id?: string;
+  level?: 'h1' | 'h2';
+}
+
+const { title, eyebrow, href, linkLabel = 'View all', id, level = 'h2' } = Astro.props;
+const Tag = level;
+---
+
+<div class="mb-4 flex flex-wrap items-end justify-between gap-3" id={id}>
+  <div>
+    {eyebrow && <p class="eyebrow mb-1">{eyebrow}</p>}
+    <Tag class:list={['h-display', level === 'h1' ? 'text-4xl sm:text-5xl' : 'text-2xl sm:text-3xl']}>{title}</Tag>
+    <slot />
+  </div>
+  {
+    href && (
+      <a href={href} class="inline-flex items-center gap-1 text-sm font-medium text-amber-400 hover:text-amber-300">
+        {linkLabel} <Icon name="arrow-right" class="size-4" />
+      </a>
+    )
+  }
+</div>

@@ -1,0 +1,18 @@
+{
+  "title": "Mario Bros.",
+  "platform": "nes",
+  "cover": "https://media.retroachievements.org/Images/065277.png",
+  "genres": [
+    "2D Platforming"
+  ],
+  "developer": "Intelligent Systems",
+  "publisher": "Nintendo",
+  "releaseYear": 1983,
+  "ownership": "owned",
+  "favorite": false,
+  "status": "played",
+  "raGameId": 1824,
+  "tags": [],
+  "addedAt": "2026-09-18T07:05:55.599Z",
+  "updatedAt": "2026-09-18T07:05:55.599Z"
+}

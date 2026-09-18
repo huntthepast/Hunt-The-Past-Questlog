@@ -1,0 +1,277 @@
+---
+import Base from '../layouts/Base.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import StatTile from '../components/StatTile.astro';
+import EmptyState from '../components/EmptyState.astro';
+import ProgressBar from '../components/ProgressBar.astro';
+import Badge from '../components/Badge.astro';
+import Icon from '../components/Icon.astro';
+import { raProfile, raSynced, allGames, formatDate, formatDateTime, formatNumber } from '../lib/data';
+import { RA_SITE, raImage } from '../lib/constants.js';
+
+const synced = raSynced();
+const games = await allGames();
+const gameByRaId = new Map(games.filter((g) => g.data.raGameId).map((g) => [g.data.raGameId as number, g]));
+
+const completion = [...raProfile.completion].sort((a, b) => (b.mostRecentAwardedDate ?? '').localeCompare(a.mostRecentAwardedDate ?? ''));
+const consoles = [...new Set(completion.map((c) => c.consoleName))].sort();
+const masteries = raProfile.awards.filter((a) => a.type === 'Mastery/Completion');
+const beaten = raProfile.awards.filter((a) => a.type === 'Game Beaten');
+
+const AWARD: Record<string, { label: string; color: string }> = {
+  mastered: { label: 'Mastered', color: 'amber' },
+  completed: { label: 'Completed', color: 'violet' },
+  'beaten-hardcore': { label: 'Beaten', color: 'emerald' },
+  'beaten-softcore': { label: 'Beaten (SC)', color: 'teal' },
+};
+
+const filterConfig = {
+  facets: ['console'],
+  flags: ['awarded'],
+  defaultSort: 'recent',
+  sorts: {
+    recent: { attr: 'recent', dir: 'desc' },
+    title: { attr: 'sort' },
+    pct: { attr: 'pct', dir: 'desc', numeric: true },
+    unlocked: { attr: 'unlocked', dir: 'desc', numeric: true },
+  },
+};
+---
+
+<Base title="Achievements" description="RetroAchievements profile, recent unlocks, masteries and per-game completion.">
+  <SectionHeading level="h1" eyebrow="RetroAchievements" title="Achievements">
+    {
+      synced && (
+        <p class="mt-2 text-sm text-zinc-400">
+          Snapshot from {formatDateTime(raProfile.syncedAt)}. Live data lives on
+          <a href={raProfile.profileUrl} target="_blank" rel="noopener" class="text-amber-400 hover:underline">retroachievements.org</a>.
+        </p>
+      )
+    }
+  </SectionHeading>
+
+  {
+    !synced ? (
+      <EmptyState title="Not synced yet" icon="trophy">
+        <p>
+          This page is filled from a snapshot of your RetroAchievements profile. Put your username and web API key in
+          <code class="rounded bg-zinc-800 px-1">.env</code>, run <code class="rounded bg-zinc-800 px-1">npm run admin</code>, open the
+          RetroAchievements tab, click <strong>Sync now</strong>, then publish.
+        </p>
+      </EmptyState>
+    ) : (
+      <>
+        <section class="card mb-8 flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
+          <img src={raProfile.avatar} alt={`${raProfile.user}'s avatar`} width="96" height="96" class="size-24 shrink-0 rounded-xl bg-zinc-800 object-cover" />
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <a href={raProfile.profileUrl} target="_blank" rel="noopener" class="font-display text-3xl text-zinc-50 hover:text-amber-300">
+                {raProfile.user}
+              </a>
+              {raProfile.rank && (
+                <Badge color="amber" label={`Rank #${formatNumber(raProfile.rank)}${raProfile.totalRanked ? ` of ${formatNumber(raProfile.totalRanked)}` : ''}`} />
+              )}
+            </div>
+            {raProfile.motto && <p class="mt-1 text-sm italic text-zinc-400">"{raProfile.motto}"</p>}
+            <p class="mt-1 text-xs text-zinc-500">Member since {formatDate(raProfile.memberSince)}</p>
+            {raProfile.richPresence && (
+              <p class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-zinc-800/80 px-2.5 py-1 text-xs text-zinc-300">
+                <Icon name="gamepad" class="size-3.5 text-amber-400" /> {raProfile.richPresence}
+              </p>
+            )}
+          </div>
+          <dl class="grid shrink-0 grid-cols-3 gap-4 text-center sm:text-right">
+            <div>
+              <dt class="text-[11px] uppercase tracking-wider text-zinc-500">Points</dt>
+              <dd class="font-display text-2xl text-amber-300 tabular-nums">{formatNumber(raProfile.points)}</dd>
+            </div>
+            <div>
+              <dt class="text-[11px] uppercase tracking-wider text-zinc-500">RetroPoints</dt>
+              <dd class="font-display text-2xl text-zinc-100 tabular-nums">{formatNumber(raProfile.truePoints)}</dd>
+            </div>
+            <div>
+              <dt class="text-[11px] uppercase tracking-wider text-zinc-500">Softcore</dt>
+              <dd class="font-display text-2xl text-zinc-400 tabular-nums">{formatNumber(raProfile.softcorePoints)}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="mb-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <StatTile label="Games played" value={formatNumber(raProfile.stats.gamesPlayed)} icon="gamepad" color="sky" />
+          <StatTile label="Achievements" value={formatNumber(raProfile.stats.achievementsEarned)} icon="check-circle" color="emerald" />
+          <StatTile label="Mastered" value={formatNumber(raProfile.stats.masteries)} icon="trophy" color="amber" />
+          <StatTile label="Completed" value={formatNumber(raProfile.stats.completions)} icon="sparkles" color="violet" />
+          <StatTile label="Beaten" value={formatNumber(raProfile.stats.beatenHardcore + raProfile.stats.beatenSoftcore)} hint={`${raProfile.stats.beatenHardcore} hardcore`} icon="flag" color="teal" />
+        </section>
+
+        <div class="mb-10 grid gap-10 lg:grid-cols-2">
+          <section>
+            <SectionHeading eyebrow="Last sessions" title="Recently Played" />
+            {raProfile.recentlyPlayed.length ? (
+              <ul class="card divide-y divide-zinc-800">
+                {raProfile.recentlyPlayed.map((g) => {
+                  const local = gameByRaId.get(g.gameId);
+                  const pct = g.numPossible ? Math.round((g.numAchieved / g.numPossible) * 100) : 0;
+                  return (
+                    <li class="flex items-center gap-3 p-3">
+                      <img src={raImage(g.imageIcon)} alt="" width="48" height="48" loading="lazy" class="size-12 shrink-0 rounded bg-zinc-800" />
+                      <div class="min-w-0 flex-1">
+                        <a href={local ? `/games/${local.id}` : `${RA_SITE}/game/${g.gameId}`} target={local ? undefined : '_blank'} rel={local ? undefined : 'noopener'} class="block truncate font-medium text-zinc-100 hover:text-amber-300">
+                          {g.title}
+                        </a>
+                        <p class="text-xs text-zinc-500">
+                          {g.consoleName} &middot; {formatDateTime(g.lastPlayed)}
+                        </p>
+                        <div class="mt-1.5 flex items-center gap-2">
+                          <ProgressBar value={pct} color={pct === 100 ? 'amber' : 'emerald'} size="sm" label="Achievements" class="max-w-40" />
+                          <span class="text-[11px] tabular-nums text-zinc-400">
+                            {g.numAchieved}/{g.numPossible}
+                          </span>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <EmptyState title="No recent sessions" icon="gamepad" />
+            )}
+          </section>
+
+          <section>
+            <SectionHeading eyebrow="Fresh" title="Recent Unlocks" />
+            {raProfile.recentAchievements.length ? (
+              <ul class="card divide-y divide-zinc-800">
+                {raProfile.recentAchievements.slice(0, 12).map((a) => (
+                  <li>
+                    <a href={`${RA_SITE}/achievement/${a.id}`} target="_blank" rel="noopener" class="flex items-center gap-3 p-3 transition hover:bg-zinc-800/50">
+                      <img src={raImage(a.badge)} alt="" width="48" height="48" loading="lazy" class="size-12 shrink-0 rounded bg-zinc-800" />
+                      <span class="min-w-0 flex-1">
+                        <span class="flex items-center gap-1.5 truncate font-medium text-zinc-100">
+                          {a.title}
+                          {a.hardcore && <Icon name="bolt" solid class="size-3.5 shrink-0 text-amber-400" title="Hardcore" />}
+                        </span>
+                        <span class="block truncate text-xs text-zinc-400">{a.description}</span>
+                        <span class="block truncate text-xs text-zinc-500">
+                          {a.gameTitle} &middot; {formatDateTime(a.date)}
+                        </span>
+                      </span>
+                      <span class="shrink-0 text-xs font-semibold text-amber-300 tabular-nums">{a.points} pts</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState title="No recent unlocks" icon="trophy" />
+            )}
+          </section>
+        </div>
+
+        <section class="mb-10" x-data={`listFilter(${JSON.stringify(filterConfig)})`}>
+          <SectionHeading eyebrow="Per game" title="Completion Progress">
+            <p class="mt-2 text-sm text-zinc-400">{completion.length} games with at least one unlock.</p>
+          </SectionHeading>
+
+          <div class="card mb-4 flex flex-col gap-3 p-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <label class="relative flex-1 sm:min-w-56">
+              <span class="sr-only">Search</span>
+              <Icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+              <input type="search" x-model.debounce.150ms="q" placeholder="Search games..." class="input pl-9" />
+            </label>
+            <select x-model="facet.console" class="input sm:w-52" aria-label="Console">
+              <option value="">All consoles</option>
+              {consoles.map((c) => (
+                <option value={c}>{c}</option>
+              ))}
+            </select>
+            <select x-model="sort" class="input sm:w-48" aria-label="Sort">
+              <option value="recent">Sort: Last unlock</option>
+              <option value="pct">Sort: Completion %</option>
+              <option value="unlocked">Sort: Unlocked count</option>
+              <option value="title">Sort: Title</option>
+            </select>
+            <label class="inline-flex cursor-pointer items-center gap-2 text-sm text-zinc-400 select-none">
+              <input type="checkbox" x-model="flag.awarded" class="size-4 accent-amber-400" /> Beaten or better
+            </label>
+            <p class="text-xs text-zinc-500 sm:ml-auto" x-cloak>
+              <span class="font-semibold text-zinc-300" x-text="visible"></span> of <span x-text="total"></span>
+              <button type="button" class="ml-2 text-amber-400 hover:underline" x-show="active" @click="reset()">Reset</button>
+            </p>
+          </div>
+
+          <ul class="card divide-y divide-zinc-800">
+            {completion.map((c) => {
+              const local = gameByRaId.get(c.gameId);
+              const pct = c.maxPossible ? Math.round((c.numAwarded / c.maxPossible) * 100) : 0;
+              const award = c.highestAwardKind ? AWARD[c.highestAwardKind] : undefined;
+              return (
+                <li
+                  data-item
+                  data-search={`${c.title} ${c.consoleName}`}
+                  data-sort={c.title.toLowerCase().replace(/^(the|a|an)\s+/, '')}
+                  data-console={c.consoleName}
+                  data-recent={c.mostRecentAwardedDate ?? ''}
+                  data-pct={pct}
+                  data-unlocked={c.numAwarded}
+                  data-awarded={c.highestAwardKind ? '1' : '0'}
+                  class="flex items-center gap-3 p-3"
+                >
+                  <img src={raImage(c.imageIcon)} alt="" width="40" height="40" loading="lazy" class="size-10 shrink-0 rounded bg-zinc-800" />
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <a href={local ? `/games/${local.id}` : `${RA_SITE}/game/${c.gameId}`} target={local ? undefined : '_blank'} rel={local ? undefined : 'noopener'} class="truncate font-medium text-zinc-100 hover:text-amber-300">
+                        {c.title}
+                      </a>
+                      {award && <Badge color={award.color} label={award.label} class="hidden sm:inline-flex" />}
+                    </div>
+                    <p class="text-xs text-zinc-500">
+                      {c.consoleName}
+                      {c.mostRecentAwardedDate && <span> &middot; last unlock {formatDate(c.mostRecentAwardedDate)}</span>}
+                    </p>
+                  </div>
+                  <div class="w-28 shrink-0 sm:w-40">
+                    <ProgressBar value={pct} color={c.highestAwardKind === 'mastered' ? 'amber' : pct === 100 ? 'violet' : 'emerald'} size="sm" label="Achievements" />
+                    <p class="mt-1 text-right text-[11px] tabular-nums text-zinc-400">
+                      {c.numAwarded}/{c.maxPossible} &middot; {pct}%
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <div x-show="visible === 0" x-cloak class="mt-4">
+            <EmptyState title="No games match" icon="filter" />
+          </div>
+        </section>
+
+        {masteries.length > 0 && (
+          <section class="mb-10">
+            <SectionHeading eyebrow="Trophy shelf" title="Masteries & Completions">
+              <p class="mt-2 text-sm text-zinc-400">
+                {masteries.length} mastery/completion awards and {beaten.length} beaten awards.
+              </p>
+            </SectionHeading>
+            <ul class="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
+              {masteries.map((a) => {
+                const local = a.gameId ? gameByRaId.get(a.gameId) : undefined;
+                return (
+                  <li>
+                    <a
+                      href={local ? `/games/${local.id}` : `${RA_SITE}/game/${a.gameId}`}
+                      target={local ? undefined : '_blank'}
+                      rel={local ? undefined : 'noopener'}
+                      class:list={['block overflow-hidden rounded-lg border-2 transition hover:scale-105', a.hardcore ? 'border-amber-400/70 shadow-glow' : 'border-zinc-700']}
+                      title={`${a.title} (${a.consoleName}) - ${a.hardcore ? 'Mastered' : 'Completed'} ${formatDate(a.awardedAt)}`}
+                    >
+                      <img src={raImage(a.imageIcon)} alt={a.title} loading="lazy" class="aspect-square w-full bg-zinc-800 object-cover" />
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+      </>
+    )
+  }
+</Base>

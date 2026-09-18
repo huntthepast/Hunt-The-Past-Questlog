@@ -1,0 +1,112 @@
+---
+import GameCard from './GameCard.astro';
+import Icon from './Icon.astro';
+import EmptyState from './EmptyState.astro';
+import { platformOf, type Game } from '../lib/data';
+import { STATUSES } from '../lib/constants.js';
+
+interface Props {
+  games: Game[];
+  showStatus?: boolean;
+  showFavorite?: boolean;
+  emptyTitle?: string;
+  emptyText?: string;
+}
+
+const { games, showStatus = true, showFavorite = true, emptyTitle = 'Nothing here yet', emptyText = 'Add games from the local admin and publish.' } = Astro.props;
+
+const platforms = [...new Set(games.map((g) => g.data.platform))].map(platformOf).sort((a, b) => a.name.localeCompare(b.name));
+const statuses = STATUSES.filter((s) => games.some((g) => g.data.status === s.id));
+
+const filterConfig = {
+  facets: ['platform', 'status'],
+  flags: ['favorite'],
+  defaultSort: 'title',
+  sorts: {
+    title: { attr: 'sort' },
+    recent: { attr: 'updated', dir: 'desc' },
+    finished: { attr: 'finished', dir: 'desc' },
+    rating: { attr: 'rating', dir: 'desc', numeric: true },
+    hours: { attr: 'hours', dir: 'desc', numeric: true },
+    year: { attr: 'year', dir: 'desc', numeric: true },
+    status: { attr: 'statusorder', numeric: true },
+  },
+};
+---
+
+{
+  games.length === 0 ? (
+    <EmptyState title={emptyTitle} icon="gamepad">
+      {emptyText}
+    </EmptyState>
+  ) : (
+    <div x-data={`listFilter(${JSON.stringify(filterConfig)})`}>
+      <div class="card mb-6 flex flex-col gap-3 p-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <label class="relative flex-1 sm:min-w-56">
+          <span class="sr-only">Search games</span>
+          <Icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+          <input type="search" x-model.debounce.150ms="q" placeholder="Search title, platform, genre..." class="input pl-9" />
+        </label>
+
+        <label class="flex items-center gap-2 text-sm text-zinc-400">
+          <span class="sr-only">Platform</span>
+          <select x-model="facet.platform" class="input sm:w-44">
+            <option value="">All platforms</option>
+            {platforms.map((p) => (
+              <option value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </label>
+
+        {showStatus && (
+          <label class="flex items-center gap-2 text-sm text-zinc-400">
+            <span class="sr-only">Status</span>
+            <select x-model="facet.status" class="input sm:w-40">
+              <option value="">Any status</option>
+              {statuses.map((s) => (
+                <option value={s.id}>{s.label}</option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        <label class="flex items-center gap-2 text-sm text-zinc-400">
+          <span class="sr-only">Sort</span>
+          <select x-model="sort" class="input sm:w-44">
+            <option value="title">Sort: Title</option>
+            <option value="recent">Sort: Recently updated</option>
+            <option value="finished">Sort: Recently finished</option>
+            <option value="rating">Sort: Rating</option>
+            <option value="hours">Sort: Hours played</option>
+            <option value="year">Sort: Release year</option>
+            <option value="status">Sort: Status</option>
+          </select>
+        </label>
+
+        {showFavorite && (
+          <label class="inline-flex cursor-pointer items-center gap-2 text-sm text-zinc-400 select-none">
+            <input type="checkbox" x-model="flag.favorite" class="size-4 rounded border-zinc-700 bg-zinc-950 accent-amber-400" />
+            <Icon name="heart" class="size-4 text-rose-400" /> Favorites
+          </label>
+        )}
+
+        <p class="text-xs text-zinc-500 sm:ml-auto" x-cloak>
+          Showing <span class="font-semibold text-zinc-300" x-text="visible"></span> of <span x-text="total"></span>
+          <button type="button" class="ml-2 text-amber-400 hover:underline" x-show="active" @click="reset()">Reset</button>
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {games.map((game) => (
+          <GameCard game={game} />
+        ))}
+      </div>
+
+      <div x-show="visible === 0" x-cloak class="mt-6">
+        <EmptyState title="No games match" icon="filter">
+          Try a different search or <button type="button" class="text-amber-400 hover:underline" @click="reset()">reset the filters</button>.
+        </EmptyState>
+      </div>
+    </div>
+  )
+}

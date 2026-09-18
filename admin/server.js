@@ -1,0 +1,427 @@
+/**
+ * QuestLog local admin.
+ *
+ * Runs ONLY on your machine (binds to 127.0.0.1) and edits the JSON / Markdown files that the
+ * public Astro site is built from. Nothing here is deployed: Vercel just runs `astro build`.
+ *
+ *   npm run admin   ->  http://127.0.0.1:3333
+ */
+import { readFile, stat, mkdir, writeFile, unlink } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { Hono } from 'hono';
+import { csrf } from 'hono/csrf';
+import { HTTPException } from 'hono/http-exception';
+import { serve } from '@hono/node-server';
+
+import { PATHS } from './lib/paths.js';
+import { HttpError, badRequest, notFound, conflict } from './lib/errors.js';
+import { slugify, isSlug } from './lib/slug.js';
+import * as store from './lib/store.js';
+import * as git from './lib/git.js';
+import * as ra from './lib/ra.js';
+import { GameSchema, GuideSchema, TrackerSchema, SiteSchema, PlatformSchema, validate, ensureTrackerItemIds } from './lib/schemas.js';
+import { STATUSES, OWNERSHIP, GUIDE_TYPES, TRACKER_TYPES, raImage } from '../src/lib/constants.js';
+import { z } from 'zod';
+
+/* ---------------- environment ---------------- */
+
+if (existsSync(PATHS.env)) {
+  try {
+    process.loadEnvFile(PATHS.env);
+  } catch (err) {
+    console.warn(`Could not read .env: ${err.message}`);
+  }
+}
+
+const HOST = '127.0.0.1';
+const PORT = Number(process.env.ADMIN_PORT) || 3333;
+const ORIGINS = [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
+
+/* ---------------- app ---------------- */
+
+const app = new Hono();
+
+// Refuse anything that isn't addressed to this machine (DNS-rebinding guard).
+app.use('*', async (c, next) => {
+  const host = (c.req.header('host') ?? '').split(':')[0];
+  if (host !== 'localhost' && host !== '127.0.0.1') return c.text('Forbidden', 403);
+  await next();
+});
+
+// Block cross-site form posts. JSON calls are already protected by the lack of CORS headers.
+app.use('/api/*', csrf({ origin: ORIGINS }));
+
+app.onError((err, c) => {
+  if (err instanceof HttpError) return c.json({ error: err.message, details: err.details ?? null }, err.status);
+  if (err instanceof HTTPException) return c.json({ error: err.message || 'Request blocked' }, err.status);
+  console.error(err);
+  return c.json({ error: err.message || 'Internal error' }, 500);
+});
+
+app.notFound((c) => c.json({ error: 'Not found' }, 404));
+
+/* ---------------- meta ---------------- */
+
+app.get('/api/meta', async (c) => {
+  const [site, platforms] = await Promise.all([store.getSite(), store.getPlatforms()]);
+  const config = ra.raConfig();
+  return c.json({
+    statuses: STATUSES,
+    ownership: OWNERSHIP,
+    guideTypes: GUIDE_TYPES,
+    trackerTypes: TRACKER_TYPES,
+    platforms,
+    site,
+    ra: { configured: config.configured, username: config.username },
+    port: PORT,
+  });
+});
+
+app.get('/api/dashboard', async (c) => {
+  const [games, guides, trackers, profile, gitStatus] = await Promise.all([
+    store.listGames(),
+    store.listGuides(),
+    store.listTrackers(),
+    store.getRaProfile(),
+    git.status().catch((err) => ({ error: err.message })),
+  ]);
+  const owned = games.filter((g) => g.ownership === 'owned');
+  return c.json({
+    games: {
+      total: games.length,
+      owned: owned.length,
+      wishlist: games.length - owned.length,
+      playing: owned.filter((g) => g.status === 'playing').length,
+      linked: games.filter((g) => g.raGameId).length,
+      byStatus: Object.fromEntries(STATUSES.map((s) => [s.id, owned.filter((g) => g.status === s.id).length])),
+    },
+    guides: guides.length,
+    trackers: trackers.length,
+    ra: { syncedAt: profile.syncedAt, points: profile.points, user: profile.user, configured: ra.raConfig().configured },
+    git: gitStatus,
+    recentGames: [...games].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))).slice(0, 8),
+  });
+});
+
+/* ---------------- games ---------------- */
+
+app.get('/api/games', async (c) => c.json(await store.listGames()));
+
+app.get('/api/games/:slug', async (c) => c.json(await store.getGame(c.req.param('slug'))));
+
+app.post('/api/games', async (c) => {
+  const body = await c.req.json();
+  const data = validate(GameSchema, body);
+  const requested = typeof body.slug === 'string' && body.slug.trim() ? body.slug.trim() : slugify(data.title);
+  if (!isSlug(requested)) throw badRequest('Slug may only contain lowercase letters, numbers and dashes');
+  if (await store.gameExists(requested)) throw conflict(`A game with slug "${requested}" already exists`);
+  await assertPlatformExists(data.platform);
+  const timestamp = store.now();
+  const game = await store.saveGame(requested, { ...data, addedAt: timestamp, updatedAt: timestamp });
+  return c.json(game, 201);
+});
+
+app.put('/api/games/:slug', async (c) => {
+  const slug = c.req.param('slug');
+  const existing = await store.getGame(slug);
+  const data = validate(GameSchema, await c.req.json());
+  await assertPlatformExists(data.platform);
+  const game = await store.saveGame(slug, { ...data, addedAt: existing.addedAt ?? store.now(), updatedAt: store.now() });
+  return c.json(game);
+});
+
+app.delete('/api/games/:slug', async (c) => {
+  const slug = c.req.param('slug');
+  const game = await store.getGame(slug);
+  const refs = await store.referencesToGame(slug);
+  if (refs.guides.length || refs.trackers.length) {
+    throw conflict(`"${game.title}" is still referenced by ${[...refs.guides, ...refs.trackers].join(', ')}. Unlink or delete those first.`);
+  }
+  await store.deleteGame(slug);
+  await removeLocalCover(slug);
+  if (game.raGameId) await store.deleteRaGame(game.raGameId);
+  return c.json({ ok: true });
+});
+
+const IMAGE_TYPES = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
+const MAX_COVER_BYTES = 8 * 1024 * 1024;
+
+async function removeLocalCover(slug) {
+  for (const ext of Object.values(IMAGE_TYPES)) {
+    const file = path.join(PATHS.covers, `${slug}.${ext}`);
+    if (existsSync(file)) await unlink(file);
+  }
+}
+
+async function storeCover(slug, bytes, mime) {
+  const ext = IMAGE_TYPES[mime];
+  if (!ext) throw badRequest(`Unsupported image type "${mime}". Use PNG, JPEG, WebP or GIF.`);
+  if (bytes.length > MAX_COVER_BYTES) throw badRequest('Cover is larger than 8 MB');
+  await mkdir(PATHS.covers, { recursive: true });
+  await removeLocalCover(slug);
+  await writeFile(path.join(PATHS.covers, `${slug}.${ext}`), bytes);
+  const game = await store.getGame(slug);
+  return store.saveGame(slug, { ...game, cover: `/covers/${slug}.${ext}`, updatedAt: store.now() });
+}
+
+// Upload a cover file (multipart/form-data, field "file").
+app.post('/api/games/:slug/cover', async (c) => {
+  const slug = c.req.param('slug');
+  await store.getGame(slug);
+  const body = await c.req.parseBody();
+  const file = body.file;
+  if (!(file instanceof File)) throw badRequest('Send the image as a multipart field named "file"');
+  const bytes = Buffer.from(await file.arrayBuffer());
+  return c.json(await storeCover(slug, bytes, file.type));
+});
+
+// Download a remote cover (e.g. RetroAchievements box art) into public/covers so the site never depends on a third-party image host.
+app.post('/api/games/:slug/cover-from-url', async (c) => {
+  const slug = c.req.param('slug');
+  await store.getGame(slug);
+  const { url } = await c.req.json();
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw badRequest('Invalid URL');
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol)) throw badRequest('Only http(s) URLs are allowed');
+  const res = await fetch(parsed, { headers: { 'User-Agent': 'huntthepast-questlog-admin/1.0' } });
+  if (!res.ok) throw badRequest(`Could not download image (HTTP ${res.status})`);
+  const mime = (res.headers.get('content-type') ?? '').split(';')[0].trim();
+  const bytes = Buffer.from(await res.arrayBuffer());
+  return c.json(await storeCover(slug, bytes, mime));
+});
+
+async function assertPlatformExists(id) {
+  const platforms = await store.getPlatforms();
+  if (!platforms.some((p) => p.id === id)) throw badRequest(`Unknown platform "${id}". Add it under Settings first.`);
+}
+
+/* ---------------- guides ---------------- */
+
+app.get('/api/guides', async (c) => c.json(await store.listGuides()));
+app.get('/api/guides/:slug', async (c) => c.json(await store.getGuide(c.req.param('slug'))));
+
+app.post('/api/guides', async (c) => {
+  const body = await c.req.json();
+  const { body: markdown, ...data } = validate(GuideSchema, body);
+  const requested = typeof body.slug === 'string' && body.slug.trim() ? body.slug.trim() : slugify(data.title);
+  if (!isSlug(requested)) throw badRequest('Slug may only contain lowercase letters, numbers and dashes');
+  if (await store.guideExists(requested)) throw conflict(`A guide with slug "${requested}" already exists`);
+  await assertGameRef(data.game);
+  const timestamp = store.now();
+  return c.json(await store.saveGuide(requested, { ...data, createdAt: timestamp, updatedAt: timestamp }, markdown), 201);
+});
+
+app.put('/api/guides/:slug', async (c) => {
+  const slug = c.req.param('slug');
+  const existing = await store.getGuide(slug);
+  const { body: markdown, ...data } = validate(GuideSchema, await c.req.json());
+  await assertGameRef(data.game);
+  return c.json(await store.saveGuide(slug, { ...data, createdAt: existing.createdAt ?? store.now(), updatedAt: store.now() }, markdown));
+});
+
+app.delete('/api/guides/:slug', async (c) => {
+  await store.deleteGuide(c.req.param('slug'));
+  return c.json({ ok: true });
+});
+
+async function assertGameRef(slug) {
+  if (slug && !(await store.gameExists(slug))) throw badRequest(`Linked game "${slug}" does not exist`);
+}
+
+/* ---------------- trackers ---------------- */
+
+app.get('/api/trackers', async (c) => c.json(await store.listTrackers()));
+app.get('/api/trackers/:slug', async (c) => c.json(await store.getTracker(c.req.param('slug'))));
+
+app.post('/api/trackers', async (c) => {
+  const body = await c.req.json();
+  const data = validate(TrackerSchema, body);
+  const requested = typeof body.slug === 'string' && body.slug.trim() ? body.slug.trim() : slugify(data.title);
+  if (!isSlug(requested)) throw badRequest('Slug may only contain lowercase letters, numbers and dashes');
+  if (await store.trackerExists(requested)) throw conflict(`A tracker with slug "${requested}" already exists`);
+  await assertGameRef(data.game);
+  const timestamp = store.now();
+  const tracker = { ...data, sections: ensureTrackerItemIds(data.sections), createdAt: timestamp, updatedAt: timestamp };
+  return c.json(await store.saveTracker(requested, tracker), 201);
+});
+
+app.put('/api/trackers/:slug', async (c) => {
+  const slug = c.req.param('slug');
+  const existing = await store.getTracker(slug);
+  const data = validate(TrackerSchema, await c.req.json());
+  await assertGameRef(data.game);
+  const tracker = { ...data, sections: ensureTrackerItemIds(data.sections), createdAt: existing.createdAt ?? store.now(), updatedAt: store.now() };
+  return c.json(await store.saveTracker(slug, tracker));
+});
+
+app.delete('/api/trackers/:slug', async (c) => {
+  await store.deleteTracker(c.req.param('slug'));
+  return c.json({ ok: true });
+});
+
+/* ---------------- settings ---------------- */
+
+app.get('/api/site', async (c) => c.json(await store.getSite()));
+
+app.put('/api/site', async (c) => {
+  const data = validate(SiteSchema, await c.req.json());
+  await store.saveSite(data);
+  return c.json(data);
+});
+
+app.get('/api/platforms', async (c) => c.json(await store.getPlatforms()));
+
+app.put('/api/platforms', async (c) => {
+  const list = validate(z.array(PlatformSchema), await c.req.json());
+  const ids = new Set();
+  for (const p of list) {
+    if (ids.has(p.id)) throw badRequest(`Duplicate platform id "${p.id}"`);
+    ids.add(p.id);
+  }
+  // Never orphan a game by removing the platform it points at.
+  const inUse = new Set((await store.listGames()).map((g) => g.platform));
+  const missing = [...inUse].filter((id) => !ids.has(id));
+  if (missing.length) throw conflict(`Platforms still used by games cannot be removed: ${missing.join(', ')}`);
+  await store.savePlatforms(list);
+  return c.json(list);
+});
+
+/* ---------------- RetroAchievements ---------------- */
+
+app.get('/api/ra/status', async (c) => {
+  const profile = await store.getRaProfile();
+  const linked = (await store.listGames()).filter((g) => g.raGameId).length;
+  const { configured, username } = ra.raConfig();
+  return c.json({ config: { configured, username }, profile: { syncedAt: profile.syncedAt, user: profile.user, points: profile.points, rank: profile.rank, stats: profile.stats, completionCount: profile.completion?.length ?? 0 }, linkedGames: linked, job: ra.syncStatus() });
+});
+
+app.post('/api/ra/sync', async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  return c.json(ra.startSync({ autoStatus: Boolean(body.autoStatus) }), 202);
+});
+
+app.get('/api/ra/sync/status', (c) => c.json(ra.syncStatus()));
+
+// Look up a game on RA to pre-fill the game form.
+app.get('/api/ra/game/:id', async (c) => {
+  const id = Number(c.req.param('id'));
+  if (!Number.isInteger(id) || id <= 0) throw badRequest('Invalid RA game id');
+  const { username, apiKey } = ra.raConfig();
+  const client = new ra.RaClient({ username, apiKey });
+  const info = await client.getGame(id);
+  if (!info || !info.Title) throw notFound(`RA game #${id} not found`);
+  const { title, tag } = ra.splitRaTitle(info.Title);
+  const platform = ra.platformForConsole(await store.getPlatforms(), info.ConsoleID, info.ConsoleName);
+  return c.json({
+    raGameId: id,
+    title,
+    tag,
+    consoleId: info.ConsoleID,
+    consoleName: info.ConsoleName,
+    platform: platform?.id ?? null,
+    cover: raImage(info.ImageBoxArt),
+    imageIcon: raImage(info.ImageIcon),
+    developer: info.Developer || '',
+    publisher: info.Publisher || '',
+    genres: String(info.Genre ?? '').split(/[,/]/).map((s) => s.trim()).filter(Boolean),
+    releaseYear: ra.releaseYearFrom(info.Released) ?? '',
+  });
+});
+
+app.get('/api/ra/import-candidates', async (c) => c.json(await ra.importCandidates()));
+
+app.post('/api/ra/import', async (c) => {
+  const body = await c.req.json();
+  const games = Array.isArray(body.games) ? body.games : [];
+  if (!games.length) throw badRequest('Select at least one game');
+  return c.json(await ra.importGames(games));
+});
+
+app.post('/api/ra/consoles', async (c) => c.json(await ra.importConsoles()));
+
+/* ---------------- git / publish ---------------- */
+
+app.get('/api/git/status', async (c) => c.json(await git.status()));
+
+app.post('/api/git/publish', async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  return c.json(await git.publish(body.message));
+});
+
+app.post('/api/build', async (c) => c.json(await git.testBuild()));
+
+/* ---------------- static files ---------------- */
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.json': 'application/json; charset=utf-8',
+  '.woff2': 'font/woff2',
+};
+
+async function sendFile(c, file) {
+  try {
+    const info = await stat(file);
+    if (!info.isFile()) throw notFound();
+  } catch {
+    throw notFound();
+  }
+  const body = await readFile(file);
+  return c.body(body, 200, { 'Content-Type': MIME[path.extname(file).toLowerCase()] ?? 'application/octet-stream', 'Cache-Control': 'no-store' });
+}
+
+// Vendored libraries served straight from node_modules so the admin works offline.
+const VENDOR = {
+  'alpine.js': path.join(PATHS.nodeModules, 'alpinejs', 'dist', 'cdn.min.js'),
+  'marked.js': path.join(PATHS.nodeModules, 'marked', 'lib', 'marked.umd.js'),
+};
+app.get('/vendor/:name', (c) => {
+  const file = VENDOR[c.req.param('name')];
+  if (!file) throw notFound();
+  return sendFile(c, file);
+});
+app.get('/vendor/fonts/:name', (c) => {
+  const name = path.basename(c.req.param('name'));
+  return sendFile(c, path.join(PATHS.nodeModules, '@fontsource-variable', 'pixelify-sans', 'files', name));
+});
+
+// Cover previews (the site serves these from /covers on Vercel).
+app.get('/covers/:name', (c) => {
+  const name = path.basename(c.req.param('name'));
+  return sendFile(c, path.join(PATHS.covers, name));
+});
+
+// The site's favicon, reused for the admin tab.
+app.get('/favicon.svg', (c) => sendFile(c, path.join(PATHS.root, 'public', 'favicon.svg')));
+
+app.get('/*', (c) => {
+  const requested = decodeURIComponent(new URL(c.req.url).pathname);
+  const relative = requested === '/' ? 'index.html' : requested.replace(/^\/+/, '');
+  const file = path.resolve(PATHS.adminPublic, relative);
+  if (!file.startsWith(PATHS.adminPublic)) throw notFound();
+  return sendFile(c, file);
+});
+
+/* ---------------- start ---------------- */
+
+serve({ fetch: app.fetch, hostname: HOST, port: PORT }, (info) => {
+  const config = ra.raConfig();
+  console.log('');
+  console.log(`  QuestLog admin  ->  http://${info.address}:${info.port}`);
+  console.log(`  Repo            ->  ${PATHS.root}`);
+  console.log(`  RetroAchievements: ${config.configured ? `configured for ${config.username}` : 'not configured (copy .env.example to .env)'}`);
+  console.log('  This server only listens on 127.0.0.1 and is never deployed.');
+  console.log('');
+});

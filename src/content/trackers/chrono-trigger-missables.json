@@ -1,0 +1,34 @@
+{
+  "title": "Chrono Trigger - Missables & One-Shot Items",
+  "type": "missables",
+  "game": "chrono-trigger",
+  "summary": "Everything that can be permanently lost in a single playthrough, ordered by when you can first get it.",
+  "sections": [
+    {
+      "title": "1000 AD",
+      "items": [
+        { "id": "power-tab-guardia-forest", "label": "Power Tab - Guardia Forest", "note": "Hidden in the bushes in the lower clearing. Not lost, just easy to skip.", "done": true },
+        { "id": "cat-food", "label": "Buy Cat Food for Crono's cat", "note": "Talk to the girl at the fair and take the cat home. Affects the trial and one of the endings.", "done": true },
+        { "id": "sealed-chests-1000", "label": "Open all sealed chests AFTER examining them in 600 AD", "note": "Examine in 600 AD, open in 1000 AD (upgraded item), then reopen in 600 AD for the base item.", "done": false }
+      ]
+    },
+    {
+      "title": "600 AD",
+      "items": [
+        { "id": "tomas-pop", "label": "Toma's Pop (Choras Inn)", "note": "Pour it on Toma's grave at West Cape in 1000 AD to learn the Rainbow Shell location.", "done": true },
+        { "id": "magic-tab-magus-castle", "label": "Magic Tab - Magus's Castle", "note": "Behind one of the fake-save-point rooms. The castle is not revisitable until New Game+.", "done": false }
+      ]
+    },
+    {
+      "title": "Side quests (after the Black Omen appears)",
+      "items": [
+        { "id": "lara-legs", "label": "Save Lucca's mother (L-A-R-A on the machine)", "note": "During the Fiona's Forest flashback. Unlocks the Green Dream accessory.", "done": false },
+        { "id": "sun-stone", "label": "Sun Stone", "note": "Moon Stone from Sun Palace (2300 AD) -> Sun Keep (65,000,000 BC) -> wait -> Sun Keep (2300 AD). Talk to the Porre mayor with the Jerky first.", "done": false },
+        { "id": "prism-dress-or-helms", "label": "Rainbow Shell: Prism Dress OR 3x Prism Helm", "note": "One-time choice from Melchior. Pick the helms unless you are running all three girls.", "done": false },
+        { "id": "ozzie-fort", "label": "Ozzie's Fort - Gloom Helm + Gloom Cape", "note": "Both are in chests inside the fort. The fort is gone after you finish it.", "done": false }
+      ]
+    }
+  ],
+  "createdAt": "2026-06-05T10:00:00.000Z",
+  "updatedAt": "2026-07-14T18:30:00.000Z"
+}

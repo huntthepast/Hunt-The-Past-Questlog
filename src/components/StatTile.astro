@@ -1,0 +1,32 @@
+---
+import Icon from './Icon.astro';
+import type { IconName } from './Icon.astro';
+import { text } from '../lib/ui';
+
+interface Props {
+  label: string;
+  value: string | number;
+  hint?: string;
+  icon?: IconName;
+  color?: string;
+  href?: string;
+}
+
+const { label, value, hint, icon, color = 'amber', href } = Astro.props;
+const Tag = href ? 'a' : 'div';
+---
+
+<Tag href={href} class:list={['card flex items-center gap-3 p-4', href && 'card-hover']}>
+  {
+    icon && (
+      <span class:list={['grid size-10 shrink-0 place-items-center rounded-lg bg-zinc-800/80', text(color)]}>
+        <Icon name={icon} class="size-5" />
+      </span>
+    )
+  }
+  <div class="min-w-0">
+    <div class="font-display text-2xl leading-none text-zinc-50 tabular-nums">{value}</div>
+    <div class="mt-1 truncate text-xs font-medium uppercase tracking-wider text-zinc-500">{label}</div>
+    {hint && <div class="mt-0.5 truncate text-xs text-zinc-500">{hint}</div>}
+  </div>
+</Tag>

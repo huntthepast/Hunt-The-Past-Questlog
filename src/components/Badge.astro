@@ -1,0 +1,18 @@
+---
+import { badge, dot } from '../lib/ui';
+
+interface Props {
+  color?: string;
+  label: string;
+  dot?: boolean;
+  class?: string;
+  title?: string;
+}
+
+const { color = 'zinc', label, dot: showDot = false, class: className = '', title } = Astro.props;
+---
+
+<span class:list={['chip', badge(color), className]} title={title}>
+  {showDot && <span class:list={['size-1.5 rounded-full', dot(color)]}></span>}
+  {label}
+</span>

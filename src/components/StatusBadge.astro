@@ -1,0 +1,15 @@
+---
+import Badge from './Badge.astro';
+import { statusById } from '../lib/constants.js';
+
+interface Props {
+  status: string;
+  short?: boolean;
+  class?: string;
+}
+
+const { status, short = false, class: className = '' } = Astro.props;
+const s = statusById(status);
+---
+
+<Badge color={s.color} label={short ? s.short : s.label} dot class={className} title={s.description} />

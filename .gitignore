@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+.astro/
+.vercel/
+
+# local secrets (RetroAchievements API key etc.)
+.env
+.env.*
+!.env.example
+
+# generated admin stylesheet (rebuilt by `npm run admin`)
+admin/public/styles.css
+
+# os / editor
+.DS_Store
+Thumbs.db
+*.log

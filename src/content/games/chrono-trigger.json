@@ -1,0 +1,25 @@
+{
+  "title": "Chrono Trigger",
+  "platform": "snes",
+  "genres": [
+    "RPG"
+  ],
+  "developer": "Square",
+  "publisher": "Square",
+  "releaseYear": 1995,
+  "ownership": "owned",
+  "favorite": true,
+  "status": "beaten",
+  "rating": 10,
+  "hoursPlayed": 28,
+  "startedAt": "2026-06-02",
+  "finishedAt": "2026-07-14",
+  "review": "Still the tightest JRPG ever made. Every dungeon is short enough to finish in a sitting, every party member has a reason to exist, and the time travel actually changes the world instead of being a gimmick.",
+  "notes": "Next run: New Game+ to collect the remaining endings.",
+  "tags": [
+    "time-travel",
+    "classic"
+  ],
+  "addedAt": "2026-09-18T12:00:00.000Z",
+  "updatedAt": "2026-09-18T12:00:00.000Z"
+}

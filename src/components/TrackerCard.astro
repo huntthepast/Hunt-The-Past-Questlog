@@ -1,0 +1,43 @@
+---
+import Badge from './Badge.astro';
+import ProgressBar from './ProgressBar.astro';
+import { trackerProgress, type Tracker, type Game } from '../lib/data';
+import { trackerTypeById } from '../lib/constants.js';
+
+interface Props {
+  tracker: Tracker;
+  game?: Game;
+}
+
+const { tracker, game } = Astro.props;
+const d = tracker.data;
+const type = trackerTypeById(d.type);
+const progress = trackerProgress(tracker);
+const search = [d.title, d.summary, game?.data.title, type.label].filter(Boolean).join(' ');
+---
+
+<article
+  data-item
+  data-search={search}
+  data-type={d.type}
+  data-kind="tracker"
+  data-updated={d.updatedAt}
+  data-sort={d.title.toLowerCase()}
+  class="card card-hover relative flex flex-col gap-2 p-4"
+>
+  <div class="flex items-center gap-2">
+    <Badge color={type.color} label={type.label} />
+    {game && <span class="truncate text-xs text-zinc-500">{game.data.title}</span>}
+  </div>
+  <h3 class="text-base font-semibold leading-snug text-zinc-100">
+    <a href={`/trackers/${tracker.id}`} class="after:absolute after:inset-0 hover:text-amber-300">{d.title}</a>
+  </h3>
+  {d.summary && <p class="line-clamp-2 text-sm text-zinc-400">{d.summary}</p>}
+  <div class="mt-auto pt-2">
+    <div class="mb-1 flex justify-between text-xs text-zinc-500">
+      <span>{progress.done} / {progress.total} done</span>
+      <span class="tabular-nums">{progress.pct}%</span>
+    </div>
+    <ProgressBar value={progress.pct} color={progress.pct === 100 ? 'emerald' : type.color} size="sm" label="Progress" />
+  </div>
+</article>

@@ -1,0 +1,19 @@
+{
+  "title": "Mega Man",
+  "platform": "nes",
+  "cover": "https://media.retroachievements.org/Images/070293.png",
+  "genres": [
+    "2D Platforming"
+  ],
+  "developer": "Capcom",
+  "publisher": "Capcom",
+  "releaseYear": 1987,
+  "ownership": "owned",
+  "favorite": false,
+  "status": "mastered",
+  "finishedAt": "2024-03-28",
+  "raGameId": 1448,
+  "tags": [],
+  "addedAt": "2026-09-18T07:05:55.905Z",
+  "updatedAt": "2026-09-18T07:05:55.905Z"
+}

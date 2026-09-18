@@ -1,0 +1,21 @@
+{
+  "title": "Mega Man 2",
+  "platform": "tg16",
+  "cover": "https://media.retroachievements.org/Images/053671.png",
+  "genres": [
+    "Action"
+  ],
+  "developer": "pcedev",
+  "publisher": "pcedev",
+  "releaseYear": 2014,
+  "ownership": "owned",
+  "favorite": false,
+  "status": "mastered",
+  "finishedAt": "2025-11-08",
+  "raGameId": 18611,
+  "tags": [
+    "homebrew"
+  ],
+  "addedAt": "2026-09-18T07:05:35.138Z",
+  "updatedAt": "2026-09-18T07:05:35.138Z"
+}

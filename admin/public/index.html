@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>QuestLog Admin</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="/vendor/marked.js"></script>
+  <script src="/app.js"></script>
+  <script defer src="/vendor/alpine.js"></script>
+</head>
+<body class="min-h-full font-sans text-zinc-100" x-data>
+  <div class="flex min-h-screen">
+    <!-- ===== Sidebar ===== -->
+    <aside class="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-zinc-800 bg-zinc-950">
+      <a href="#/dashboard" class="flex items-center gap-2.5 border-b border-zinc-800 px-4 py-4">
+        <span class="grid size-9 place-items-center rounded-lg bg-amber-400 text-zinc-950">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="size-5"><path d="M7.5 5.5h9a5 5 0 014.9 6l-1 5a2.5 2.5 0 01-4.4 1.2L14 15h-4l-2 2.7a2.5 2.5 0 01-4.4-1.2l-1-5a5 5 0 014.9-6zM6.5 10h4M8.5 8v4M15.5 9h.01M17.5 11h.01"/></svg>
+        </span>
+        <span>
+          <span class="block font-display text-xl leading-none text-zinc-50">QuestLog</span>
+          <span class="block text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-400/80">Local admin</span>
+        </span>
+      </a>
+
+      <nav class="flex-1 space-y-0.5 overflow-y-auto p-3" aria-label="Admin">
+        <template x-for="item in [
+          { id: 'dashboard', label: 'Dashboard' },
+          { id: 'games', label: 'Games' },
+          { id: 'guides', label: 'Guides' },
+          { id: 'trackers', label: 'Trackers' },
+          { id: 'ra', label: 'RetroAchievements' },
+          { id: 'settings', label: 'Settings' },
+          { id: 'publish', label: 'Publish' },
+        ]" :key="item.id">
+          <a :href="'#/' + item.id" class="nav-link" :class="$store.app.view === item.id && 'nav-link-active'" x-text="item.label"></a>
+        </template>
+      </nav>
+
+      <div class="space-y-2 border-t border-zinc-800 p-4 text-xs text-zinc-500">
+        <p>Listening on <span class="text-zinc-300">127.0.0.1</span> only. Nothing here is deployed.</p>
+        <a :href="$store.app.siteUrl()" target="_blank" rel="noopener" class="block text-amber-400 hover:underline">Open dev site (npm run dev)</a>
+      </div>
+    </aside>
+
+    <!-- ===== Main ===== -->
+    <main class="min-w-0 flex-1 p-6 lg:p-8">
+      <template x-if="$store.app.error">
+        <div class="card border-rose-500/40 p-6 text-rose-200">
+          <p class="font-semibold">The admin API is not reachable.</p>
+          <p class="mt-1 text-sm" x-text="$store.app.error"></p>
+        </div>
+      </template>
+
+      <!-- ===== Dashboard ===== -->
+      <template x-if="$store.app.ready && $store.app.view === 'dashboard'">
+        <section x-data="dashboardView">
+          <header class="mb-6">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400/90">Overview</p>
+            <h1 class="h-display text-4xl">Dashboard</h1>
+          </header>
+
+          <template x-if="error"><p class="text-rose-300" x-text="error"></p></template>
+
+          <template x-if="data">
+            <div class="space-y-8">
+              <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <a href="#/games" class="card p-4 transition hover:border-zinc-600">
+                  <div class="font-display text-3xl" x-text="data.games.owned"></div>
+                  <div class="text-xs uppercase tracking-wider text-zinc-500">Games in library</div>
+                  <div class="mt-1 text-xs text-zinc-500"><span x-text="data.games.wishlist"></span> wishlisted &middot; <span x-text="data.games.playing"></span> playing &middot; <span x-text="data.games.linked"></span> linked to RA</div>
+                </a>
+                <a href="#/guides" class="card p-4 transition hover:border-zinc-600">
+                  <div class="font-display text-3xl" x-text="data.guides"></div>
+                  <div class="text-xs uppercase tracking-wider text-zinc-500">Guides</div>
+                  <div class="mt-1 text-xs text-zinc-500"><span x-text="data.trackers"></span> trackers</div>
+                </a>
+                <a href="#/ra" class="card p-4 transition hover:border-zinc-600">
+                  <div class="font-display text-3xl" x-text="data.ra.syncedAt ? data.ra.points.toLocaleString() : '--'"></div>
+                  <div class="text-xs uppercase tracking-wider text-zinc-500">RA points</div>
+                  <div class="mt-1 text-xs text-zinc-500" x-text="data.ra.syncedAt ? 'Synced ' + $store.app.fmtDate(data.ra.syncedAt) : (data.ra.configured ? 'Never synced' : 'Not configured')"></div>
+                </a>
+                <a href="#/publish" class="card p-4 transition hover:border-zinc-600">
+                  <div class="font-display text-3xl" x-text="data.git.error ? '!' : data.git.files.length"></div>
+                  <div class="text-xs uppercase tracking-wider text-zinc-500">Unpublished changes</div>
+                  <div class="mt-1 text-xs text-zinc-500" x-text="data.git.error ? data.git.error : (data.git.branch + (data.git.ahead ? ' · ' + data.git.ahead + ' commit(s) to push' : ''))"></div>
+                </a>
+              </div>
+
+              <div class="grid gap-6 lg:grid-cols-2">
+                <div class="card p-4">
+                  <h2 class="h-display mb-3 text-xl">Library by status</h2>
+                  <ul class="space-y-2">
+                    <template x-for="s in $store.app.meta.statuses" :key="s.id">
+                      <li class="flex items-center gap-3 text-sm">
+                        <span class="chip w-24 justify-center" :class="$store.app.chip(s.color)" x-text="s.label"></span>
+                        <div class="h-2 flex-1 overflow-hidden rounded-full bg-zinc-800">
+                          <div class="h-full rounded-full bg-amber-400/80" :style="`width:${data.games.owned ? (data.games.byStatus[s.id] / data.games.owned) * 100 : 0}%`"></div>
+                        </div>
+                        <span class="w-8 text-right tabular-nums text-zinc-400" x-text="data.games.byStatus[s.id]"></span>
+                      </li>
+                    </template>
+                  </ul>
+                </div>
+
+                <div class="card p-4">
+                  <div class="mb-3 flex items-center justify-between">
+                    <h2 class="h-display text-xl">Recently edited</h2>
+                    <a href="#/games/new" class="btn btn-sm btn-accent">+ New game</a>
+                  </div>
+                  <ul class="divide-y divide-zinc-800">
+                    <template x-for="g in data.recentGames" :key="g.slug">
+                      <li>
+                        <a :href="'#/games/' + g.slug" class="flex items-center gap-3 py-2 text-sm hover:text-amber-300">
+                          <span class="chip" :class="$store.app.chip($store.app.status(g.status).color)" x-text="$store.app.status(g.status).short"></span>
+                          <span class="flex-1 truncate" x-text="g.title"></span>
+                          <span class="text-xs text-zinc-500" x-text="$store.app.platform(g.platform).short"></span>
+                        </a>
+                      </li>
+                    </template>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="card p-4 text-sm text-zinc-400">
+                <h2 class="h-display mb-2 text-xl">Workflow</h2>
+                <ol class="list-inside list-decimal space-y-1">
+                  <li>Edit games, guides and trackers here. Every change is written straight into <code class="text-zinc-300">src/content</code>.</li>
+                  <li>Optionally sync RetroAchievements to refresh <code class="text-zinc-300">src/data/ra-profile.json</code> and per-game snapshots.</li>
+                  <li>Check the result on the dev site (<code class="text-zinc-300">npm run dev</code>), then go to <a href="#/publish" class="text-amber-400 hover:underline">Publish</a> to commit and push. Vercel rebuilds automatically.</li>
+                </ol>
+              </div>
+            </div>
+          </template>
+        </section>
+      </template>
+
+      <!-- ===== Games ===== -->
+      <template x-if="$store.app.ready && $store.app.view === 'games'">
+        <section x-data="gamesView" class="grid gap-6 xl:grid-cols-[340px_1fr]">
+          <!-- list -->
+          <div class="card flex max-h-[calc(100vh-4rem)] flex-col">
+            <div class="flex items-center justify-between border-b border-zinc-800 px-3 py-3">
+              <h1 class="h-display text-2xl">Games <span class="text-base text-zinc-500" x-text="`(${games.length})`"></span></h1>
+              <button type="button" class="btn btn-sm btn-accent" @click="create()">+ New</button>
+            </div>
+            <div class="space-y-2 border-b border-zinc-800 p-3">
+              <input type="search" class="input" placeholder="Search..." x-model="q" />
+              <div class="grid grid-cols-3 gap-2">
+                <select class="input" x-model="filterOwnership">
+                  <option value="">Owned + wish</option>
+                  <template x-for="o in $store.app.meta.ownership" :key="o.id"><option :value="o.id" x-text="o.label"></option></template>
+                </select>
+                <select class="input" x-model="filterStatus">
+                  <option value="">Any status</option>
+                  <template x-for="s in $store.app.meta.statuses" :key="s.id"><option :value="s.id" x-text="s.label"></option></template>
+                </select>
+                <select class="input" x-model="filterPlatform">
+                  <option value="">Any platform</option>
+                  <template x-for="p in $store.app.meta.platforms" :key="p.id"><option :value="p.id" x-text="p.short"></option></template>
+                </select>
+              </div>
+            </div>
+            <ul class="flex-1 overflow-y-auto">
+              <template x-for="g in filtered" :key="g.slug">
+                <li>
+                  <button type="button" class="row" :class="selected === g.slug && 'row-active'" @click="open(g.slug)">
+                    <span class="block h-12 w-9 shrink-0 overflow-hidden rounded bg-zinc-800">
+                      <img x-show="g.cover" :src="g.cover" alt="" class="h-full w-full object-cover" loading="lazy" />
+                    </span>
+                    <span class="min-w-0 flex-1">
+                      <span class="block truncate font-medium text-zinc-100" x-text="g.title"></span>
+                      <span class="block text-xs text-zinc-500">
+                        <span x-text="$store.app.platform(g.platform).short"></span>
+                        <span x-show="g.ownership === 'wishlist'"> &middot; wishlist</span>
+                        <span x-show="g.favorite" class="text-rose-400"> &hearts;</span>
+                      </span>
+                    </span>
+                    <span class="chip shrink-0" :class="$store.app.chip($store.app.status(g.status).color)" x-text="$store.app.status(g.status).short"></span>
+                  </button>
+                </li>
+              </template>
+              <li x-show="filtered.length === 0" class="p-6 text-center text-sm text-zinc-500">No games match.</li>
+            </ul>
+          </div>
+
+          <!-- editor -->
+          <div>
+            <template x-if="!form">
+              <div class="card flex h-64 flex-col items-center justify-center gap-2 text-center text-zinc-500">
+                <p class="font-display text-2xl text-zinc-300">Pick a game or create one</p>
+                <p class="text-sm">Each game is a JSON file in <code>src/content/games/</code>.</p>
+                <button type="button" class="btn btn-accent mt-2" @click="create()">+ New game</button>
+              </div>
+            </template>
+
+            <template x-if="form">
+              <form class="space-y-6" @submit.prevent="save()">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 class="h-display text-2xl" x-text="isNew ? 'New game' : form.title"></h2>
+                    <p class="text-xs text-zinc-500">
+                      <span x-text="isNew ? 'Will be saved as' : 'File:'"></span>
+                      <code class="text-zinc-300" x-text="`src/content/games/${isNew ? slugPreview : selected}.json`"></code>
+                      <span x-show="dirty" class="ml-2 text-amber-300">&bull; unsaved</span>
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <a x-show="!isNew" :href="$store.app.siteUrl('/games/' + selected)" target="_blank" rel="noopener" class="btn btn-sm">View on dev site</a>
+                    <button type="button" class="btn btn-sm" @click="close()">Close</button>
+                    <button type="button" x-show="!isNew" class="btn btn-sm btn-danger" @click="remove()">Delete</button>
+                    <button type="submit" class="btn btn-accent" :disabled="saving" x-text="saving ? 'Saving...' : 'Save'"></button>
+                  </div>
+                </div>
+
+                <div class="grid gap-6 lg:grid-cols-[220px_1fr]">
+                  <!-- cover column -->
+                  <div class="space-y-3">
+                    <div class="card aspect-[3/4] overflow-hidden bg-zinc-900">
+                      <img x-show="form.cover" :src="form.cover" alt="" class="h-full w-full object-cover" />
+                      <div x-show="!form.cover" class="flex h-full items-center justify-center text-xs text-zinc-600">No cover</div>
+                    </div>
+                    <label class="field">
+                      <span class="label">Cover URL or /covers/ path</span>
+                      <input class="input" x-model.trim="form.cover" placeholder="https://... or /covers/slug.png" />
+                    </label>
+                    <div class="flex flex-wrap gap-2">
+                      <label class="btn btn-sm cursor-pointer" :class="isNew && 'opacity-50'" :title="isNew ? 'Save the game first' : 'Upload an image into public/covers'">
+                        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" :disabled="isNew || covers.uploading" @change="uploadCover($event)" />
+                        <span x-text="covers.uploading ? 'Working...' : 'Upload file'"></span>
+                      </label>
+                      <button type="button" class="btn btn-sm" :disabled="isNew || !form.cover || form.cover.startsWith('/covers/') || covers.uploading" @click="localizeCover()" title="Download the remote image into public/covers so the site never depends on another host">Save URL locally</button>
+                    </div>
+                  </div>
+
+                  <!-- fields -->
+                  <div class="space-y-6">
+                    <fieldset class="card space-y-4 p-4">
+                      <legend class="px-1 text-xs font-semibold uppercase tracking-wider text-amber-400/90">Basics</legend>
+                      <div class="grid gap-4 sm:grid-cols-2">
+                        <label class="field sm:col-span-2">
+                          <span class="label">Title *</span>
+                          <input class="input" x-model="form.title" required />
+                        </label>
+                        <label class="field" x-show="isNew">
+                          <span class="label">Slug (optional)</span>
+                          <input class="input font-mono" x-model.trim="form.slug" :placeholder="slugPreview || 'auto from title'" pattern="[a-z0-9]+(-[a-z0-9]+)*" />
+                        </label>
+                        <label class="field">
+                          <span class="label">Platform *</span>
+                          <select class="input" x-model="form.platform" required>
+                            <option value="">Select...</option>
+                            <template x-for="p in $store.app.meta.platforms" :key="p.id"><option :value="p.id" x-text="p.name"></option></template>
+                          </select>
+                        </label>
+                        <div class="field">
+                          <span class="label">RetroAchievements game id</span>
+                          <div class="flex gap-2">
+                            <input class="input" type="number" min="1" x-model="form.raGameId" placeholder="e.g. 1" />
+                            <button type="button" class="btn shrink-0" :disabled="busy || !$store.app.meta.ra.configured || !form.raGameId" @click="lookupRa()" :title="$store.app.meta.ra.configured ? 'Fill empty fields from RA' : 'Configure RA in .env first'" x-text="busy ? '...' : 'Fetch'"></button>
+                          </div>
+                          <p class="mt-1 text-[11px] text-zinc-500">The number in retroachievements.org/game/<b>1234</b>. Linking enables achievement sync and pre-fills metadata.</p>
+                        </div>
+                      </div>
+                    </fieldset>
+
+                    <fieldset class="card space-y-4 p-4">
+                      <legend class="px-1 text-xs font-semibold uppercase tracking-wider text-amber-400/90">Details</legend>
+                      <div class="grid gap-4 sm:grid-cols-2">
+                        <label class="field"><span class="label">Developer</span><input class="input" x-model.trim="form.developer" /></label>
+                        <label class="field"><span class="label">Publisher</span><input class="input" x-model.trim="form.publisher" /></label>
+                        <label class="field"><span class="label">Release year</span><input class="input" type="number" min="1950" max="2100" x-model="form.releaseYear" /></label>
+                        <label class="field"><span class="label">Genres (comma separated)</span><input class="input" x-model="form.genres" placeholder="RPG, Action" /></label>
+                        <label class="field sm:col-span-2"><span class="label">Tags (comma separated)</span><input class="input" x-model="form.tags" placeholder="classic, backlog-priority" /></label>
+                      </div>
+                    </fieldset>
+
+                    <fieldset class="card space-y-4 p-4">
+                      <legend class="px-1 text-xs font-semibold uppercase tracking-wider text-amber-400/90">Progress</legend>
+                      <div class="grid gap-4 sm:grid-cols-3">
+                        <label class="field">
+                          <span class="label">Ownership</span>
+                          <select class="input" x-model="form.ownership">
+                            <template x-for="o in $store.app.meta.ownership" :key="o.id"><option :value="o.id" x-text="o.label"></option></template>
+                          </select>
+                        </label>
+                        <label class="field">
+                          <span class="label">Status</span>
+                          <select class="input" x-model="form.status">
+                            <template x-for="s in $store.app.meta.statuses" :key="s.id"><option :value="s.id" x-text="s.label"></option></template>
+                          </select>
+                        </label>
+                        <label class="flex items-center gap-2 self-end pb-2 text-sm">
+                          <input type="checkbox" class="size-4 accent-amber-400" x-model="form.favorite" /> Favorite
+                        </label>
+                        <label class="field"><span class="label">Rating (0-10)</span><input class="input" type="number" min="0" max="10" step="0.5" x-model="form.rating" /></label>
+                        <label class="field"><span class="label">Hours played</span><input class="input" type="number" min="0" step="0.5" x-model="form.hoursPlayed" /></label>
+                        <div></div>
+                        <label class="field"><span class="label">Started</span><input class="input" type="date" x-model="form.startedAt" /></label>
+                        <label class="field"><span class="label">Finished</span><input class="input" type="date" x-model="form.finishedAt" /></label>
+                      </div>
+                      <p class="text-[11px] text-zinc-500" x-text="$store.app.status(form.status).description"></p>
+                    </fieldset>
+
+                    <fieldset class="card space-y-4 p-4">
+                      <legend class="px-1 text-xs font-semibold uppercase tracking-wider text-amber-400/90">Writing (markdown)</legend>
+                      <label class="field"><span class="label">Review</span><textarea class="input min-h-28" x-model="form.review" placeholder="What did you think?"></textarea></label>
+                      <label class="field"><span class="label">Notes</span><textarea class="input min-h-20" x-model="form.notes" placeholder="Where you left off, what to do next..."></textarea></label>
+                    </fieldset>
+                  </div>
+                </div>
+              </form>
+            </template>
+          </div>
+        </section>
+      </template>
+
+      <!-- ===== Guides ===== -->
+      <template x-if="$store.app.ready && $store.app.view === 'guides'">
+        <section x-data="guidesView" class="grid gap-6 xl:grid-cols-[320px_1fr]">
+          <div class="card flex max-h-[calc(100vh-4rem)] flex-col">
+            <div class="flex items-center justify-between border-b border-zinc-800 px-3 py-3">
+              <h1 class="h-display text-2xl">Guides <span class="text-base text-zinc-500" x-text="`(${guides.length})`"></span></h1>
+              <button type="button" class="btn btn-sm btn-accent" @click="create()">+ New</button>
+            </div>
+            <div class="border-b border-zinc-800 p-3"><input type="search" class="input" placeholder="Search..." x-model="q" /></div>
+            <ul class="flex-1 overflow-y-auto">
+              <template x-for="g in filtered" :key="g.slug">
+                <li>
+                  <button type="button" class="row" :class="selected === g.slug && 'row-active'" @click="open(g.slug)">
+                    <span class="min-w-0 flex-1">
+                      <span class="block truncate font-medium text-zinc-100" x-text="g.title"></span>
+                      <span class="block truncate text-xs text-zinc-500"><span x-text="g.game || 'no game'"></span> &middot; <span x-text="$store.app.fmtDate(g.updatedAt)"></span></span>
+                    </span>
+                    <span class="chip shrink-0" :class="$store.app.chip($store.app.guideType(g.type).color)" x-text="$store.app.guideType(g.type).label"></span>
+                    <span x-show="g.draft" class="chip bg-zinc-800 text-zinc-400 ring-zinc-700">draft</span>
+                  </button>
+                </li>
+              </template>
+              <li x-show="filtered.length === 0" class="p-6 text-center text-sm text-zinc-500">No guides yet.</li>
+            </ul>
+          </div>
+
+          <div>
+            <template x-if="!form">
+              <div class="card flex h-64 flex-col items-center justify-center gap-2 text-center text-zinc-500">
+                <p class="font-display text-2xl text-zinc-300">Pick a guide or write one</p>
+                <p class="text-sm">Guides are markdown files in <code>src/content/guides/</code>. Walkthroughs, cheat lists, tips, reviews, notes.</p>
+                <button type="button" class="btn btn-accent mt-2" @click="create()">+ New guide</button>
+              </div>
+            </template>
+
+            <template x-if="form">
+              <form class="space-y-4" @submit.prevent="save()">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 class="h-display text-2xl" x-text="isNew ? 'New guide' : form.title"></h2>
+                    <p class="text-xs text-zinc-500">
+                      <code class="text-zinc-300" x-text="`src/content/guides/${isNew ? slugPreview : selected}.md`"></code>
+                      <span x-show="dirty" class="ml-2 text-amber-300">&bull; unsaved</span>
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <a x-show="!isNew" :href="$store.app.siteUrl('/guides/' + selected)" target="_blank" rel="noopener" class="btn btn-sm">View on dev site</a>
+                    <button type="button" class="btn btn-sm" @click="close()">Close</button>
+                    <button type="button" x-show="!isNew" class="btn btn-sm btn-danger" @click="remove()">Delete</button>
+                    <button type="submit" class="btn btn-accent" :disabled="saving" x-text="saving ? 'Saving...' : 'Save'"></button>
+                  </div>
+                </div>
+
+                <div class="card grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <label class="field lg:col-span-2"><span class="label">Title *</span><input class="input" x-model="form.title" required /></label>
+                  <label class="field" x-show="isNew"><span class="label">Slug (optional)</span><input class="input font-mono" x-model.trim="form.slug" :placeholder="slugPreview || 'auto'" /></label>
+                  <label class="field">
+                    <span class="label">Type</span>
+                    <select class="input" x-model="form.type">
+                      <template x-for="t in $store.app.meta.guideTypes" :key="t.id"><option :value="t.id" x-text="t.label"></option></template>
+                    </select>
+                  </label>
+                  <label class="field lg:col-span-2">
+                    <span class="label">Game</span>
+                    <select class="input" x-model="form.game">
+                      <option value="">Not tied to a game</option>
+                      <template x-for="g in games" :key="g.slug"><option :value="g.slug" x-text="`${g.title} (${$store.app.platform(g.platform).short})`"></option></template>
+                    </select>
+                  </label>
+                  <label class="field"><span class="label">Tags</span><input class="input" x-model="form.tags" placeholder="comma, separated" /></label>
+                  <label class="flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" class="size-4 accent-amber-400" x-model="form.draft" /> Draft (hidden on site)</label>
+                  <label class="field sm:col-span-2 lg:col-span-4"><span class="label">Summary</span><input class="input" x-model="form.summary" placeholder="One sentence shown in lists" /></label>
+                </div>
+
+                <div class="card">
+                  <div class="flex flex-wrap items-center gap-2 border-b border-zinc-800 px-3 py-2 text-xs">
+                    <span class="mr-2 font-semibold uppercase tracking-wider text-zinc-500">Body</span>
+                    <button type="button" class="btn btn-sm" @click="insert('## ')">H2</button>
+                    <button type="button" class="btn btn-sm" @click="insert('### ')">H3</button>
+                    <button type="button" class="btn btn-sm" @click="insert('**bold**')">Bold</button>
+                    <button type="button" class="btn btn-sm" @click="insert('- [ ] ')">Checkbox</button>
+                    <button type="button" class="btn btn-sm" @click="insert('| Input | Effect |\n| --- | --- |\n| Up, Down | Something |\n')">Table</button>
+                    <button type="button" class="btn btn-sm" @click="insert('> ')">Quote</button>
+                    <span class="ml-auto flex items-center gap-2">
+                      <span class="text-zinc-500" x-text="`${(form.body || '').length} chars`"></span>
+                      <button type="button" class="btn btn-sm" :class="preview && 'btn-accent'" @click="preview = !preview" x-text="preview ? 'Edit' : 'Preview'"></button>
+                    </span>
+                  </div>
+                  <textarea x-show="!preview" x-ref="body" class="min-h-[32rem] w-full resize-y bg-transparent p-4 font-mono text-sm leading-relaxed text-zinc-100 focus:outline-none" x-model="form.body" placeholder="Write markdown here. GitHub-flavored: tables, task lists and footnotes all work."></textarea>
+                  <div x-show="preview" class="preview-prose p-6" x-html="rendered"></div>
+                </div>
+              </form>
+            </template>
+          </div>
+        </section>
+      </template>
+
+      <!-- ===== Trackers ===== -->
+      <template x-if="$store.app.ready && $store.app.view === 'trackers'">
+        <section x-data="trackersView" class="grid gap-6 xl:grid-cols-[320px_1fr]">
+          <div class="card flex max-h-[calc(100vh-4rem)] flex-col">
+            <div class="flex items-center justify-between border-b border-zinc-800 px-3 py-3">
+              <h1 class="h-display text-2xl">Trackers <span class="text-base text-zinc-500" x-text="`(${trackers.length})`"></span></h1>
+              <button type="button" class="btn btn-sm btn-accent" @click="create()">+ New</button>
+            </div>
+            <div class="border-b border-zinc-800 p-3"><input type="search" class="input" placeholder="Search..." x-model="q" /></div>
+            <ul class="flex-1 overflow-y-auto">
+              <template x-for="t in filtered" :key="t.slug">
+                <li>
+                  <button type="button" class="row" :class="selected === t.slug && 'row-active'" @click="open(t.slug)">
+                    <span class="min-w-0 flex-1">
+                      <span class="block truncate font-medium text-zinc-100" x-text="t.title"></span>
+                      <span class="block truncate text-xs text-zinc-500"><span x-text="t.game || 'no game'"></span> &middot; <span x-text="`${progress(t).done}/${progress(t).total}`"></span></span>
+                    </span>
+                    <span class="chip shrink-0" :class="$store.app.chip($store.app.trackerType(t.type).color)" x-text="$store.app.trackerType(t.type).label"></span>
+                  </button>
+                </li>
+              </template>
+              <li x-show="filtered.length === 0" class="p-6 text-center text-sm text-zinc-500">No trackers yet.</li>
+            </ul>
+          </div>
+
+          <div>
+            <template x-if="!form">
+              <div class="card flex h-64 flex-col items-center justify-center gap-2 text-center text-zinc-500">
+                <p class="font-display text-2xl text-zinc-300">Pick a tracker or start one</p>
+                <p class="text-sm">Trackers are checklists: missables, collectibles, side quests, bosses. Tick items as you play; visitors can track their own copy too.</p>
+                <button type="button" class="btn btn-accent mt-2" @click="create()">+ New tracker</button>
+              </div>
+            </template>
+
+            <template x-if="form">
+              <form class="space-y-4" @submit.prevent="save()">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 class="h-display text-2xl" x-text="isNew ? 'New tracker' : form.title"></h2>
+                    <p class="text-xs text-zinc-500">
+                      <code class="text-zinc-300" x-text="`src/content/trackers/${isNew ? slugPreview : selected}.json`"></code>
+                      <span class="ml-2" x-text="`${progress(form).done}/${progress(form).total} done (${progress(form).pct}%)`"></span>
+                      <span x-show="dirty" class="ml-2 text-amber-300">&bull; unsaved</span>
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <a x-show="!isNew" :href="$store.app.siteUrl('/trackers/' + selected)" target="_blank" rel="noopener" class="btn btn-sm">View on dev site</a>
+                    <button type="button" class="btn btn-sm" @click="close()">Close</button>
+                    <button type="button" x-show="!isNew" class="btn btn-sm btn-danger" @click="remove()">Delete</button>
+                    <button type="submit" class="btn btn-accent" :disabled="saving" x-text="saving ? 'Saving...' : 'Save'"></button>
+                  </div>
+                </div>
+
+                <div class="card grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <label class="field lg:col-span-2"><span class="label">Title *</span><input class="input" x-model="form.title" required /></label>
+                  <label class="field" x-show="isNew"><span class="label">Slug (optional)</span><input class="input font-mono" x-model.trim="form.slug" :placeholder="slugPreview || 'auto'" /></label>
+                  <label class="field">
+                    <span class="label">Type</span>
+                    <select class="input" x-model="form.type">
+                      <template x-for="t in $store.app.meta.trackerTypes" :key="t.id"><option :value="t.id" x-text="t.label"></option></template>
+                    </select>
+                  </label>
+                  <label class="field lg:col-span-2">
+                    <span class="label">Game</span>
+                    <select class="input" x-model="form.game">
+                      <option value="">Not tied to a game</option>
+                      <template x-for="g in games" :key="g.slug"><option :value="g.slug" x-text="`${g.title} (${$store.app.platform(g.platform).short})`"></option></template>
+                    </select>
+                  </label>
+                  <label class="field lg:col-span-2"><span class="label">Summary</span><input class="input" x-model="form.summary" /></label>
+                </div>
+
+                <div class="space-y-4">
+                  <template x-for="(section, si) in form.sections" :key="si">
+                    <div class="card">
+                      <div class="flex items-center gap-2 border-b border-zinc-800 px-3 py-2">
+                        <span class="font-display text-lg text-zinc-500" x-text="String(si + 1).padStart(2, '0')"></span>
+                        <input class="input flex-1" x-model="section.title" placeholder="Section title (area, chapter, disc...)" required />
+                        <button type="button" class="btn btn-sm" @click="move(form.sections, si, si - 1)" :disabled="si === 0" title="Move up">&uarr;</button>
+                        <button type="button" class="btn btn-sm" @click="move(form.sections, si, si + 1)" :disabled="si === form.sections.length - 1" title="Move down">&darr;</button>
+                        <button type="button" class="btn btn-sm btn-danger" @click="removeSection(si)" title="Remove section">&times;</button>
+                      </div>
+                      <ul class="divide-y divide-zinc-800/80">
+                        <template x-for="(item, ii) in section.items" :key="ii">
+                          <li class="flex items-start gap-2 px-3 py-2">
+                            <input type="checkbox" class="mt-2.5 size-4 shrink-0 accent-amber-400" x-model="item.done" title="Done" />
+                            <div class="grid flex-1 gap-1 sm:grid-cols-[1fr_1fr]">
+                              <input class="input" x-model="item.label" placeholder="Item" required data-item-label @keydown.enter.prevent="addItem(section)" />
+                              <input class="input" x-model="item.note" placeholder="Note / where / how (optional)" />
+                            </div>
+                            <div class="flex shrink-0 gap-1 pt-1">
+                              <button type="button" class="btn btn-sm" @click="move(section.items, ii, ii - 1)" :disabled="ii === 0">&uarr;</button>
+                              <button type="button" class="btn btn-sm" @click="move(section.items, ii, ii + 1)" :disabled="ii === section.items.length - 1">&darr;</button>
+                              <button type="button" class="btn btn-sm btn-danger" @click="removeItem(section, ii)">&times;</button>
+                            </div>
+                          </li>
+                        </template>
+                      </ul>
+                      <div class="flex flex-wrap items-start gap-2 border-t border-zinc-800 p-3">
+                        <button type="button" class="btn btn-sm" @click="addItem(section)">+ Add item</button>
+                        <details class="text-xs text-zinc-500">
+                          <summary class="cursor-pointer py-1 hover:text-zinc-300">Bulk add (one per line, optional "label | note")</summary>
+                          <textarea class="input mt-2 min-h-24 w-96 font-mono" x-model="section.bulk" placeholder="Speed Tab | Behind the waterfall&#10;Magic Tab"></textarea>
+                          <button type="button" class="btn btn-sm mt-2" @click="addBulk(section)">Add lines</button>
+                        </details>
+                      </div>
+                    </div>
+                  </template>
+                  <button type="button" class="btn" @click="addSection()">+ Add section</button>
+                </div>
+              </form>
+            </template>
+          </div>
+        </section>
+      </template>
+
+      <!-- ===== RetroAchievements ===== -->
+      <template x-if="$store.app.ready && $store.app.view === 'ra'">
+        <section x-data="raView" class="space-y-6">
+          <header>
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400/90">Integration</p>
+            <h1 class="h-display text-4xl">RetroAchievements</h1>
+          </header>
+
+          <template x-if="status">
+            <div class="space-y-6">
+              <!-- config -->
+              <div class="card p-4">
+                <template x-if="!status.config.configured">
+                  <div class="text-sm text-zinc-300">
+                    <p class="font-semibold text-rose-300">Not configured.</p>
+                    <ol class="mt-2 list-inside list-decimal space-y-1 text-zinc-400">
+                      <li>Copy <code class="text-zinc-200">.env.example</code> to <code class="text-zinc-200">.env</code> in the project root.</li>
+                      <li>Set <code class="text-zinc-200">RA_USERNAME</code> and <code class="text-zinc-200">RA_API_KEY</code> (retroachievements.org &rarr; Settings &rarr; Keys &rarr; Web API Key).</li>
+                      <li>Restart <code class="text-zinc-200">npm run admin</code>. The key never leaves this machine; the site only ever sees the JSON snapshot.</li>
+                    </ol>
+                  </div>
+                </template>
+                <template x-if="status.config.configured">
+                  <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="text-sm">
+                      <p>Configured for <span class="font-semibold text-amber-300" x-text="status.config.username"></span>.</p>
+                      <p class="text-zinc-500">
+                        <span x-text="status.profile.syncedAt ? 'Last synced ' + $store.app.fmtDate(status.profile.syncedAt) : 'Never synced'"></span>
+                        &middot; <span x-text="status.linkedGames"></span> library games linked to RA
+                        <template x-if="status.profile.syncedAt"><span> &middot; <span x-text="status.profile.points.toLocaleString()"></span> points &middot; <span x-text="status.profile.completionCount"></span> games with progress</span></template>
+                      </p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                      <label class="flex items-center gap-2 text-sm text-zinc-400" title="Upgrade a game's status to Beaten/Completed/Mastered when RA awards say so. Never downgrades.">
+                        <input type="checkbox" class="size-4 accent-amber-400" x-model="autoStatus" /> Auto-upgrade statuses
+                      </label>
+                      <button type="button" class="btn btn-accent" :disabled="job?.running" @click="sync()" x-text="job?.running ? 'Syncing...' : 'Sync now'"></button>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <!-- job -->
+              <template x-if="job && (job.running || job.finishedAt)">
+                <div class="card p-4">
+                  <div class="mb-2 flex items-center justify-between text-sm">
+                    <span class="font-semibold" x-text="job.running ? 'Sync in progress' : (job.error ? 'Sync failed' : 'Last sync')"></span>
+                    <span class="text-zinc-500" x-text="job.progress.total ? `${job.progress.done}/${job.progress.total} games` : ''"></span>
+                  </div>
+                  <div class="mb-3 h-2 overflow-hidden rounded-full bg-zinc-800">
+                    <div class="h-full rounded-full transition-[width]" :class="job.error ? 'bg-rose-400' : 'bg-amber-400'" :style="`width:${job.running || job.progress.total ? progressPct : 100}%`"></div>
+                  </div>
+                  <pre x-ref="log" class="max-h-64 overflow-y-auto rounded-lg bg-zinc-950 p-3 text-xs leading-relaxed text-zinc-400"><template x-for="(line, i) in job.log" :key="i"><span class="block" :class="line.message.startsWith('ERROR') && 'text-rose-300'" x-text="line.message"></span></template></pre>
+                </div>
+              </template>
+
+              <!-- import -->
+              <div class="card p-4" x-show="status.config.configured">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 class="h-display text-xl">Import games from your RA history</h2>
+                    <p class="text-sm text-zinc-500">Adds library entries (with box art, developer, year and a suggested status) for games you have progress on but haven't added yet. Sync first.</p>
+                  </div>
+                  <div class="flex gap-2">
+                    <button type="button" class="btn" :disabled="consolesBusy" @click="importConsoles()" title="Adds RA consoles to the platform list so imports can be matched" x-text="consolesBusy ? '...' : 'Import RA console list'"></button>
+                    <button type="button" class="btn" :disabled="loadingCandidates || !status.profile.syncedAt" @click="loadCandidates()" x-text="loadingCandidates ? 'Loading...' : (candidates ? 'Reload' : 'Find games to import')"></button>
+                  </div>
+                </div>
+
+                <template x-if="candidates">
+                  <div class="mt-4">
+                    <div class="mb-2 flex flex-wrap items-center gap-3 text-sm">
+                      <span><span class="font-semibold" x-text="candidates.length"></span> not in the library yet</span>
+                      <button type="button" class="text-amber-400 hover:underline" @click="selectAll(true)">Select all</button>
+                      <button type="button" class="text-zinc-400 hover:underline" @click="selectAll(false)">Clear</button>
+                      <button type="button" class="btn btn-sm btn-accent ml-auto" :disabled="importing || !selectedCount" @click="importSelected()" x-text="importing ? 'Importing...' : `Import ${selectedCount} selected`"></button>
+                    </div>
+                    <div class="max-h-[32rem] overflow-y-auto rounded-lg border border-zinc-800">
+                      <table class="w-full text-sm">
+                        <thead class="sticky top-0 bg-zinc-900 text-left text-xs uppercase tracking-wider text-zinc-500">
+                          <tr><th class="p-2"></th><th class="p-2">Game</th><th class="p-2">Console &rarr; platform</th><th class="p-2">Progress</th><th class="p-2">Status</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-800">
+                          <template x-for="c in candidates" :key="c.gameId">
+                            <tr :class="selection[c.gameId] && 'bg-amber-400/5'">
+                              <td class="p-2"><input type="checkbox" class="size-4 accent-amber-400" x-model="selection[c.gameId]" /></td>
+                              <td class="p-2">
+                                <div class="flex items-center gap-2">
+                                  <img :src="c.imageIcon" alt="" class="size-8 rounded bg-zinc-800" loading="lazy" />
+                                  <div class="min-w-0">
+                                    <div class="truncate font-medium text-zinc-100" x-text="c.title"></div>
+                                    <div class="text-xs text-zinc-500">#<span x-text="c.gameId"></span><span x-show="c.tag"> &middot; <span x-text="c.tag"></span></span></div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td class="p-2">
+                                <div class="text-xs text-zinc-500" x-text="c.consoleName"></div>
+                                <select class="input mt-1 py-1" x-model="c.platform">
+                                  <option value="">Auto (create if missing)</option>
+                                  <template x-for="p in $store.app.meta.platforms" :key="p.id"><option :value="p.id" x-text="p.name"></option></template>
+                                </select>
+                              </td>
+                              <td class="p-2 text-xs text-zinc-400">
+                                <span x-text="`${c.numAwarded}/${c.maxPossible}`"></span>
+                                <span x-show="c.highestAwardKind" class="chip ml-1 bg-emerald-500/15 text-emerald-300 ring-emerald-500/30" x-text="c.highestAwardKind"></span>
+                              </td>
+                              <td class="p-2">
+                                <select class="input py-1" x-model="c.status">
+                                  <template x-for="s in $store.app.meta.statuses" :key="s.id"><option :value="s.id" x-text="s.label"></option></template>
+                                </select>
+                              </td>
+                            </tr>
+                          </template>
+                        </tbody>
+                      </table>
+                      <p x-show="candidates.length === 0" class="p-6 text-center text-sm text-zinc-500">Everything from your RA history is already in the library.</p>
+                    </div>
+                    <template x-if="importResult">
+                      <div class="mt-3 text-sm">
+                        <p class="text-emerald-300" x-text="`Imported ${importResult.created.length} games. Run a sync to fetch their achievements.`"></p>
+                        <ul class="mt-1 text-rose-300"><template x-for="e in importResult.errors" :key="e.gameId"><li x-text="`#${e.gameId}: ${e.message}`"></li></template></ul>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+
+              <div class="card p-4 text-sm text-zinc-400">
+                <h2 class="h-display mb-2 text-xl">What a sync does</h2>
+                <ul class="list-inside list-disc space-y-1">
+                  <li>Writes your profile, rank, points, recent unlocks, per-game completion and awards to <code class="text-zinc-300">src/data/ra-profile.json</code>.</li>
+                  <li>For every library game with an RA game id, writes the full achievement list with your unlock dates to <code class="text-zinc-300">src/content/ra-games/&lt;id&gt;.json</code>.</li>
+                  <li>Fills in missing cover art, developer, publisher, genre and release year on those games (never overwrites what you typed).</li>
+                  <li>With "Auto-upgrade statuses" on, moves games to Beaten / Completed / Mastered based on your RA awards.</li>
+                </ul>
+              </div>
+            </div>
+          </template>
+        </section>
+      </template>
+
+      <!-- ===== Settings ===== -->
+      <template x-if="$store.app.ready && $store.app.view === 'settings'">
+        <section x-data="settingsView" class="space-y-8">
+          <header>
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400/90">Configuration</p>
+            <h1 class="h-display text-4xl">Settings</h1>
+          </header>
+
+          <template x-if="site">
+            <form class="card space-y-4 p-4" @submit.prevent="saveSite()">
+              <div class="flex items-center justify-between">
+                <h2 class="h-display text-xl">Site <span class="text-sm text-zinc-500">src/data/site.json</span></h2>
+                <button type="submit" class="btn btn-accent" :disabled="savingSite" x-text="savingSite ? 'Saving...' : 'Save site'"></button>
+              </div>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="field"><span class="label">Site title</span><input class="input" x-model="site.title" required /></label>
+                <label class="field"><span class="label">Owner name</span><input class="input" x-model="site.owner" required /></label>
+                <label class="field sm:col-span-2"><span class="label">Tagline</span><input class="input" x-model="site.tagline" /></label>
+                <label class="field sm:col-span-2"><span class="label">About (markdown, shown on the home page)</span><textarea class="input min-h-24" x-model="site.about"></textarea></label>
+                <label class="field"><span class="label">RetroAchievements username (for the footer link)</span><input class="input" x-model="site.raUsername" /></label>
+              </div>
+              <div>
+                <div class="mb-2 flex items-center justify-between">
+                  <span class="label mb-0">Footer links</span>
+                  <button type="button" class="btn btn-sm" @click="addLink()">+ Add link</button>
+                </div>
+                <div class="space-y-2">
+                  <template x-for="(link, i) in site.links" :key="i">
+                    <div class="flex gap-2">
+                      <input class="input w-40" x-model="link.label" placeholder="Label" required />
+                      <input class="input flex-1" x-model="link.url" placeholder="https://..." type="url" required />
+                      <button type="button" class="btn btn-sm btn-danger" @click="site.links.splice(i, 1)">&times;</button>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </form>
+          </template>
+
+          <template x-if="platforms">
+            <form class="card space-y-4 p-4" @submit.prevent="savePlatforms()">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 class="h-display text-xl">Platforms <span class="text-sm text-zinc-500">src/data/platforms.json</span></h2>
+                  <p class="text-xs text-zinc-500">The RA console id lets imports and lookups pick the right platform automatically. Platforms used by games can't be removed.</p>
+                </div>
+                <div class="flex gap-2">
+                  <button type="button" class="btn btn-sm" @click="addPlatform()">+ Add platform</button>
+                  <button type="submit" class="btn btn-accent" :disabled="savingPlatforms" x-text="savingPlatforms ? 'Saving...' : 'Save platforms'"></button>
+                </div>
+              </div>
+              <table class="w-full text-sm">
+                <thead class="text-left text-xs uppercase tracking-wider text-zinc-500">
+                  <tr><th class="p-1">Id (slug)</th><th class="p-1">Name</th><th class="p-1">Short</th><th class="p-1">RA console id</th><th></th></tr>
+                </thead>
+                <tbody>
+                  <template x-for="(p, i) in platforms" :key="i">
+                    <tr>
+                      <td class="p-1"><input class="input font-mono" x-model.trim="p.id" :readonly="existingIds.has(p.id) && p.id !== ''" @input="p._idTouched = true" pattern="[a-z0-9]+(-[a-z0-9]+)*" required /></td>
+                      <td class="p-1"><input class="input" x-model="p.name" @input="onPlatformName(p)" required /></td>
+                      <td class="p-1"><input class="input w-28" x-model.trim="p.short" required /></td>
+                      <td class="p-1"><input class="input w-28" type="number" min="1" x-model="p.raConsoleId" /></td>
+                      <td class="p-1"><button type="button" class="btn btn-sm btn-danger" @click="platforms.splice(i, 1)">&times;</button></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </form>
+          </template>
+        </section>
+      </template>
+
+      <!-- ===== Publish ===== -->
+      <template x-if="$store.app.ready && $store.app.view === 'publish'">
+        <section x-data="publishView" class="space-y-6">
+          <header>
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400/90">Ship it</p>
+            <h1 class="h-display text-4xl">Publish</h1>
+            <p class="mt-1 text-sm text-zinc-500">Commits every change in the repo and pushes to GitHub. Vercel picks up the push and rebuilds the public site.</p>
+          </header>
+
+          <template x-if="error"><div class="card border-rose-500/40 p-4 text-sm text-rose-200" x-text="error"></div></template>
+
+          <template x-if="git">
+            <div class="space-y-6">
+              <div class="card p-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                  <div class="space-y-0.5">
+                    <p>Branch <span class="font-mono text-amber-300" x-text="git.branch"></span> &rarr; <span class="font-mono text-zinc-300" x-text="git.remote || 'no remote'"></span></p>
+                    <p class="text-zinc-500">
+                      <span x-text="git.lastCommit ? 'Last commit: ' + git.lastCommit : 'No commits yet'"></span>
+                      <span x-show="git.ahead"> &middot; <span x-text="git.ahead"></span> commit(s) not pushed</span>
+                      <span x-show="git.behind" class="text-rose-300"> &middot; <span x-text="git.behind"></span> commit(s) behind remote - pull first</span>
+                    </p>
+                  </div>
+                  <button type="button" class="btn btn-sm" @click="refresh()">Refresh</button>
+                </div>
+                <div class="mt-3">
+                  <p class="label" x-text="git.clean ? 'Working tree is clean' : `${git.files.length} changed file(s)`"></p>
+                  <ul class="max-h-64 overflow-y-auto rounded-lg bg-zinc-950 p-3 font-mono text-xs text-zinc-400" x-show="!git.clean">
+                    <template x-for="f in git.files" :key="f.path">
+                      <li><span class="inline-block w-8 text-amber-300" x-text="f.code"></span><span x-text="f.path"></span></li>
+                    </template>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="grid gap-6 lg:grid-cols-2">
+                <div class="card p-4">
+                  <h2 class="h-display text-xl">1. Test build</h2>
+                  <p class="mb-3 text-sm text-zinc-500">Runs <code class="text-zinc-300">npm run build</code> locally. Catches schema errors (a bad date, a missing game reference) before Vercel does.</p>
+                  <button type="button" class="btn" :disabled="building" @click="testBuild()" x-text="building ? 'Building...' : 'Run build'"></button>
+                  <template x-if="buildResult">
+                    <pre class="mt-3 max-h-72 overflow-auto rounded-lg bg-zinc-950 p-3 text-xs" :class="buildResult.ok ? 'text-emerald-200' : 'text-rose-200'" x-text="buildResult.output"></pre>
+                  </template>
+                </div>
+                <div class="card p-4">
+                  <h2 class="h-display text-xl">2. Commit &amp; push</h2>
+                  <label class="field mt-3"><span class="label">Commit message</span><input class="input" x-model="message" /></label>
+                  <button type="button" class="btn btn-accent mt-3" :disabled="publishing || git.clean" @click="publish()" x-text="publishing ? 'Pushing...' : 'Commit all & push'"></button>
+                  <p class="mt-2 text-xs text-zinc-500">Prefer doing this by hand? <code class="text-zinc-300">git add -A && git commit -m "..." && git push</code> does exactly the same.</p>
+                  <template x-if="publishResult">
+                    <pre class="mt-3 max-h-72 overflow-auto rounded-lg bg-zinc-950 p-3 text-xs text-zinc-300" x-text="publishResult.output"></pre>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </template>
+        </section>
+      </template>
+    </main>
+  </div>
+
+  <!-- ===== Toasts ===== -->
+  <div class="pointer-events-none fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2">
+    <template x-for="t in $store.app.toasts" :key="t.id">
+      <div class="pointer-events-auto rounded-lg border px-3 py-2 text-sm shadow-lg" :class="t.type === 'error' ? 'border-rose-500/50 bg-rose-950/90 text-rose-100' : 'border-emerald-500/40 bg-emerald-950/90 text-emerald-100'" @click="$store.app.dismiss(t.id)" x-text="t.message"></div>
+    </template>
+  </div>
+</body>
+</html>

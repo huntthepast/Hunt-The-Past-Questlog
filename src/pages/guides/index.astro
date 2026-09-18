@@ -1,0 +1,96 @@
+---
+import Base from '../../layouts/Base.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import GuideCard from '../../components/GuideCard.astro';
+import TrackerCard from '../../components/TrackerCard.astro';
+import EmptyState from '../../components/EmptyState.astro';
+import Icon from '../../components/Icon.astro';
+import { allGames, allGuides, allTrackers } from '../../lib/data';
+import { GUIDE_TYPES, TRACKER_TYPES } from '../../lib/constants.js';
+
+const games = await allGames();
+const guides = await allGuides();
+const trackers = await allTrackers();
+const gameById = new Map(games.map((g) => [g.id, g]));
+
+const guideTypes = GUIDE_TYPES.filter((t) => guides.some((g) => g.data.type === t.id));
+const trackerTypes = TRACKER_TYPES.filter((t) => trackers.some((g) => g.data.type === t.id));
+
+const filterConfig = {
+  facets: ['type', 'kind'],
+  defaultSort: 'recent',
+  sorts: {
+    recent: { attr: 'updated', dir: 'desc' },
+    title: { attr: 'sort' },
+  },
+};
+---
+
+<Base title="Guides" description="Walkthroughs, cheat lists, missable trackers and notes.">
+  <SectionHeading level="h1" eyebrow="Written down" title="Guides & Trackers">
+    <p class="mt-2 text-sm text-zinc-400">{guides.length} {guides.length === 1 ? 'guide' : 'guides'} and {trackers.length} {trackers.length === 1 ? 'tracker' : 'trackers'}.</p>
+  </SectionHeading>
+
+  {
+    guides.length + trackers.length === 0 ? (
+      <EmptyState title="Nothing written yet" icon="book">
+        Create a guide (markdown) or a tracker (checklist) in the admin.
+      </EmptyState>
+    ) : (
+      <div x-data={`listFilter(${JSON.stringify(filterConfig)})`}>
+        <div class="card mb-6 flex flex-col gap-3 p-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <label class="relative flex-1 sm:min-w-56">
+            <span class="sr-only">Search</span>
+            <Icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+            <input type="search" x-model.debounce.150ms="q" placeholder="Search guides, games, tags..." class="input pl-9" />
+          </label>
+          <select x-model="facet.kind" class="input sm:w-40" aria-label="Kind">
+            <option value="">Guides & trackers</option>
+            <option value="guide">Guides only</option>
+            <option value="tracker">Trackers only</option>
+          </select>
+          <select x-model="facet.type" class="input sm:w-44" aria-label="Type">
+            <option value="">All types</option>
+            {guideTypes.length > 0 && (
+              <optgroup label="Guides">
+                {guideTypes.map((t) => (
+                  <option value={t.id}>{t.label}</option>
+                ))}
+              </optgroup>
+            )}
+            {trackerTypes.length > 0 && (
+              <optgroup label="Trackers">
+                {trackerTypes.map((t) => (
+                  <option value={t.id}>{t.label}</option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+          <select x-model="sort" class="input sm:w-44" aria-label="Sort">
+            <option value="recent">Sort: Recently updated</option>
+            <option value="title">Sort: Title</option>
+          </select>
+          <p class="text-xs text-zinc-500 sm:ml-auto" x-cloak>
+            <span class="font-semibold text-zinc-300" x-text="visible"></span> of <span x-text="total"></span>
+            <button type="button" class="ml-2 text-amber-400 hover:underline" x-show="active" @click="reset()">Reset</button>
+          </p>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {guides.map((guide) => (
+            <GuideCard guide={guide} game={guide.data.game ? gameById.get(guide.data.game.id) : undefined} />
+          ))}
+          {trackers.map((tracker) => (
+            <TrackerCard tracker={tracker} game={tracker.data.game ? gameById.get(tracker.data.game.id) : undefined} />
+          ))}
+        </div>
+
+        <div x-show="visible === 0" x-cloak class="mt-6">
+          <EmptyState title="No matches" icon="filter">
+            <button type="button" class="text-amber-400 hover:underline" @click="reset()">Reset the filters</button>
+          </EmptyState>
+        </div>
+      </div>
+    )
+  }
+</Base>

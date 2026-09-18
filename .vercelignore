@@ -1,0 +1,4 @@
+# The admin backend is local-only and must never be deployed.
+admin/
+.env
+.env.*

@@ -1,0 +1,16 @@
+---
+import Base from '../layouts/Base.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import GameGrid from '../components/GameGrid.astro';
+import { wishlistGames } from '../lib/data';
+
+const games = await wishlistGames();
+---
+
+<Base title="Wishlist" description="Games I want to play next.">
+  <SectionHeading level="h1" eyebrow="Want to play" title="Wishlist">
+    <p class="mt-2 text-sm text-zinc-400">{games.length} games waiting for a sale, a free weekend, or a spare console.</p>
+  </SectionHeading>
+
+  <GameGrid games={games} showStatus={false} showFavorite={false} emptyTitle="Wishlist is empty" emptyText="Mark a game's ownership as Wishlist in the admin to see it here." />
+</Base>

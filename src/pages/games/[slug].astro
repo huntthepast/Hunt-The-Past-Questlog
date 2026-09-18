@@ -1,0 +1,257 @@
+---
+import Base from '../../layouts/Base.astro';
+import Cover from '../../components/Cover.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import Badge from '../../components/Badge.astro';
+import Rating from '../../components/Rating.astro';
+import Icon from '../../components/Icon.astro';
+import ProgressBar from '../../components/ProgressBar.astro';
+import GuideCard from '../../components/GuideCard.astro';
+import TrackerCard from '../../components/TrackerCard.astro';
+import {
+  allGames,
+  allGuides,
+  allTrackers,
+  guidesForGame,
+  trackersForGame,
+  platformOf,
+  raGameById,
+  formatDate,
+  formatDateTime,
+  formatHours,
+  renderMarkdown,
+} from '../../lib/data';
+import { statusById, RA_SITE } from '../../lib/constants.js';
+
+export async function getStaticPaths() {
+  const games = await allGames();
+  return games.map((game) => ({ params: { slug: game.id }, props: { game } }));
+}
+
+const { game } = Astro.props;
+const d = game.data;
+const platform = platformOf(d.platform);
+const status = statusById(d.status);
+const guides = guidesForGame(await allGuides(), game.id);
+const trackers = trackersForGame(await allTrackers(), game.id);
+const ra = await raGameById(d.raGameId);
+
+const raAchievements = ra ? [...ra.data.achievements].sort((a, b) => a.displayOrder - b.displayOrder) : [];
+const raEarned = raAchievements.filter((a) => a.earnedAt || a.earnedHardcoreAt).length;
+const raPct = ra && ra.data.numAchievements ? Math.round((raEarned / ra.data.numAchievements) * 100) : 0;
+const raPoints = raAchievements.reduce((sum, a) => sum + a.points, 0);
+const raPointsEarned = raAchievements.filter((a) => a.earnedAt || a.earnedHardcoreAt).reduce((sum, a) => sum + a.points, 0);
+
+const AWARD_LABEL: Record<string, string> = {
+  mastered: 'Mastered',
+  completed: 'Completed',
+  'beaten-hardcore': 'Beaten (Hardcore)',
+  'beaten-softcore': 'Beaten (Softcore)',
+};
+
+const facts = [
+  { label: 'Platform', value: platform.name },
+  { label: 'Released', value: d.releaseYear ? String(d.releaseYear) : '' },
+  { label: 'Developer', value: d.developer ?? '' },
+  { label: 'Publisher', value: d.publisher ?? '' },
+  { label: 'Genre', value: d.genres.join(', ') },
+].filter((f) => f.value);
+
+const description = d.review?.slice(0, 160) || `${d.title} on ${platform.name}: ${status.label.toLowerCase()}.`;
+---
+
+<Base title={d.title} description={description} image={d.cover}>
+  <nav class="mb-6 text-sm text-zinc-500" aria-label="Breadcrumb">
+    <a href={d.ownership === 'wishlist' ? '/wishlist' : '/games'} class="inline-flex items-center gap-1 hover:text-amber-300">
+      <Icon name="arrow-left" class="size-4" /> {d.ownership === 'wishlist' ? 'Wishlist' : 'Library'}
+    </a>
+  </nav>
+
+  <div class="grid gap-8 lg:grid-cols-[280px_1fr]">
+    <!-- Cover column -->
+    <aside class="lg:sticky lg:top-24 lg:self-start">
+      <div class="card mx-auto aspect-[3/4] w-full max-w-[280px] overflow-hidden">
+        <Cover src={d.cover} title={d.title} platformShort={platform.short} eager />
+      </div>
+      <dl class="card mt-4 divide-y divide-zinc-800 text-sm">
+        {
+          facts.map((f) => (
+            <div class="flex justify-between gap-4 px-4 py-2.5">
+              <dt class="text-zinc-500">{f.label}</dt>
+              <dd class="text-right text-zinc-200">{f.value}</dd>
+            </div>
+          ))
+        }
+        {
+          d.raGameId && (
+            <div class="flex justify-between gap-4 px-4 py-2.5">
+              <dt class="text-zinc-500">RetroAchievements</dt>
+              <dd>
+                <a href={`${RA_SITE}/game/${d.raGameId}`} target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-amber-400 hover:underline">
+                  Game #{d.raGameId} <Icon name="external" class="size-3.5" />
+                </a>
+              </dd>
+            </div>
+          )
+        }
+      </dl>
+    </aside>
+
+    <!-- Details column -->
+    <div class="min-w-0">
+      <div class="mb-2 flex flex-wrap items-center gap-2">
+        <StatusBadge status={d.status} />
+        {d.ownership === 'wishlist' && <Badge color="teal" label="Wishlist" />}
+        {
+          d.favorite && (
+            <span class="chip bg-rose-500/15 text-rose-300 ring-rose-500/30">
+              <Icon name="heart" solid class="size-3" /> Favorite
+            </span>
+          )
+        }
+      </div>
+      <h1 class="h-display text-4xl sm:text-5xl">{d.title}</h1>
+      <p class="mt-2 text-zinc-400">
+        {platform.name}{d.releaseYear && <span> &middot; {d.releaseYear}</span>}
+      </p>
+
+      <!-- Play stats -->
+      <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div class="card p-3">
+          <div class="text-xs uppercase tracking-wider text-zinc-500">Rating</div>
+          <div class="mt-1 text-xl">{d.rating !== undefined ? <Rating value={d.rating} showMax /> : <span class="text-zinc-600">&mdash;</span>}</div>
+        </div>
+        <div class="card p-3">
+          <div class="text-xs uppercase tracking-wider text-zinc-500">Hours</div>
+          <div class="mt-1 text-xl font-semibold tabular-nums text-zinc-100">{d.hoursPlayed !== undefined ? formatHours(d.hoursPlayed) : <span class="text-zinc-600">&mdash;</span>}</div>
+        </div>
+        <div class="card p-3">
+          <div class="text-xs uppercase tracking-wider text-zinc-500">Started</div>
+          <div class="mt-1 text-sm font-medium text-zinc-100">{d.startedAt ? formatDate(d.startedAt) : <span class="text-zinc-600">&mdash;</span>}</div>
+        </div>
+        <div class="card p-3">
+          <div class="text-xs uppercase tracking-wider text-zinc-500">Finished</div>
+          <div class="mt-1 text-sm font-medium text-zinc-100">{d.finishedAt ? formatDate(d.finishedAt) : <span class="text-zinc-600">&mdash;</span>}</div>
+        </div>
+      </div>
+
+      {
+        d.tags.length > 0 && (
+          <ul class="mt-4 flex flex-wrap gap-1.5">
+            {d.tags.map((tag) => (
+              <li class="chip bg-zinc-800 text-zinc-300 ring-zinc-700">
+                <Icon name="tag" class="size-3" /> {tag}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+
+      {
+        d.review && (
+          <section class="mt-8">
+            <h2 class="h-display mb-2 text-2xl">Review</h2>
+            <div class="guide-prose" set:html={renderMarkdown(d.review)} />
+          </section>
+        )
+      }
+
+      {
+        d.notes && (
+          <section class="mt-8">
+            <h2 class="h-display mb-2 text-2xl">Notes</h2>
+            <div class="guide-prose card p-4" set:html={renderMarkdown(d.notes)} />
+          </section>
+        )
+      }
+
+      <!-- RetroAchievements -->
+      {
+        ra && (
+          <section class="mt-10">
+            <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
+              <h2 class="h-display text-2xl">Achievements</h2>
+              <a href={`${RA_SITE}/game/${ra.data.gameId}`} target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-sm text-amber-400 hover:underline">
+                View on RetroAchievements <Icon name="external" class="size-3.5" />
+              </a>
+            </div>
+            <div class="card p-4">
+              <div class="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span class="text-zinc-300">
+                  <span class="font-semibold text-zinc-100">{raEarned}</span> of {ra.data.numAchievements} unlocked
+                  <span class="text-zinc-500">
+                    ({ra.data.numAwardedHardcore} hardcore) &middot; {raPointsEarned}/{raPoints} points
+                  </span>
+                </span>
+                {ra.data.highestAwardKind && (
+                  <Badge color={ra.data.highestAwardKind === 'mastered' ? 'amber' : ra.data.highestAwardKind === 'completed' ? 'violet' : 'emerald'} label={AWARD_LABEL[ra.data.highestAwardKind] ?? ra.data.highestAwardKind} dot title={ra.data.highestAwardDate ? `Awarded ${formatDateTime(ra.data.highestAwardDate)}` : undefined} />
+                )}
+              </div>
+              <ProgressBar value={raPct} color={raPct === 100 ? 'amber' : 'emerald'} label="Achievement progress" />
+              <p class="mt-2 text-xs text-zinc-500">Synced {formatDateTime(ra.data.syncedAt)}</p>
+            </div>
+
+            <ul class="mt-4 grid gap-2 sm:grid-cols-2">
+              {raAchievements.map((a) => {
+                const earned = Boolean(a.earnedAt || a.earnedHardcoreAt);
+                const hardcore = Boolean(a.earnedHardcoreAt);
+                return (
+                  <li class:list={['card flex items-start gap-3 p-3', !earned && 'opacity-60 grayscale']}>
+                    <img src={a.badge} alt="" width="48" height="48" loading="lazy" class="size-12 shrink-0 rounded bg-zinc-800" />
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-start justify-between gap-2">
+                        <a href={`${RA_SITE}/achievement/${a.id}`} target="_blank" rel="noopener" class="font-medium leading-snug text-zinc-100 hover:text-amber-300">
+                          {a.title}
+                        </a>
+                        <span class="shrink-0 text-xs font-semibold text-amber-300 tabular-nums">{a.points}</span>
+                      </div>
+                      <p class="mt-0.5 text-xs text-zinc-400">{a.description}</p>
+                      <p class="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
+                        {earned ? (
+                          <span class="inline-flex items-center gap-1 text-emerald-300">
+                            <Icon name="check" class="size-3" /> {formatDateTime(a.earnedHardcoreAt ?? a.earnedAt)}
+                          </span>
+                        ) : (
+                          <span class="inline-flex items-center gap-1">
+                            <Icon name="lock" class="size-3" /> Locked
+                          </span>
+                        )}
+                        {hardcore && (
+                          <span class="inline-flex items-center gap-0.5 text-amber-400">
+                            <Icon name="bolt" solid class="size-3" /> Hardcore
+                          </span>
+                        )}
+                        {a.type === 'missable' && <span class="text-rose-300">Missable</span>}
+                        {a.type === 'progression' && <span class="text-sky-300">Progression</span>}
+                        {a.type === 'win_condition' && <span class="text-violet-300">Win condition</span>}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )
+      }
+
+      <!-- Guides & trackers -->
+      {
+        (guides.length > 0 || trackers.length > 0) && (
+          <section class="mt-10">
+            <h2 class="h-display mb-3 text-2xl">Guides & Trackers</h2>
+            <div class="grid gap-4 sm:grid-cols-2">
+              {guides.map((guide) => (
+                <GuideCard guide={guide} />
+              ))}
+              {trackers.map((tracker) => (
+                <TrackerCard tracker={tracker} />
+              ))}
+            </div>
+          </section>
+        )
+      }
+
+      <p class="mt-10 text-xs text-zinc-600">Added {formatDate(d.addedAt)} &middot; Updated {formatDate(d.updatedAt)}</p>
+    </div>
+  </div>
+</Base>

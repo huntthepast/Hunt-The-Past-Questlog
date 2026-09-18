@@ -1,0 +1,38 @@
+---
+import Icon from './Icon.astro';
+import { site, raProfile, formatDate } from '../lib/data';
+import { RA_SITE } from '../lib/constants.js';
+
+const built = new Date().toISOString().slice(0, 10);
+const raUser = raProfile.user || site.raUsername;
+---
+
+<footer class="mt-16 border-t border-zinc-800/80">
+  <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-zinc-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+    <p>
+      <span class="font-display text-base text-zinc-300">{site.title}</span>
+      <span class="mx-2 text-zinc-700">/</span>
+      {site.owner}'s game journal. Last updated {formatDate(built)}.
+    </p>
+    <ul class="flex flex-wrap items-center gap-x-4 gap-y-2">
+      {
+        raUser && (
+          <li>
+            <a href={`${RA_SITE}/user/${raUser}`} class="inline-flex items-center gap-1 hover:text-amber-300" target="_blank" rel="noopener">
+              RetroAchievements <Icon name="external" class="size-3.5" />
+            </a>
+          </li>
+        )
+      }
+      {
+        site.links.map((link) => (
+          <li>
+            <a href={link.url} class="inline-flex items-center gap-1 hover:text-amber-300" target="_blank" rel="noopener">
+              {link.label} <Icon name="external" class="size-3.5" />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</footer>

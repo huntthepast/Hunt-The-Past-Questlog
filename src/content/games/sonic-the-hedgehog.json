@@ -1,0 +1,22 @@
+{
+  "title": "Sonic the Hedgehog",
+  "platform": "genesis",
+  "cover": "https://media.retroachievements.org/Images/051872.png",
+  "genres": [
+    "Platformer"
+  ],
+  "developer": "Sonic Team",
+  "publisher": "Sega",
+  "releaseYear": 1991,
+  "ownership": "owned",
+  "favorite": false,
+  "status": "played",
+  "rating": 7,
+  "hoursPlayed": 3,
+  "raGameId": 1,
+  "tags": [
+    "retro"
+  ],
+  "addedAt": "2026-09-18T12:00:00.000Z",
+  "updatedAt": "2026-09-18T12:00:00.000Z"
+}

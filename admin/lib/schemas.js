@@ -105,6 +105,7 @@ export const SiteSchema = z.object({
   owner: text.min(1),
   about: text.default(''),
   raUsername: text.default(''),
+  googleSiteVerification: text.default(''),
   links: z.array(z.object({ label: text.min(1), url: text.pipe(z.url()) })).default([]),
 });
 

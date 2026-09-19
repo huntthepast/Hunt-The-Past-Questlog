@@ -22,6 +22,7 @@ import {
   renderMarkdown,
 } from '../../lib/data';
 import { statusById, RA_SITE } from '../../lib/constants.js';
+import { gameSeo, gameJsonLd, breadcrumbJsonLd } from '../../lib/seo';
 
 export async function getStaticPaths() {
   const games = await allGames();
@@ -57,10 +58,18 @@ const facts = [
   { label: 'Genre', value: d.genres.join(', ') },
 ].filter((f) => f.value);
 
-const description = d.review?.slice(0, 160) || `${d.title} on ${platform.name}: ${status.label.toLowerCase()}.`;
+const seo = gameSeo(game, guides.length, trackers.length);
+const jsonLd = [
+  gameJsonLd(Astro.site, game),
+  breadcrumbJsonLd(Astro.site, [
+    { name: 'Home', path: '/' },
+    { name: d.ownership === 'wishlist' ? 'Wishlist' : 'Library', path: d.ownership === 'wishlist' ? '/wishlist' : '/games' },
+    { name: d.title, path: `/games/${game.id}` },
+  ]),
+];
 ---
 
-<Base title={d.title} description={description} image={d.cover}>
+<Base title={seo.title} description={seo.description} image={d.cover} jsonLd={jsonLd}>
   <nav class="mb-6 text-sm text-zinc-500" aria-label="Breadcrumb">
     <a href={d.ownership === 'wishlist' ? '/wishlist' : '/games'} class="inline-flex items-center gap-1 hover:text-amber-300">
       <Icon name="arrow-left" class="size-4" /> {d.ownership === 'wishlist' ? 'Wishlist' : 'Library'}

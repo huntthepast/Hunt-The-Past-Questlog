@@ -9,6 +9,7 @@ import ProgressBar from '../../components/ProgressBar.astro';
 import GuideHub from '../../components/GuideHub.astro';
 import { allTrackers, allGuides, guidesForGame, trackersForGame, trackerProgress, platformOf, formatDate, site } from '../../lib/data';
 import { trackerTypeById } from '../../lib/constants.js';
+import { trackerSeo, breadcrumbJsonLd } from '../../lib/seo';
 
 export async function getStaticPaths() {
   const trackers = await allTrackers();
@@ -23,9 +24,16 @@ const platform = game ? platformOf(game.data.platform) : undefined;
 const relatedGuides = game ? guidesForGame(await allGuides(), game.id) : [];
 const relatedTrackers = game ? trackersForGame(await allTrackers(), game.id) : [];
 const progress = trackerProgress(tracker);
+const seo = trackerSeo(tracker, game);
+const jsonLd = breadcrumbJsonLd(Astro.site, [
+  { name: 'Home', path: '/' },
+  { name: 'Guides', path: '/guides' },
+  ...(game ? [{ name: game.data.title, path: `/games/${game.id}` }] : []),
+  { name: d.title, path: `/trackers/${tracker.id}` },
+]);
 ---
 
-<Base title={d.title} description={d.summary ?? `${type.label} tracker for ${game?.data.title ?? 'the collection'}.`} image={game?.data.cover}>
+<Base title={seo.title} description={seo.description} image={game?.data.cover} jsonLd={jsonLd}>
   <nav class="mb-6 text-sm text-zinc-500" aria-label="Breadcrumb">
     <a href="/guides" class="inline-flex items-center gap-1 hover:text-amber-300"><Icon name="arrow-left" class="size-4" /> Guides &amp; Trackers</a>
   </nav>

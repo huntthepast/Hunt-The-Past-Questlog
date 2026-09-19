@@ -8,12 +8,22 @@ import { site } from '../lib/data';
 interface Props {
   title?: string;
   description?: string;
+  /** Page-specific share image (absolute or site-relative). Falls back to the site card. */
   image?: string;
+  /** Structured data objects rendered as JSON-LD. */
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  /** Open Graph type; "article" for guides. */
+  ogType?: 'website' | 'article';
 }
 
-const { title, description = site.tagline, image } = Astro.props;
-const pageTitle = title ? `${title} | ${site.title}` : `${site.title} - ${site.tagline}`;
+const { title, description = site.tagline, image, jsonLd, ogType = 'website' } = Astro.props;
+const pageTitle = title ? `${title} | ${site.title}` : `${site.owner}'s ${site.title} - ${site.tagline}`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const shareImage = new URL(image ?? '/og-default.png', Astro.site);
+const structuredData = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+// "</script>" inside a JSON string would end the tag early; escape angle brackets to be safe.
+const toJsonLd = (data: Record<string, unknown>) => JSON.stringify(data).replace(/</g, '\\u003c');
+const verification = (site as { googleSiteVerification?: string }).googleSiteVerification;
 ---
 
 <!doctype html>
@@ -23,18 +33,33 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
+    <meta name="author" content={site.owner} />
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#09090b" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="canonical" href={canonical} />
-    <meta property="og:type" content="website" />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+    {verification && <meta name="google-site-verification" content={verification} />}
+    <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content={site.title} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    {image && <meta property="og:image" content={new URL(image, Astro.site)} />}
-    <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+    <meta property="og:image" content={shareImage} />
+    {
+      !image && (
+        <>
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+        </>
+      )
+    }
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={shareImage} />
     <meta name="generator" content={Astro.generator} />
+    {structuredData.map((data) => <script is:inline type="application/ld+json" set:html={toJsonLd(data)} />)}
   </head>
   <body class="flex min-h-full flex-col font-sans text-zinc-100">
     <Header />

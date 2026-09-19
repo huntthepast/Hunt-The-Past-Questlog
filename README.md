@@ -190,6 +190,27 @@ Other RA helpers in the admin:
 The public site only ever reads the JSON snapshots, so the API key never leaves your machine and the site keeps
 working even if RetroAchievements is down.
 
+## Search engines
+
+The build emits `sitemap-index.xml`, `robots.txt` (pointing at it), canonical URLs, Open Graph / Twitter cards with a
+default share image (`public/og-default.png`) and JSON-LD structured data (`WebSite`, `VideoGame` + your review rating
+on game pages, `Article` on guides, `BreadcrumbList` everywhere). Page titles and descriptions are generated from the
+data in `src/lib/seo.ts`.
+
+To get indexed rather than waiting for Google to find the site on its own:
+
+1. Open [Google Search Console](https://search.google.com/search-console), add the site as a **URL prefix** property
+   and choose the **HTML tag** verification method.
+2. Paste the `content` value of that tag into **Settings -> Google Search Console verification code** in the admin,
+   publish, then click **Verify** in Search Console.
+3. In Search Console go to **Sitemaps** and submit `sitemap-index.xml`. Use **URL inspection -> Request indexing**
+   for pages you want picked up quickly.
+4. Link to the site from places you control (RetroAchievements profile, GitHub profile). A couple of real links matter
+   more than anything on-page.
+
+If you attach a custom domain on Vercel, update `site` in `astro.config.mjs` so canonicals, the sitemap and share
+images point at it.
+
 ## Deploying to Vercel
 
 1. Push this repository to GitHub (it can be public: secrets live only in `.env`, which is ignored).

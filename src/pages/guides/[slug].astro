@@ -9,6 +9,7 @@ import GuideHub from '../../components/GuideHub.astro';
 import Lightbox from '../../components/Lightbox.astro';
 import { allGuides, allTrackers, guidesForGame, trackersForGame, platformOf, formatDate } from '../../lib/data';
 import { guideType } from '../../lib/constants.js';
+import { guideSeo, guideJsonLd, breadcrumbJsonLd } from '../../lib/seo';
 
 export async function getStaticPaths() {
   const guides = await allGuides();
@@ -27,9 +28,19 @@ const { Content, headings } = await render(guide);
 const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
 const gallery = d.gallery;
 const ogImage = gallery[0]?.src ?? game?.data.cover;
+const seo = guideSeo(guide, game, guide.body ?? '');
+const jsonLd = [
+  guideJsonLd(Astro.site, guide, game, seo.description),
+  breadcrumbJsonLd(Astro.site, [
+    { name: 'Home', path: '/' },
+    { name: 'Guides', path: '/guides' },
+    ...(game ? [{ name: game.data.title, path: `/games/${game.id}` }] : []),
+    { name: d.title, path: `/guides/${guide.id}` },
+  ]),
+];
 ---
 
-<Base title={d.title} description={d.summary ?? `${type.label} for ${game?.data.title ?? 'the collection'}.`} image={ogImage}>
+<Base title={seo.title} description={seo.description} image={ogImage} jsonLd={jsonLd} ogType="article">
   <nav class="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-500" aria-label="Breadcrumb">
     <a href="/guides" class="inline-flex items-center gap-1 hover:text-amber-300"><Icon name="arrow-left" class="size-4" /> Guides</a>
     {

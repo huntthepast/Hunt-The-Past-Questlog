@@ -352,7 +352,53 @@ document.addEventListener('alpine:init', () => {
 
   /* ---------------- guides ---------------- */
 
-  const blankGuide = () => ({ slug: '', title: '', type: 'notes', game: '', summary: '', tags: '', draft: false, body: '' });
+  const blankGuide = () => ({ slug: '', title: '', type: 'Walkthrough', game: '', summary: '', version: '', order: 0, tags: '', draft: false, gallery: [], downloads: [], body: '' });
+
+  /* GameFAQs-style skeleton. Headings feed the auto-generated table of contents. */
+  const WALKTHROUGH_TEMPLATE = `## Introduction
+
+What this game is, what this guide covers and how to use it.
+
+## Controls
+
+| Button | Action |
+| --- | --- |
+| A | Confirm / talk |
+| B | Cancel / run |
+
+## Characters
+
+### Character name
+
+Who they are, when they join and what they are good at.
+
+## Part 1: Area or chapter name
+
+### Map
+
+![Area map](/guides/{{slug}}/area-map.png)
+
+### Checklist
+
+- [ ] Item or event in this area
+- [ ] Another one
+
+### Walkthrough
+
+Step by step through the area.
+
+## Part 2: Next area
+
+### Map
+
+### Checklist
+
+### Walkthrough
+
+## Credits & Version History
+
+- 1.0 - First version.
+`;
 
   Alpine.data('guidesView', () => ({
     guides: [],
@@ -364,6 +410,12 @@ document.addEventListener('alpine:init', () => {
     dirty: false,
     saving: false,
     preview: false,
+    panel: null,
+    attachments: [],
+    uploading: false,
+    linkGuides: [],
+    linkGuide: '',
+    linkHeadings: [],
 
     async init() {
       await this.load();
@@ -390,6 +442,12 @@ document.addEventListener('alpine:init', () => {
       return window.marked ? marked.parse(this.form?.body ?? '') : '';
     },
 
+    /** Suggested types: the built-in list plus every type already used by a guide. */
+    get typeSuggestions() {
+      const used = this.guides.map((g) => g.type).filter(Boolean);
+      return [...new Set([...(Alpine.store('app').meta.guideTypes ?? []), ...used])];
+    },
+
     async load() {
       this.guides = await api('GET', '/api/guides');
     },
@@ -408,6 +466,8 @@ document.addEventListener('alpine:init', () => {
       this.selected = null;
       this.isNew = true;
       this.preview = false;
+      this.panel = null;
+      this.attachments = [];
       this.setForm(blankGuide());
     },
 
@@ -417,7 +477,19 @@ document.addEventListener('alpine:init', () => {
         const g = await api('GET', `/api/guides/${slug}`);
         this.selected = slug;
         this.isNew = false;
-        this.setForm({ ...blankGuide(), ...g, game: g.game ?? '', summary: g.summary ?? '', tags: (g.tags ?? []).join(', ') });
+        this.panel = null;
+        this.setForm({
+          ...blankGuide(),
+          ...g,
+          game: g.game ?? '',
+          summary: g.summary ?? '',
+          version: g.version ?? '',
+          order: g.order ?? 0,
+          tags: (g.tags ?? []).join(', '),
+          gallery: (g.gallery ?? []).map((item) => ({ ...item, caption: item.caption ?? '' })),
+          downloads: (g.downloads ?? []).map((item) => ({ ...item, note: item.note ?? '' })),
+        });
+        await this.loadAttachments();
       } catch (err) {
         Alpine.store('app').toast(err.message, 'error');
       }
@@ -428,13 +500,22 @@ document.addEventListener('alpine:init', () => {
       this.form = null;
       this.selected = null;
       this.dirty = false;
+      this.panel = null;
+    },
+
+    payload() {
+      return {
+        ...this.form,
+        gallery: this.form.gallery.map((g) => ({ src: g.src, title: g.title, caption: g.caption || undefined })),
+        downloads: this.form.downloads.map((d) => ({ label: d.label, url: d.url, note: d.note || undefined })),
+      };
     },
 
     async save() {
       if (!this.form) return;
       this.saving = true;
       try {
-        const saved = this.isNew ? await api('POST', '/api/guides', this.form) : await api('PUT', `/api/guides/${this.selected}`, this.form);
+        const saved = this.isNew ? await api('POST', '/api/guides', this.payload()) : await api('PUT', `/api/guides/${this.selected}`, this.payload());
         Alpine.store('app').toast(`Saved "${saved.title}"`);
         await this.load();
         this.dirty = false;
@@ -447,7 +528,7 @@ document.addEventListener('alpine:init', () => {
     },
 
     async remove() {
-      if (!this.selected || !confirm(`Delete guide "${this.form.title}"?`)) return;
+      if (!this.selected || !confirm(`Delete guide "${this.form.title}"? Its images in public/guides/${this.selected}/ are deleted too.`)) return;
       try {
         await api('DELETE', `/api/guides/${this.selected}`);
         Alpine.store('app').toast('Guide deleted');
@@ -460,6 +541,8 @@ document.addEventListener('alpine:init', () => {
       }
     },
 
+    /* ---- text helpers ---- */
+
     insert(snippet) {
       const el = this.$refs.body;
       if (!el) return;
@@ -470,6 +553,117 @@ document.addEventListener('alpine:init', () => {
         el.focus();
         el.selectionStart = el.selectionEnd = start + snippet.length;
       });
+    },
+
+    /** Inserts a block (image, template) on its own paragraph. */
+    insertBlock(text) {
+      const el = this.$refs.body;
+      const before = el ? el.value.slice(0, el.selectionStart ?? el.value.length) : this.form.body;
+      const prefix = before.length === 0 || before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n';
+      this.insert(`${prefix}${text}\n\n`);
+    },
+
+    insertTemplate() {
+      if (this.form.body.trim() && !confirm('Insert the walkthrough skeleton at the cursor? Your existing text is kept.')) return;
+      const slug = this.isNew ? this.slugPreview || 'your-guide' : this.selected;
+      this.insertBlock(WALKTHROUGH_TEMPLATE.replaceAll('{{slug}}', slug).trimEnd());
+    },
+
+    togglePanel(name) {
+      this.panel = this.panel === name ? null : name;
+      if (this.panel === 'link') this.openLinkPicker();
+    },
+
+    /* ---- attachments & gallery ---- */
+
+    async loadAttachments() {
+      if (!this.selected) return;
+      try {
+        this.attachments = await api('GET', `/api/guides/${this.selected}/attachments`);
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      }
+    },
+
+    async uploadAttachments(event) {
+      const files = Array.from(event.target.files ?? []);
+      if (!files.length || !this.selected) return;
+      const body = new FormData();
+      for (const file of files) body.append('files', file);
+      this.uploading = true;
+      try {
+        const result = await api('POST', `/api/guides/${this.selected}/attachments`, body);
+        this.attachments = result.files;
+        Alpine.store('app').toast(`Uploaded ${result.added.length} image(s)`);
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      } finally {
+        this.uploading = false;
+        event.target.value = '';
+      }
+    },
+
+    async deleteAttachment(file) {
+      if (!confirm(`Delete ${file.name}? Any place in the text or gallery that uses it will break.`)) return;
+      try {
+        const result = await api('DELETE', `/api/guides/${this.selected}/attachments/${encodeURIComponent(file.name)}`);
+        this.attachments = result.files;
+        this.form.gallery = this.form.gallery.filter((g) => g.src !== file.url);
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      }
+    },
+
+    insertImage(file) {
+      const alt = file.name.replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ');
+      this.insertBlock(`![${alt}](${file.url})`);
+      if (this.preview) this.preview = false;
+    },
+
+    inGallery(file) {
+      return this.form.gallery.some((g) => g.src === file.url);
+    },
+
+    addToGallery(file) {
+      if (this.inGallery(file)) return;
+      const title = file.name.replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      this.form.gallery.push({ src: file.url, title, caption: '' });
+    },
+
+    move(list, from, to) {
+      if (to < 0 || to >= list.length) return;
+      const [item] = list.splice(from, 1);
+      list.splice(to, 0, item);
+    },
+
+    /* ---- links to other guides ---- */
+
+    openLinkPicker() {
+      const game = this.form?.game;
+      this.linkGuides = this.guides
+        .filter((g) => g.slug !== this.selected)
+        .sort((a, b) => Number((b.game ?? '') === game) - Number((a.game ?? '') === game) || a.title.localeCompare(b.title));
+      if (!this.linkGuide) {
+        this.linkHeadings = [];
+      }
+    },
+
+    async loadHeadings() {
+      this.linkHeadings = [];
+      if (!this.linkGuide) return;
+      try {
+        this.linkHeadings = await api('GET', `/api/guides/${this.linkGuide}/headings`);
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      }
+    },
+
+    insertLink(heading) {
+      const guide = this.guides.find((g) => g.slug === this.linkGuide);
+      if (!guide) return;
+      const href = heading ? `/guides/${guide.slug}#${heading.slug}` : `/guides/${guide.slug}`;
+      const text = heading ? heading.text : guide.title;
+      this.insert(`[${text}](${href})`);
     },
   }));
 
@@ -641,6 +835,7 @@ document.addEventListener('alpine:init', () => {
     status: null,
     job: null,
     autoStatus: false,
+    autoHours: true,
     polling: null,
     candidates: null,
     loadingCandidates: false,
@@ -666,7 +861,7 @@ document.addEventListener('alpine:init', () => {
 
     async sync() {
       try {
-        this.job = await api('POST', '/api/ra/sync', { autoStatus: this.autoStatus });
+        this.job = await api('POST', '/api/ra/sync', { autoStatus: this.autoStatus, autoHours: this.autoHours });
         this.startPolling();
       } catch (err) {
         Alpine.store('app').toast(err.message, 'error');
@@ -755,6 +950,106 @@ document.addEventListener('alpine:init', () => {
 
     destroy() {
       clearInterval(this.polling);
+    },
+  }));
+
+  /* ---------------- trophy shelf order ---------------- */
+
+  Alpine.data('shelfEditor', () => ({
+    awards: [],
+    manual: false,
+    hasDisplayOrder: false,
+    loading: true,
+    dirty: false,
+    saving: false,
+    dragFrom: null,
+    dragOver: null,
+    filter: '',
+
+    async init() {
+      await this.load();
+    },
+
+    async load() {
+      this.loading = true;
+      try {
+        const state = await api('GET', '/api/shelf');
+        this.awards = state.awards;
+        this.manual = state.manual;
+        this.hasDisplayOrder = state.hasDisplayOrder;
+        this.dirty = false;
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    get visibleCount() {
+      return this.awards.filter((a) => !a.hidden).length;
+    },
+
+    matches(a) {
+      const q = this.filter.trim().toLowerCase();
+      return !q || `${a.title} ${a.consoleName}`.toLowerCase().includes(q);
+    },
+
+    move(from, to) {
+      if (to < 0 || to >= this.awards.length || from === to) return;
+      const [item] = this.awards.splice(from, 1);
+      this.awards.splice(to, 0, item);
+      this.dirty = true;
+    },
+
+    toggleHidden(index) {
+      const a = this.awards[index];
+      a.hidden = !a.hidden;
+      this.dirty = true;
+    },
+
+    /* native drag and drop between rows */
+    onDragStart(index, event) {
+      this.dragFrom = index;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', String(index));
+    },
+    onDrop(index) {
+      if (this.dragFrom !== null) this.move(this.dragFrom, index);
+      this.dragFrom = null;
+      this.dragOver = null;
+    },
+
+    async save() {
+      this.saving = true;
+      try {
+        const order = this.awards.filter((a) => !a.hidden).map((a) => a.gameId);
+        const hidden = this.awards.filter((a) => a.hidden).map((a) => a.gameId);
+        const state = await api('PUT', '/api/shelf', { order, hidden });
+        this.awards = state.awards;
+        this.manual = state.manual;
+        this.dirty = false;
+        Alpine.store('app').toast('Trophy shelf order saved');
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    async followRa() {
+      if (!confirm('Discard the manual arrangement and follow the order from your RetroAchievements profile?')) return;
+      this.saving = true;
+      try {
+        const state = await api('PUT', '/api/shelf', { order: [], hidden: [] });
+        this.awards = state.awards;
+        this.manual = state.manual;
+        this.dirty = false;
+        Alpine.store('app').toast('Shelf now follows RetroAchievements');
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      } finally {
+        this.saving = false;
+      }
     },
   }));
 

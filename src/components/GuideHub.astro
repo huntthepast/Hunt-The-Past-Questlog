@@ -1,0 +1,110 @@
+---
+/**
+ * Per-game guide navigation: every guide of a game grouped by type (Walkthrough, Maps, Items...),
+ * plus its trackers. Shown in the sidebar of each guide/tracker page and on the game page, so a
+ * reader can hop from the walkthrough to the item list to the map gallery without leaving the game.
+ */
+import Icon from './Icon.astro';
+import { trackerProgress, type Game, type Guide, type Tracker } from '../lib/data';
+import { guideType, normalizeGuideType, trackerTypeById } from '../lib/constants.js';
+import { dot } from '../lib/ui';
+
+interface Props {
+  game: Game;
+  guides: Guide[];
+  trackers: Tracker[];
+  currentId?: string;
+  /** "sidebar" = compact card for guide pages, "panel" = roomier version for the game page. */
+  variant?: 'sidebar' | 'panel';
+}
+
+const { game, guides, trackers, currentId, variant = 'sidebar' } = Astro.props;
+
+const groups = [...new Map(guides.map((g) => [normalizeGuideType(g.data.type), guideType(g.data.type)])).values()]
+  .sort((a, b) => a.weight - b.weight || a.label.localeCompare(b.label))
+  .map((type) => ({
+    type,
+    guides: guides
+      .filter((g) => normalizeGuideType(g.data.type) === type.id)
+      .sort((a, b) => a.data.order - b.data.order || a.data.title.localeCompare(b.data.title)),
+  }));
+
+const total = guides.length + trackers.length;
+---
+
+{
+  total > 0 && (
+    <nav class:list={[variant === 'sidebar' ? 'card p-4' : '']} aria-label={`Guides for ${game.data.title}`}>
+      {variant === 'sidebar' && <p class="eyebrow mb-3">Guides for this game</p>}
+      <div class:list={[variant === 'panel' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3' : 'space-y-3']}>
+        {groups.map(({ type, guides: list }) => (
+          <div>
+            <p class="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+              <span class:list={['size-1.5 rounded-full', dot(type.color)]}></span>
+              {type.label}
+            </p>
+            <ul class="space-y-0.5">
+              {list.map((guide) => {
+                const active = guide.id === currentId;
+                return (
+                  <li>
+                    <a
+                      href={`/guides/${guide.id}`}
+                      aria-current={active ? 'page' : undefined}
+                      class:list={[
+                        'flex items-start gap-2 rounded-md px-2 py-1 text-sm transition',
+                        active ? 'bg-zinc-800/80 text-amber-300' : 'text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100',
+                      ]}
+                    >
+                      <Icon name={guide.data.gallery.length ? 'grid' : 'book'} class="mt-0.5 size-3.5 shrink-0 text-zinc-500" />
+                      <span class="min-w-0">
+                        <span class="block leading-snug">{guide.data.title}</span>
+                        {guide.data.version && <span class="text-[11px] text-zinc-500">v{guide.data.version}</span>}
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+
+        {trackers.length > 0 && (
+          <div>
+            <p class="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+              <span class="size-1.5 rounded-full bg-zinc-400"></span>
+              Trackers
+            </p>
+            <ul class="space-y-0.5">
+              {trackers.map((tracker) => {
+                const active = tracker.id === currentId;
+                const progress = trackerProgress(tracker);
+                const type = trackerTypeById(tracker.data.type);
+                return (
+                  <li>
+                    <a
+                      href={`/trackers/${tracker.id}`}
+                      aria-current={active ? 'page' : undefined}
+                      class:list={[
+                        'flex items-start gap-2 rounded-md px-2 py-1 text-sm transition',
+                        active ? 'bg-zinc-800/80 text-amber-300' : 'text-zinc-300 hover:bg-zinc-800/50 hover:text-zinc-100',
+                      ]}
+                    >
+                      <Icon name="checklist" class="mt-0.5 size-3.5 shrink-0 text-zinc-500" />
+                      <span class="min-w-0">
+                        <span class="block leading-snug">{tracker.data.title}</span>
+                        <span class="text-[11px] text-zinc-500">
+                          {type.label} &middot; {progress.done}/{progress.total}
+                        </span>
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+    </nav>
+  )
+}

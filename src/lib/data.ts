@@ -3,6 +3,7 @@ import { marked } from 'marked';
 import platforms from '../data/platforms.json';
 import site from '../data/site.json';
 import raProfileJson from '../data/ra-profile.json';
+import shelfJson from '../data/shelf.json';
 import { STATUSES, statusById } from './constants.js';
 
 export type Game = CollectionEntry<'games'>;
@@ -50,7 +51,12 @@ export type RaAward = {
   title: string;
   consoleName: string;
   imageIcon: string;
+  /** Position from "Reorder Site Awards" on RA; absent in snapshots taken before it was recorded. */
+  displayOrder?: number;
 };
+
+/** Manual trophy-shelf overrides edited in the admin (src/data/shelf.json). Empty = follow RA. */
+export type Shelf = { order: number[]; hidden: number[] };
 
 export type RaRecentlyPlayed = {
   gameId: number;
@@ -94,8 +100,9 @@ export type RaProfile = {
 };
 
 const raProfile = raProfileJson as unknown as RaProfile;
+const shelf = shelfJson as Shelf;
 
-export { site, platforms, raProfile };
+export { site, platforms, raProfile, shelf };
 
 /* ---------- platforms ---------- */
 
@@ -182,6 +189,58 @@ export async function raGameById(raGameId: number | undefined): Promise<RaGame |
 
 export const raSynced = () => Boolean(raProfile.syncedAt);
 
+/** RA profile order: DisplayOrder (set with "Reorder Site Awards" on RA), then the date earned. */
+export const byRaShelfOrder = (a: RaAward, b: RaAward) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0) || a.awardedAt.localeCompare(b.awardedAt);
+
+/** mastered > completed > beaten (hardcore) > beaten (softcore) */
+export function awardRank(a: RaAward): number {
+  if (a.type === 'Mastery/Completion') return a.hardcore ? 4 : 3;
+  if (a.type === 'Game Beaten') return a.hardcore ? 2 : 1;
+  return 0;
+}
+
+export function awardKind(a: RaAward): 'mastered' | 'completed' | 'beaten-hardcore' | 'beaten-softcore' | 'other' {
+  switch (awardRank(a)) {
+    case 4:
+      return 'mastered';
+    case 3:
+      return 'completed';
+    case 2:
+      return 'beaten-hardcore';
+    case 1:
+      return 'beaten-softcore';
+    default:
+      return 'other';
+  }
+}
+
+/**
+ * Game awards for the trophy shelf: one entry per game (its best award), in RA's own order, with the
+ * admin's manual overrides applied on top (games listed in shelf.order come first in that order;
+ * shelf.hidden are dropped).
+ */
+export function shelfAwards(awards: RaAward[] = raProfile.awards, overrides: Shelf = shelf): RaAward[] {
+  const hidden = new Set(overrides.hidden);
+  const position = new Map(overrides.order.map((id, index) => [id, index]));
+  const best = new Map<number, RaAward>();
+  for (const a of awards) {
+    if (a.gameId === null || awardRank(a) === 0) continue;
+    const current = best.get(a.gameId);
+    if (!current || awardRank(a) > awardRank(current)) best.set(a.gameId, a);
+  }
+  return [...best.values()]
+    .filter((a) => !hidden.has(a.gameId as number))
+    .sort(byRaShelfOrder)
+    .sort((a, b) => {
+      const pa = position.get(a.gameId as number);
+      const pb = position.get(b.gameId as number);
+      if (pa !== undefined && pb !== undefined) return pa - pb;
+      if (pa !== undefined) return -1;
+      if (pb !== undefined) return 1;
+      return 0; // stable sort keeps RA order for everything not pinned manually
+    });
+}
+
 /* ---------- formatting ---------- */
 
 const dateFmt = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -210,6 +269,22 @@ export function parseDate(value: string): Date {
 export function formatHours(hours?: number): string {
   if (hours === undefined || hours === null) return '';
   return Number.isInteger(hours) ? `${hours}h` : `${hours.toFixed(1)}h`;
+}
+
+/** RetroAchievements playtime in seconds -> "5h 12m" (or "48m" under an hour). */
+export function formatPlaytime(seconds?: number | null): string {
+  if (!seconds || seconds <= 0) return '';
+  const totalMinutes = Math.round(seconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `${minutes}m`;
+  return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
+}
+
+/** Sum of RA-tracked playtime across every synced game snapshot, in seconds. */
+export async function raTrackedSeconds(): Promise<number> {
+  const all = await getCollection('raGames');
+  return all.reduce((sum, entry) => sum + (entry.data.playtimeSeconds ?? 0), 0);
 }
 
 export const formatNumber = (n: number) => new Intl.NumberFormat('en-US').format(n);

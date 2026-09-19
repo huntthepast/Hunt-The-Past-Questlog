@@ -11,11 +11,12 @@
   "ownership": "owned",
   "favorite": false,
   "status": "mastered",
+  "hoursPlayed": 11.2,
   "finishedAt": "2025-11-10",
   "raGameId": 24453,
   "tags": [
     "homebrew"
   ],
   "addedAt": "2026-09-18T07:05:34.432Z",
-  "updatedAt": "2026-09-18T07:05:34.432Z"
+  "updatedAt": "2026-09-19T07:26:03.304Z"
 }

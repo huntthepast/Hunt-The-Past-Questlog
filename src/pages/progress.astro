@@ -5,9 +5,11 @@ import Badge from '../components/Badge.astro';
 import Cover from '../components/Cover.astro';
 import Rating from '../components/Rating.astro';
 import ProgressBar from '../components/ProgressBar.astro';
+import Pagination from '../components/Pagination.astro';
+import ListCounter from '../components/ListCounter.astro';
 import EmptyState from '../components/EmptyState.astro';
 import Icon from '../components/Icon.astro';
-import { libraryGames, libraryStats, groupByStatus, platformOf, formatDate, formatHours } from '../lib/data';
+import { libraryGames, libraryStats, groupByStatus, platformOf, sortKey, formatDate, formatHours } from '../lib/data';
 import { STATUSES } from '../lib/constants.js';
 import { bar, text } from '../lib/ui';
 
@@ -15,6 +17,36 @@ const games = await libraryGames();
 const stats = libraryStats(games);
 const groups = groupByStatus(games);
 const counts = STATUSES.map((s) => ({ status: s, count: games.filter((g) => g.data.status === s.id).length }));
+const platforms = [...new Set(games.map((g) => g.data.platform))].map(platformOf).sort((a, b) => a.name.localeCompare(b.name));
+
+// Status presets, RetroAchievements-profile style: one click to focus on a slice of the library.
+const PRESETS = [
+  { id: 'all', label: 'All', statuses: STATUSES.map((s) => s.id) },
+  { id: 'progress', label: 'In progress', statuses: ['playing', 'on-hold'] },
+  { id: 'finished', label: 'Finished', statuses: STATUSES.filter((s) => s.done).map((s) => s.id) },
+  { id: 'unfinished', label: 'Unfinished', statuses: ['played', 'dropped'] },
+  { id: 'backlog', label: 'Backlog', statuses: ['unplayed'] },
+];
+
+const PAGE_SIZES = [25, 50, 100, 0];
+
+const filterConfig = {
+  facets: ['platform'],
+  multi: { status: STATUSES.map((s) => s.id) },
+  defaultSort: 'title',
+  pageSize: 50,
+  pageSizes: PAGE_SIZES,
+  storageKey: 'questlog:progress',
+  sorts: {
+    title: { attr: 'sort' },
+    titleDesc: { attr: 'sort', dir: 'desc' },
+    finished: { attr: 'finished', dir: 'desc' },
+    started: { attr: 'started', dir: 'desc' },
+    updated: { attr: 'updated', dir: 'desc' },
+    hours: { attr: 'hours', dir: 'desc', numeric: true },
+    rating: { attr: 'rating', dir: 'desc', numeric: true },
+  },
+};
 ---
 
 <Base title="Progress" description="Where every game in the library stands: playing, beaten, completed, mastered or dropped.">
@@ -24,88 +56,160 @@ const counts = STATUSES.map((s) => ({ status: s, count: games.filter((g) => g.da
     </p>
   </SectionHeading>
 
-  <!-- Stacked completion bar -->
-  <section class="card mb-8 p-4 sm:p-5">
-    <div class="mb-3 flex h-3 w-full overflow-hidden rounded-full bg-zinc-800" role="img" aria-label="Library status breakdown">
-      {
-        counts
-          .filter((c) => c.count > 0)
-          .map((c) => (
-            <div class={bar(c.status.color)} style={`width:${(c.count / Math.max(stats.owned, 1)) * 100}%`} title={`${c.status.label}: ${c.count}`}></div>
-          ))
-      }
-    </div>
-    <ul class="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-      {
-        counts.map((c) => (
-          <li class:list={['flex items-center gap-1.5', c.count === 0 && 'opacity-40']}>
-            <a href={c.count ? `#${c.status.id}` : undefined} class="flex items-center gap-1.5 hover:text-white">
-              <span class:list={['size-2.5 rounded-full', bar(c.status.color)]}></span>
-              <span class="text-zinc-300">{c.status.label}</span>
-              <span class:list={['font-semibold tabular-nums', text(c.status.color)]}>{c.count}</span>
-            </a>
-          </li>
-        ))
-      }
-    </ul>
-  </section>
-
   {
     groups.length === 0 ? (
       <EmptyState title="No games in the library" icon="chart">
         Add games in the admin to start tracking progress.
       </EmptyState>
     ) : (
-      <div class="grid gap-8">
-        {groups.map(({ status, games: list }) => (
-          <section id={status.id} class="scroll-mt-24">
-            <div class="mb-3 flex items-center gap-3">
-              <Badge color={status.color} label={status.label} dot />
-              <span class="text-sm text-zinc-500">
-                {list.length} {list.length === 1 ? 'game' : 'games'}
-              </span>
-              <span class="hidden text-xs text-zinc-600 sm:inline">{status.description}</span>
-            </div>
-            <ul class="card divide-y divide-zinc-800">
-              {list.map((game) => {
-                const d = game.data;
-                const platform = platformOf(d.platform);
-                return (
-                  <li>
-                    <a href={`/games/${game.id}`} class="flex items-center gap-3 p-3 transition hover:bg-zinc-800/50 sm:gap-4">
-                      <span class="block h-16 w-12 shrink-0 overflow-hidden rounded bg-zinc-800">
-                        <Cover src={d.cover} title={d.title} platformShort={platform.short} />
-                      </span>
-                      <span class="min-w-0 flex-1">
-                        <span class="flex items-center gap-2">
-                          <span class="truncate font-medium text-zinc-100">{d.title}</span>
-                          {d.favorite && <Icon name="heart" solid class="size-3.5 shrink-0 text-rose-400" title="Favorite" />}
+      <div x-data={`listFilter(${JSON.stringify(filterConfig)})`} class="scroll-mt-24">
+        <!-- Status breakdown: the bar is informational, the legend chips toggle which statuses are listed. -->
+        <section class="card mb-6 p-4 sm:p-5">
+          <div class="mb-4 flex h-3 w-full overflow-hidden rounded-full bg-zinc-800" role="img" aria-label="Library status breakdown">
+            {counts
+              .filter((c) => c.count > 0)
+              .map((c) => (
+                <div class={bar(c.status.color)} style={`width:${(c.count / Math.max(stats.owned, 1)) * 100}%`} title={`${c.status.label}: ${c.count}`}></div>
+              ))}
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Statuses to show">
+            {counts.map((c) => (
+              <button
+                type="button"
+                class="chip chip-btn ring-zinc-700 bg-zinc-900 text-zinc-300 px-3 py-1 text-sm font-medium transition disabled:opacity-30 disabled:hover:brightness-100"
+                :class={`{ 'opacity-40 grayscale': !has('status', ${JSON.stringify(c.status.id)}) }`}
+                :aria-pressed={`has('status', ${JSON.stringify(c.status.id)}) ? 'true' : 'false'`}
+                @click={`toggle('status', ${JSON.stringify(c.status.id)})`}
+                title={c.status.description}
+                disabled={c.count === 0}
+              >
+                <span class:list={['size-2.5 rounded-full', bar(c.status.color)]}></span>
+                {c.status.label}
+                <span class:list={['ml-0.5 tabular-nums', text(c.status.color)]}>{c.count}</span>
+              </button>
+            ))}
+          </div>
+
+          <div class="mt-3 flex flex-wrap items-center gap-x-1 gap-y-1 text-xs text-zinc-500">
+            <span class="mr-1">Show:</span>
+            {PRESETS.map((preset) => (
+              <button
+                type="button"
+                class="rounded-md px-2 py-1 transition hover:bg-zinc-800 hover:text-zinc-100"
+                :class={`{ 'bg-zinc-800 text-amber-300': is('status', ${JSON.stringify(preset.statuses)}) }`}
+                @click={`set('status', ${JSON.stringify(preset.statuses)})`}
+              >
+                {preset.label}
+              </button>
+            ))}
+            <button type="button" class="rounded-md px-2 py-1 transition hover:bg-zinc-800 hover:text-zinc-100" @click="set('status', [])">None</button>
+          </div>
+        </section>
+
+        <!-- Search / platform / sort / page size -->
+        <div class="card mb-6 p-3">
+          <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <label class="relative flex-1 sm:min-w-56">
+              <span class="sr-only">Search games</span>
+              <Icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+              <input type="search" x-model.debounce.150ms="q" placeholder="Search title or platform..." class="input pl-9" />
+            </label>
+            <select x-model="facet.platform" class="input sm:w-44" aria-label="Platform">
+              <option value="">All platforms</option>
+              {platforms.map((p) => (
+                <option value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <select x-model="sort" class="input sm:w-44" aria-label="Sort by">
+              <option value="title">A-Z</option>
+              <option value="titleDesc">Z-A</option>
+              <option value="finished">Recently finished</option>
+              <option value="started">Recently started</option>
+              <option value="updated">Recently updated</option>
+              <option value="hours">Hours played</option>
+              <option value="rating">Rating</option>
+            </select>
+            <select x-model.number="pageSize" class="input sm:w-32" aria-label="Games per page">
+              {PAGE_SIZES.map((size) => (
+                <option value={size}>{size === 0 ? 'Show all' : `${size} / page`}</option>
+              ))}
+            </select>
+          </div>
+          <ListCounter total={games.length} pageSize={50} noun="games" />
+        </div>
+
+        <!-- One section per status; a section hides itself when none of its rows are on the current page. -->
+        <div class="grid gap-8">
+          {groups.map(({ status, games: list }) => (
+            <section id={status.id} data-group class="scroll-mt-24">
+              <div class="mb-3 flex items-center gap-3">
+                <Badge color={status.color} label={status.label} dot />
+                <span class="text-sm text-zinc-500">
+                  {list.length} {list.length === 1 ? 'game' : 'games'}
+                </span>
+                <span class="hidden text-xs text-zinc-600 sm:inline">{status.description}</span>
+              </div>
+              <ul class="card divide-y divide-zinc-800">
+                {list.map((game) => {
+                  const d = game.data;
+                  const platform = platformOf(d.platform);
+                  return (
+                    <li
+                      data-item
+                      data-search={`${d.title} ${platform.name} ${platform.short}`}
+                      data-sort={sortKey(d.title)}
+                      data-status={d.status}
+                      data-platform={d.platform}
+                      data-finished={d.finishedAt ?? ''}
+                      data-started={d.startedAt ?? ''}
+                      data-updated={d.updatedAt}
+                      data-hours={d.hoursPlayed ?? ''}
+                      data-rating={d.rating ?? ''}
+                    >
+                      <a href={`/games/${game.id}`} class="flex items-center gap-3 p-3 transition hover:bg-zinc-800/50 sm:gap-4">
+                        <span class="block h-16 w-12 shrink-0 overflow-hidden rounded bg-zinc-800">
+                          <Cover src={d.cover} title={d.title} platformShort={platform.short} />
                         </span>
-                        <span class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-zinc-500">
-                          <span>{platform.short}</span>
-                          {d.hoursPlayed !== undefined && (
-                            <span class="inline-flex items-center gap-1">
-                              <Icon name="clock" class="size-3.5" /> {formatHours(d.hoursPlayed)}
-                            </span>
-                          )}
-                          {d.startedAt && (
-                            <span class="inline-flex items-center gap-1">
-                              <Icon name="calendar" class="size-3.5" /> {formatDate(d.startedAt)}
-                              {d.finishedAt && <span> &rarr; {formatDate(d.finishedAt)}</span>}
-                            </span>
-                          )}
+                        <span class="min-w-0 flex-1">
+                          <span class="flex items-center gap-2">
+                            <span class="truncate font-medium text-zinc-100">{d.title}</span>
+                            {d.favorite && <Icon name="heart" solid class="size-3.5 shrink-0 text-rose-400" title="Favorite" />}
+                          </span>
+                          <span class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-zinc-500">
+                            <span>{platform.short}</span>
+                            {d.hoursPlayed !== undefined && (
+                              <span class="inline-flex items-center gap-1">
+                                <Icon name="clock" class="size-3.5" /> {formatHours(d.hoursPlayed)}
+                              </span>
+                            )}
+                            {d.startedAt && (
+                              <span class="inline-flex items-center gap-1">
+                                <Icon name="calendar" class="size-3.5" /> {formatDate(d.startedAt)}
+                                {d.finishedAt && <span> &rarr; {formatDate(d.finishedAt)}</span>}
+                              </span>
+                            )}
+                          </span>
+                          {d.notes && <span class="mt-1 line-clamp-1 text-xs text-zinc-400">{d.notes}</span>}
                         </span>
-                        {d.notes && <span class="mt-1 line-clamp-1 text-xs text-zinc-400">{d.notes}</span>}
-                      </span>
-                      <Rating value={d.rating} class="shrink-0 text-sm" />
-                      <Icon name="chevron-right" class="size-4 shrink-0 text-zinc-600" />
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ))}
+                        <Rating value={d.rating} class="shrink-0 text-sm" />
+                        <Icon name="chevron-right" class="size-4 shrink-0 text-zinc-600" />
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
+
+        <div x-show="visible === 0" x-cloak>
+          <EmptyState title="No games match" icon="filter">
+            Turn a status back on above, or <button type="button" class="text-amber-400 hover:underline" @click="reset()">reset the filters</button>.
+          </EmptyState>
+        </div>
+
+        <Pagination />
       </div>
     )
   }

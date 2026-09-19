@@ -1,4 +1,6 @@
 ---
+import type { HTMLAttributes } from 'astro/types';
+
 /** Inline 24x24 stroke icons (Heroicons-style paths) so the site ships no icon font. */
 const ICONS = {
   search: 'M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z',
@@ -37,14 +39,15 @@ const ICONS = {
 
 export type IconName = keyof typeof ICONS;
 
-interface Props {
+/** Extra attributes (aria-*, Alpine bindings such as :fill) are passed straight to the <svg>. */
+interface Props extends HTMLAttributes<'svg'> {
   name: IconName;
   class?: string;
   solid?: boolean;
   title?: string;
 }
 
-const { name, class: className = 'size-4', solid = false, title } = Astro.props;
+const { name, class: className = 'size-4', solid = false, title, ...rest } = Astro.props;
 const d = ICONS[name];
 ---
 
@@ -59,6 +62,7 @@ const d = ICONS[name];
   class={className}
   aria-hidden={title ? undefined : 'true'}
   role={title ? 'img' : undefined}
+  {...rest}
 >
   {title && <title>{title}</title>}
   <path d={d}></path>

@@ -1,6 +1,6 @@
 ---
 title: "Sonic the Hedgehog - Cheat Codes"
-type: cheats
+type: "Cheats & Codes"
 game: sonic-the-hedgehog
 summary: "Level select, debug mode and the sound test, for the original Genesis release."
 tags: ["genesis", "codes"]

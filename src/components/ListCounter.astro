@@ -1,0 +1,25 @@
+---
+/**
+ * "Showing 1–24 of 77 games" line for a `listFilter` Alpine component. Sits on its own line under
+ * the controls so its changing width never re-wraps them, and renders its initial numbers at
+ * build time so nothing pops in when Alpine boots. Must be inside the component's root.
+ */
+interface Props {
+  total: number;
+  pageSize?: number;
+  noun?: string;
+  class?: string;
+}
+
+const { total, pageSize = 0, noun = 'items', class: className = 'mt-3 border-t border-zinc-800 pt-2.5' } = Astro.props;
+const initialEnd = pageSize ? Math.min(pageSize, total) : total;
+---
+
+<p class:list={['text-xs text-zinc-500', className]}>
+  <span x-show="visible > 0">
+    Showing <span class="font-semibold text-zinc-300" x-text="rangeStart">1</span>&ndash;<span class="font-semibold text-zinc-300" x-text="rangeEnd">{initialEnd}</span> of <span x-text="visible">{total}</span> {noun}
+  </span>
+  <span x-show="visible === 0" x-cloak>No {noun} match</span>
+  <span x-show="active" x-cloak> &middot; filtered from <span x-text="total"></span></span>
+  <button type="button" class="ml-2 text-amber-400 hover:underline" x-show="active" x-cloak @click="reset()">Reset filters</button>
+</p>

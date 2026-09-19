@@ -242,19 +242,19 @@
   {
     "id": "atari-jaguar",
     "name": "Atari Jaguar",
-    "short": "AJ",
+    "short": "Jaguar",
     "raConsoleId": 17
   },
   {
     "id": "magnavox-odyssey-2",
     "name": "Magnavox Odyssey 2",
-    "short": "MO2",
+    "short": "Odyssey 2",
     "raConsoleId": 23
   },
   {
     "id": "pokemon-mini",
     "name": "Pokemon Mini",
-    "short": "PM",
+    "short": "PokeMini",
     "raConsoleId": 24
   },
   {
@@ -266,13 +266,13 @@
   {
     "id": "sg-1000",
     "name": "SG-1000",
-    "short": "SG 1000",
+    "short": "SG-1000",
     "raConsoleId": 33
   },
   {
     "id": "amstrad-cpc",
     "name": "Amstrad CPC",
-    "short": "AC",
+    "short": "CPC",
     "raConsoleId": 37
   },
   {
@@ -284,19 +284,19 @@
   {
     "id": "3do-interactive-multiplayer",
     "name": "3DO Interactive Multiplayer",
-    "short": "3IM",
+    "short": "3DO",
     "raConsoleId": 43
   },
   {
     "id": "colecovision",
     "name": "ColecoVision",
-    "short": "C",
+    "short": "Coleco",
     "raConsoleId": 44
   },
   {
     "id": "intellivision",
     "name": "Intellivision",
-    "short": "I",
+    "short": "INTV",
     "raConsoleId": 45
   },
   {
@@ -308,43 +308,43 @@
   {
     "id": "pc-8000-8800",
     "name": "PC-8000/8800",
-    "short": "P8000880",
+    "short": "PC-88",
     "raConsoleId": 47
   },
   {
     "id": "pc-fx",
     "name": "PC-FX",
-    "short": "PC FX",
+    "short": "PC-FX",
     "raConsoleId": 49
   },
   {
     "id": "atari-7800",
     "name": "Atari 7800",
-    "short": "A7800",
+    "short": "7800",
     "raConsoleId": 51
   },
   {
     "id": "neo-geo-cd",
     "name": "Neo Geo CD",
-    "short": "NGC",
+    "short": "NGCD",
     "raConsoleId": 56
   },
   {
     "id": "fairchild-channel-f",
     "name": "Fairchild Channel F",
-    "short": "FCF",
+    "short": "Channel F",
     "raConsoleId": 57
   },
   {
     "id": "watara-supervision",
     "name": "Watara Supervision",
-    "short": "WS",
+    "short": "Supervision",
     "raConsoleId": 63
   },
   {
     "id": "mega-duck",
     "name": "Mega Duck",
-    "short": "MD",
+    "short": "Mega Duck",
     "raConsoleId": 69
   },
   {
@@ -356,43 +356,43 @@
   {
     "id": "wasm-4",
     "name": "WASM-4",
-    "short": "WASM 4",
+    "short": "WASM-4",
     "raConsoleId": 72
   },
   {
     "id": "arcadia-2001",
     "name": "Arcadia 2001",
-    "short": "A2001",
+    "short": "Arcadia",
     "raConsoleId": 73
   },
   {
     "id": "interton-vc-4000",
     "name": "Interton VC 4000",
-    "short": "IV4000",
+    "short": "VC 4000",
     "raConsoleId": 74
   },
   {
     "id": "elektor-tv-games-computer",
     "name": "Elektor TV Games Computer",
-    "short": "ETGC",
+    "short": "Elektor",
     "raConsoleId": 75
   },
   {
     "id": "pc-engine-cd-turbografx-cd",
     "name": "PC Engine CD/TurboGrafx-CD",
-    "short": "PECTC",
+    "short": "TG-CD",
     "raConsoleId": 76
   },
   {
     "id": "atari-jaguar-cd",
     "name": "Atari Jaguar CD",
-    "short": "AJC",
+    "short": "Jaguar CD",
     "raConsoleId": 77
   },
   {
     "id": "nintendo-dsi",
     "name": "Nintendo DSi",
-    "short": "ND",
+    "short": "DSi",
     "raConsoleId": 78
   },
   {
@@ -410,7 +410,7 @@
   {
     "id": "standalone",
     "name": "Standalone",
-    "short": "S",
+    "short": "PC",
     "raConsoleId": 102
   }
 ]

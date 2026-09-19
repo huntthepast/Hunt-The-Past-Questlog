@@ -334,7 +334,7 @@
                       <span class="block truncate font-medium text-zinc-100" x-text="g.title"></span>
                       <span class="block truncate text-xs text-zinc-500"><span x-text="g.game || 'no game'"></span> &middot; <span x-text="$store.app.fmtDate(g.updatedAt)"></span></span>
                     </span>
-                    <span class="chip shrink-0" :class="$store.app.chip($store.app.guideType(g.type).color)" x-text="$store.app.guideType(g.type).label"></span>
+                    <span class="chip shrink-0 bg-zinc-800 text-zinc-300 ring-zinc-700" x-text="g.type"></span>
                     <span x-show="g.draft" class="chip bg-zinc-800 text-zinc-400 ring-zinc-700">draft</span>
                   </button>
                 </li>
@@ -347,7 +347,7 @@
             <template x-if="!form">
               <div class="card flex h-64 flex-col items-center justify-center gap-2 text-center text-zinc-500">
                 <p class="font-display text-2xl text-zinc-300">Pick a guide or write one</p>
-                <p class="text-sm">Guides are markdown files in <code>src/content/guides/</code>. Walkthroughs, cheat lists, tips, reviews, notes.</p>
+                <p class="text-sm">Guides are markdown files in <code>src/content/guides/</code>. Walkthroughs, maps, item lists, cheats, reviews, notes - any type you like, grouped per game on the site.</p>
                 <button type="button" class="btn btn-accent mt-2" @click="create()">+ New guide</button>
               </div>
             </template>
@@ -370,14 +370,15 @@
                   </div>
                 </div>
 
-                <div class="card grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <label class="field lg:col-span-2"><span class="label">Title *</span><input class="input" x-model="form.title" required /></label>
-                  <label class="field" x-show="isNew"><span class="label">Slug (optional)</span><input class="input font-mono" x-model.trim="form.slug" :placeholder="slugPreview || 'auto'" /></label>
-                  <label class="field">
+                <div class="card grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-6">
+                  <label class="field sm:col-span-2 lg:col-span-3"><span class="label">Title *</span><input class="input" x-model="form.title" required /></label>
+                  <label class="field lg:col-span-2" x-show="isNew"><span class="label">Slug (optional)</span><input class="input font-mono" x-model.trim="form.slug" :placeholder="slugPreview || 'auto'" /></label>
+                  <label class="field lg:col-span-2">
                     <span class="label">Type</span>
-                    <select class="input" x-model="form.type">
-                      <template x-for="t in $store.app.meta.guideTypes" :key="t.id"><option :value="t.id" x-text="t.label"></option></template>
-                    </select>
+                    <input class="input" x-model.trim="form.type" list="guide-type-suggestions" placeholder="Walkthrough, Maps, Items, Persona List..." />
+                    <datalist id="guide-type-suggestions">
+                      <template x-for="t in typeSuggestions" :key="t"><option :value="t"></option></template>
+                    </datalist>
                   </label>
                   <label class="field lg:col-span-2">
                     <span class="label">Game</span>
@@ -386,9 +387,11 @@
                       <template x-for="g in games" :key="g.slug"><option :value="g.slug" x-text="`${g.title} (${$store.app.platform(g.platform).short})`"></option></template>
                     </select>
                   </label>
-                  <label class="field"><span class="label">Tags</span><input class="input" x-model="form.tags" placeholder="comma, separated" /></label>
-                  <label class="flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" class="size-4 accent-amber-400" x-model="form.draft" /> Draft (hidden on site)</label>
-                  <label class="field sm:col-span-2 lg:col-span-4"><span class="label">Summary</span><input class="input" x-model="form.summary" placeholder="One sentence shown in lists" /></label>
+                  <label class="field"><span class="label">Version</span><input class="input" x-model.trim="form.version" placeholder="1.0" /></label>
+                  <label class="field"><span class="label">Order in group</span><input class="input" type="number" x-model="form.order" title="Lower comes first inside its type (e.g. Part 1 = 1, Part 2 = 2)" /></label>
+                  <label class="field lg:col-span-2"><span class="label">Tags</span><input class="input" x-model="form.tags" placeholder="comma, separated" /></label>
+                  <label class="flex items-center gap-2 self-end pb-2 text-sm lg:col-span-1"><input type="checkbox" class="size-4 accent-amber-400" x-model="form.draft" /> Draft</label>
+                  <label class="field sm:col-span-2 lg:col-span-6"><span class="label">Summary</span><input class="input" x-model="form.summary" placeholder="One sentence shown in lists" /></label>
                 </div>
 
                 <div class="card">
@@ -400,12 +403,108 @@
                     <button type="button" class="btn btn-sm" @click="insert('- [ ] ')">Checkbox</button>
                     <button type="button" class="btn btn-sm" @click="insert('| Input | Effect |\n| --- | --- |\n| Up, Down | Something |\n')">Table</button>
                     <button type="button" class="btn btn-sm" @click="insert('> ')">Quote</button>
+                    <span class="mx-1 h-4 w-px bg-zinc-800"></span>
+                    <button type="button" class="btn btn-sm" :class="panel === 'images' && 'btn-accent'" @click="togglePanel('images')" :disabled="isNew" :title="isNew ? 'Save the guide first' : 'Upload maps and images, manage the gallery'">Images &amp; gallery</button>
+                    <button type="button" class="btn btn-sm" :class="panel === 'link' && 'btn-accent'" @click="togglePanel('link')" title="Insert a link to another guide or one of its sections">Link to guide</button>
+                    <button type="button" class="btn btn-sm" :class="panel === 'downloads' && 'btn-accent'" @click="togglePanel('downloads')" title="Files linked from the sidebar (e.g. a zip on a GitHub release)">Downloads</button>
+                    <button type="button" class="btn btn-sm" @click="insertTemplate()" title="Insert the walkthrough skeleton (intro, controls, characters, areas with map + checklist, credits)">Template</button>
                     <span class="ml-auto flex items-center gap-2">
                       <span class="text-zinc-500" x-text="`${(form.body || '').length} chars`"></span>
                       <button type="button" class="btn btn-sm" :class="preview && 'btn-accent'" @click="preview = !preview" x-text="preview ? 'Edit' : 'Preview'"></button>
                     </span>
                   </div>
-                  <textarea x-show="!preview" x-ref="body" class="min-h-[32rem] w-full resize-y bg-transparent p-4 font-mono text-sm leading-relaxed text-zinc-100 focus:outline-none" x-model="form.body" placeholder="Write markdown here. GitHub-flavored: tables, task lists and footnotes all work."></textarea>
+
+                  <!-- images & gallery panel -->
+                  <div x-show="panel === 'images'" x-cloak class="border-b border-zinc-800 bg-zinc-950/40 p-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <div class="text-xs text-zinc-500">
+                        Stored in <code class="text-zinc-300" x-text="`public/guides/${selected}/`"></code> and served at <code class="text-zinc-300" x-text="`/guides/${selected}/...`"></code>. PNG, JPEG, WebP, GIF or SVG, up to 15 MB each.
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <label class="btn btn-sm cursor-pointer">
+                          <input type="file" class="hidden" multiple accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" :disabled="uploading" @change="uploadAttachments($event)" />
+                          <span x-text="uploading ? 'Uploading...' : 'Upload images'"></span>
+                        </label>
+                        <a x-show="attachments.length" :href="`/api/guides/${selected}/gallery.zip`" class="btn btn-sm" download title="Zip of the gallery images (or all images if the gallery is empty) - attach it to a GitHub release and add it under Downloads">Download zip</a>
+                      </div>
+                    </div>
+
+                    <p x-show="!attachments.length" class="mt-3 text-sm text-zinc-500">No images yet. Upload a map, then insert it into the text or add it to the gallery.</p>
+                    <ul x-show="attachments.length" class="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                      <template x-for="f in attachments" :key="f.name">
+                        <li class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 p-2 text-xs">
+                          <img :src="f.url" alt="" class="size-12 shrink-0 rounded bg-zinc-950 object-cover" loading="lazy" />
+                          <span class="min-w-0 flex-1">
+                            <span class="block truncate font-medium text-zinc-200" x-text="f.name" :title="f.name"></span>
+                            <span class="block text-zinc-500" x-text="`${Math.round(f.size / 1024)} KB`"></span>
+                            <span class="mt-1 flex flex-wrap gap-1">
+                              <button type="button" class="btn btn-sm" @click="insertImage(f)" title="Insert into the text at the cursor">Insert</button>
+                              <button type="button" class="btn btn-sm" :disabled="inGallery(f)" @click="addToGallery(f)" x-text="inGallery(f) ? 'In gallery' : '+ Gallery'"></button>
+                              <button type="button" class="btn btn-sm btn-danger" @click="deleteAttachment(f)">Delete</button>
+                            </span>
+                          </span>
+                        </li>
+                      </template>
+                    </ul>
+
+                    <div class="mt-4">
+                      <p class="label">Gallery (shown above the text, with a lightbox)</p>
+                      <p x-show="!form.gallery.length" class="text-sm text-zinc-500">Empty. Use "+ Gallery" on an image above. Good for a set of maps: give each one the area name.</p>
+                      <ol x-show="form.gallery.length" class="space-y-1">
+                        <template x-for="(g, i) in form.gallery" :key="g.src">
+                          <li class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 p-2">
+                            <span class="w-5 text-right font-mono text-xs text-zinc-600" x-text="i + 1"></span>
+                            <img :src="g.src" alt="" class="size-10 shrink-0 rounded bg-zinc-950 object-cover" loading="lazy" />
+                            <input class="input" x-model="g.title" placeholder="Title (e.g. Guardia Forest)" required />
+                            <input class="input" x-model="g.caption" placeholder="Caption (optional)" />
+                            <button type="button" class="btn btn-sm" :disabled="i === 0" @click="move(form.gallery, i, i - 1)">&uarr;</button>
+                            <button type="button" class="btn btn-sm" :disabled="i === form.gallery.length - 1" @click="move(form.gallery, i, i + 1)">&darr;</button>
+                            <button type="button" class="btn btn-sm btn-danger" @click="form.gallery.splice(i, 1)">&times;</button>
+                          </li>
+                        </template>
+                      </ol>
+                    </div>
+                  </div>
+
+                  <!-- link picker -->
+                  <div x-show="panel === 'link'" x-cloak class="border-b border-zinc-800 bg-zinc-950/40 p-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <select class="input sm:w-80" x-model="linkGuide" @change="loadHeadings()">
+                        <option value="">Choose a guide...</option>
+                        <template x-for="g in linkGuides" :key="g.slug"><option :value="g.slug" x-text="`${g.title}${g.game ? ' - ' + g.game : ''}`"></option></template>
+                      </select>
+                      <button type="button" class="btn btn-sm" :disabled="!linkGuide" @click="insertLink()">Link to the guide</button>
+                      <span class="text-xs text-zinc-500">or pick a section:</span>
+                    </div>
+                    <p x-show="linkGuide && !linkHeadings.length" class="mt-2 text-xs text-zinc-500">That guide has no headings yet.</p>
+                    <ul x-show="linkHeadings.length" class="mt-2 flex max-h-40 flex-wrap gap-1 overflow-y-auto">
+                      <template x-for="h in linkHeadings" :key="h.slug">
+                        <li>
+                          <button type="button" class="btn btn-sm" :class="h.depth > 2 && 'opacity-80'" @click="insertLink(h)" :title="'#' + h.slug">
+                            <span x-text="'#'.repeat(h.depth) + ' ' + h.text"></span>
+                          </button>
+                        </li>
+                      </template>
+                    </ul>
+                  </div>
+
+                  <!-- downloads panel -->
+                  <div x-show="panel === 'downloads'" x-cloak class="border-b border-zinc-800 bg-zinc-950/40 p-3">
+                    <p class="text-xs text-zinc-500">Shown as buttons in the guide's sidebar. For big files (a zip of all maps) upload the file to a GitHub release and paste the asset URL here - it is served by GitHub, not Vercel, and stays out of git history.</p>
+                    <div class="mt-2 space-y-1">
+                      <template x-for="(dl, i) in form.downloads" :key="i">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <input class="input sm:w-56" x-model="dl.label" placeholder="Label (e.g. All maps, zip)" required />
+                          <input class="input flex-1" x-model="dl.url" placeholder="https://github.com/.../releases/download/v1/maps.zip" required />
+                          <input class="input sm:w-40" x-model="dl.note" placeholder="Note (12 MB)" />
+                          <button type="button" class="btn btn-sm btn-danger" @click="form.downloads.splice(i, 1)">&times;</button>
+                        </div>
+                      </template>
+                    </div>
+                    <button type="button" class="btn btn-sm mt-2" @click="form.downloads.push({ label: '', url: '', note: '' })">+ Add download</button>
+                  </div>
+
+                  <textarea x-show="!preview" x-ref="body" class="min-h-[32rem] w-full resize-y bg-transparent p-4 font-mono text-sm leading-relaxed text-zinc-100 focus:outline-none" x-model="form.body" placeholder="Write markdown here. GitHub-flavored: tables, task lists and footnotes all work. Use the Template button for the walkthrough skeleton."></textarea>
                   <div x-show="preview" class="preview-prose p-6" x-html="rendered"></div>
                 </div>
               </form>
@@ -563,6 +662,9 @@
                       </p>
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
+                      <label class="flex items-center gap-2 text-sm text-zinc-400" title="Set hours played from RA's tracked playtime. Only ever raises the number, never lowers a value you typed.">
+                        <input type="checkbox" class="size-4 accent-amber-400" x-model="autoHours" /> Update hours played
+                      </label>
                       <label class="flex items-center gap-2 text-sm text-zinc-400" title="Upgrade a game's status to Beaten/Completed/Mastered when RA awards say so. Never downgrades.">
                         <input type="checkbox" class="size-4 accent-amber-400" x-model="autoStatus" /> Auto-upgrade statuses
                       </label>
@@ -657,12 +759,72 @@
                 </template>
               </div>
 
+              <!-- trophy shelf order -->
+              <div class="card p-4" x-show="status.profile.syncedAt" x-data="shelfEditor">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 class="h-display text-xl">Trophy shelf</h2>
+                    <p class="text-sm text-zinc-500">
+                      The badge wall on the Achievements page. By default it mirrors your RetroAchievements profile
+                      (the order from "Reorder Site Awards" on RA). Drag rows, use the arrows, or hide badges to arrange it yourself.
+                    </p>
+                    <p class="mt-1 text-xs" :class="manual ? 'text-amber-300' : 'text-zinc-500'" x-text="manual ? 'Arranged by hand - saved in src/data/shelf.json.' : 'Following RetroAchievements order.'"></p>
+                    <p class="mt-1 text-xs text-rose-300" x-show="!loading && !hasDisplayOrder" x-cloak>
+                      This snapshot is from before profile order was recorded - run a sync to pick up your RA arrangement.
+                    </p>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <input type="search" class="input w-44" placeholder="Filter list..." x-model="filter" />
+                    <button type="button" class="btn" :disabled="saving || !manual" @click="followRa()">Follow RA order</button>
+                    <button type="button" class="btn btn-accent" :disabled="saving || !dirty" @click="save()" x-text="saving ? 'Saving...' : 'Save order'"></button>
+                  </div>
+                </div>
+
+                <p class="mt-3 text-xs text-zinc-500">
+                  <span x-text="visibleCount"></span> shown &middot; <span x-text="awards.length - visibleCount"></span> hidden
+                  <span x-show="dirty" class="ml-2 text-amber-300">&bull; unsaved</span>
+                </p>
+
+                <ol class="mt-2 max-h-[36rem] divide-y divide-zinc-800/80 overflow-y-auto rounded-lg border border-zinc-800">
+                  <template x-for="(a, i) in awards" :key="a.gameId">
+                    <li
+                      x-show="matches(a)"
+                      class="flex items-center gap-3 px-3 py-2 text-sm transition"
+                      :class="{ 'opacity-40': a.hidden, 'bg-amber-400/10': dragOver === i && dragFrom !== i }"
+                      draggable="true"
+                      @dragstart="onDragStart(i, $event)"
+                      @dragover.prevent="dragOver = i"
+                      @dragleave="dragOver === i && (dragOver = null)"
+                      @drop.prevent="onDrop(i)"
+                      @dragend="dragFrom = null; dragOver = null"
+                    >
+                      <span class="w-8 shrink-0 text-right font-mono text-xs text-zinc-600" x-text="i + 1"></span>
+                      <span class="cursor-grab text-zinc-600 select-none" title="Drag to reorder">&#8942;&#8942;</span>
+                      <img :src="a.imageIcon" alt="" class="size-10 shrink-0 rounded bg-zinc-800" loading="lazy" />
+                      <span class="min-w-0 flex-1">
+                        <span class="block truncate font-medium text-zinc-100" x-text="a.title"></span>
+                        <span class="block truncate text-xs text-zinc-500"><span x-text="a.consoleName"></span> &middot; <span x-text="$store.app.fmtDate(a.awardedAt)"></span></span>
+                      </span>
+                      <span class="chip shrink-0" :class="$store.app.chip({ mastered: 'amber', completed: 'violet', 'beaten-hardcore': 'emerald', 'beaten-softcore': 'teal' }[a.kind] || 'zinc')" x-text="a.kind.replace('-', ' ')"></span>
+                      <span class="flex shrink-0 gap-1">
+                        <button type="button" class="btn btn-sm" title="Move to top" :disabled="i === 0" @click="move(i, 0)">&#8676;</button>
+                        <button type="button" class="btn btn-sm" title="Move up" :disabled="i === 0" @click="move(i, i - 1)">&uarr;</button>
+                        <button type="button" class="btn btn-sm" title="Move down" :disabled="i === awards.length - 1" @click="move(i, i + 1)">&darr;</button>
+                        <button type="button" class="btn btn-sm" :class="a.hidden && 'btn-accent'" :title="a.hidden ? 'Show on the shelf' : 'Hide from the shelf'" @click="toggleHidden(i)" x-text="a.hidden ? 'Show' : 'Hide'"></button>
+                      </span>
+                    </li>
+                  </template>
+                </ol>
+                <p x-show="!loading && awards.length === 0" class="p-4 text-center text-sm text-zinc-500">No game awards yet.</p>
+              </div>
+
               <div class="card p-4 text-sm text-zinc-400">
                 <h2 class="h-display mb-2 text-xl">What a sync does</h2>
                 <ul class="list-inside list-disc space-y-1">
                   <li>Writes your profile, rank, points, recent unlocks, per-game completion and awards to <code class="text-zinc-300">src/data/ra-profile.json</code>.</li>
                   <li>For every library game with an RA game id, writes the full achievement list with your unlock dates to <code class="text-zinc-300">src/content/ra-games/&lt;id&gt;.json</code>.</li>
                   <li>Fills in missing cover art, developer, publisher, genre and release year on those games (never overwrites what you typed).</li>
+                  <li>With "Update hours played" on, sets each linked game's hours from RA's tracked playtime (time spent while the emulator was connected to RA). It only raises the number, so hours you logged on real hardware are kept.</li>
                   <li>With "Auto-upgrade statuses" on, moves games to Beaten / Completed / Mastered based on your RA awards.</li>
                 </ul>
               </div>

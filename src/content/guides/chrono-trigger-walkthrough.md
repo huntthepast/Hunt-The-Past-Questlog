@@ -1,64 +1,109 @@
 ---
-title: "Chrono Trigger - Walkthrough (Millennial Fair to the End of Time)"
-type: walkthrough
-game: chrono-trigger
-summary: "A no-nonsense route through the opening act, with every hidden Tab and sealed chest called out along the way."
+title: "Chrono Trigger - Walkthrough"
+type: "Walkthrough"
+game: "chrono-trigger"
+summary: "Part 1: the Millennial Fair to the End of Time, with every hidden Tab and sealed chest called out along the way."
+version: "1.1"
+order: 1
 tags: ["snes", "rpg"]
 draft: false
 createdAt: "2026-06-05T10:00:00.000Z"
-updatedAt: "2026-07-14T18:30:00.000Z"
+updatedAt: "2026-09-19T09:00:00.000Z"
 ---
 
-## Before you start
+## Introduction
 
-A few things worth knowing for the whole game:
+Chrono Trigger is a 1995 SNES RPG about a small band of time travellers trying to stop the world from ending in 1999 AD. This walkthrough covers the opening act up to the End of Time. It is written for a first playthrough: no glitches, no speedrun tricks, every hidden Tab pointed out.
 
-- **Tabs are permanent stat boosts.** Power Tabs (+1 Power), Magic Tabs (+1 Magic) and Speed Tabs (+1 Speed). Speed Tabs are the rarest and the most valuable - hand them all to your fastest attacker.
-- **Sealed chests** (glowing blue) can be "examined but not opened" in 600 AD, opened in 1000 AD for an *upgraded* item, and then opened again in 600 AD for the base item. Do this for every sealed chest you find.
-- Save often. Nothing in the opening act is missable in the "locked out forever" sense, but a couple of Tabs are easy to walk past.
+Each area below follows the same shape: a **map**, a **checklist** of everything worth grabbing (tick them as you go - the ticks are saved in your browser), and the **walkthrough** itself. The full set of maps lives in the [Maps](/guides/chrono-trigger-maps) guide, and every item mentioned is described in the [Items](/guides/chrono-trigger-items) guide.
 
-## 1000 AD - Crono's House and the Millennial Fair
+## Controls
 
-1. Wake up, talk to Mom, grab the **200 G** from the table on the way out.
-2. Head north to **Leene Square**. Bump into Marle and agree to show her around.
-3. Talk to **Melchior** near the top of the fair - he will matter later.
-4. Buy a couple of **Tonics** from the shop before Lucca's demonstration.
-5. Watch Lucca's telepod demo. Marle disappears - follow her through the gate.
+| Button | Action |
+| --- | --- |
+| A | Confirm / talk / open |
+| B | Cancel / run (after Robo joins, hold to dash) |
+| X | Open the menu |
+| Y | Not used |
+| L / R | Scroll menus, hold together for the Arris Dome rat code |
+| Start | Pause |
 
-> Tip: the soda-drinking contest and the cat in the fair feed into the trial later. Being nice here saves you a headache.
+## Characters
 
-## 600 AD - Guardia Forest and the Cathedral
+### Crono
 
-- **Guardia Forest** - there is a **Power Tab** hidden in the bushes on the way south. Search the small clearing on the left side of the lower screen.
-- Enter **Guardia Castle** and talk to the Chancellor. When you are told the Queen is safe, go back to the forest and Lucca will join.
-- Go to the **Cathedral**. Frog joins. Fight through - the Naga-ette enemies drop Tonics, keep a few.
-- Boss: **Yakra.** Nothing special, just heal at 50% and hit hard.
+Silent protagonist and the party's all-rounder. Lightning magic, katanas. Gets **Cyclone** early - use it on every group fight.
 
-## 1000 AD - The Trial
+### Marle
 
-Your dialogue choices at the fair decide how the trial goes. Either way you end up in the prison.
+Ice magic and healing. Frail early on, indispensable once **Aura** and **Cure** show up. Her pendant is the reason you travel at all.
 
-- Break out. In **Guardia Prison** there is a chest with a **Bronze Mail** on the way out.
-- Escape the castle with Marle. Head to the northern **Guardia Forest** and use the gate.
+### Lucca
 
-## 2300 AD - Lab 16 through Proto Dome
+Fire magic and a gun with great range. **Flame Toss** carries the 600 AD segment. Her lore matters later (see the missables tracker).
 
-- **Lab 16** is straightforward. Grab every chest.
-- **Arris Dome**: feed the rat to the... no wait, *chase* the rat to learn the code (hold L + R, then press A). That opens the storage room with the **Seed**.
-- **Sewer Access**: don't examine anything that says not to. Or do, for a fight and a laugh.
-- **Proto Dome**: repair Robo. Robo joins.
+## Part 1: Guardia Forest and the Cathedral (600 AD)
 
-Use the gate at the back of Proto Dome and you arrive at the **End of Time**.
+### Map
 
-## End of Time
+![Guardia Forest (600 AD)](/guides/chrono-trigger-maps/guardia-forest.svg)
 
-- Talk to the old man, then talk to **Spekkio** and beat him to unlock magic for the party.
-- From here the game opens up. Next stop: **65,000,000 BC** or **12,000 BC** depending on your route.
+### Checklist
 
-## Checklist for this section
+- [ ] [Power Tab](/guides/chrono-trigger-items#tabs) - hidden in the bushes in the lower clearing
+- [ ] Recruit Lucca (return to the forest after the castle)
+- [ ] Recruit Frog (inside the Cathedral)
+- [ ] Tonics from the Naga-ette drops - keep at least three for Yakra
 
-- [ ] Power Tab - Guardia Forest (600 AD)
-- [ ] Bronze Mail - Guardia Prison
-- [ ] Seed - Arris Dome
-- [ ] Robo recruited
-- [ ] Magic unlocked at the End of Time
+### Walkthrough
+
+You arrive in the forest right after Marle vanishes through the gate. Head south; in the small clearing on the left side of the lower screen, search the bushes for the **Power Tab** - it is easy to walk straight past.
+
+Go to **Guardia Castle** and talk to the Chancellor. When the guards tell you the Queen is safe and well, that is your cue: go back to the forest, Lucca joins, and the two of you head for the **Cathedral**.
+
+![Cathedral (600 AD)](/guides/chrono-trigger-maps/cathedral.svg)
+
+Inside, talk to the frog-shaped knight to have **Frog** join. Fight your way through; Naga-ettes drop Tonics, keep a few. The boss, **Yakra**, has one dangerous move (Needle Spin). Heal at half HP and just keep hitting - Cyclone plus Flame Toss ends it in a few rounds.
+
+## Part 2: The Trial and the Escape (1000 AD)
+
+### Map
+
+*No map needed - the castle is linear.*
+
+### Checklist
+
+- [ ] Bronze Mail - chest in Guardia Prison on the way out
+- [ ] Ether - chest on the roof, before the fight with the Dragon Tank
+
+### Walkthrough
+
+Back in 1000 AD you are arrested on the spot. How the trial goes depends on what you did at the fair (the cat, the lunch, the old man's bag) but you end up in prison regardless.
+
+Break out, grab the **Bronze Mail**, and work your way to the roof. The **Dragon Tank** is a three-part boss: hit the head first, then the wheels, then the body. Escape north with Marle to the gate in **Guardia Forest**.
+
+## Part 3: The Future (2300 AD)
+
+### Map
+
+*Lab 16 and Arris Dome are small enough to do without one.*
+
+### Checklist
+
+- [ ] Every chest in Lab 16
+- [ ] Seed - Arris Dome storage room (needs the rat's code: hold L + R, press A)
+- [ ] Recruit Robo - Proto Dome
+- [ ] Magic unlocked - Spekkio at the End of Time
+
+### Walkthrough
+
+**Lab 16** is straightforward: grab every chest and push through. In **Arris Dome**, chase the rat instead of fighting it to learn the code, open the storage room and take the **Seed**. In the **Sewer Access** you can examine the things you are told not to examine, if you fancy a fight and a laugh.
+
+**Proto Dome**: repair Robo, who joins. Use the gate at the back to reach the **End of Time**. Talk to the old man, then beat **Spekkio** to unlock magic for the whole party.
+
+From here the game opens up - Part 2 of this walkthrough picks up at 65,000,000 BC.
+
+## Credits & Version History
+
+- **1.1** - Restructured into the map / checklist / walkthrough format, added links to the Items and Maps guides.
+- **1.0** - First version.

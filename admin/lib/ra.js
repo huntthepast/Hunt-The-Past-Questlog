@@ -141,10 +141,15 @@ export function normalizeGameProgress(raw, syncedAt) {
     completionHardcore: pct(raw.UserCompletionHardcore),
     highestAwardKind: raw.HighestAwardKind ?? null,
     highestAwardDate: raw.HighestAwardDate ?? null,
+    // RA's session tracking: total seconds the user spent in the game while connected to RA.
+    playtimeSeconds: num(raw.UserTotalPlaytime),
     syncedAt,
     achievements,
   };
 }
+
+/** RA playtime (seconds) -> hours with one decimal, e.g. 18720 -> 5.2 */
+export const playtimeHours = (seconds) => Math.round((num(seconds) / 3600) * 10) / 10;
 
 const DONE_RANK = { beaten: 1, completed: 2, mastered: 3 };
 
@@ -167,11 +172,103 @@ export function platformForConsole(platforms, consoleId, consoleName) {
   return platforms.find((p) => p.id === wanted) ?? null;
 }
 
-function shortNameFor(name) {
-  const cleaned = name.replace(/[^A-Za-z0-9 ]/g, ' ').trim();
-  if (cleaned.length <= 8) return cleaned;
-  const initials = cleaned.split(/\s+/).map((w) => (/^\d+$/.test(w) ? w : w[0])).join('');
-  return initials.toUpperCase().slice(0, 8);
+/** Short labels for RetroAchievements system names (the ones shown on game cards). */
+export const RA_SHORT_NAMES = {
+  'mega drive': 'Genesis',
+  'nintendo 64': 'N64',
+  'snes/super famicom': 'SNES',
+  'game boy': 'GB',
+  'game boy advance': 'GBA',
+  'game boy color': 'GBC',
+  'nes/famicom': 'NES',
+  'pc engine/turbografx-16': 'TG16',
+  'sega cd': 'Sega CD',
+  '32x': '32X',
+  'master system': 'SMS',
+  playstation: 'PS1',
+  'atari lynx': 'Lynx',
+  'neo geo pocket': 'NGP',
+  'game gear': 'GG',
+  gamecube: 'GCN',
+  'atari jaguar': 'Jaguar',
+  'nintendo ds': 'DS',
+  wii: 'Wii',
+  'wii u': 'Wii U',
+  'playstation 2': 'PS2',
+  xbox: 'Xbox',
+  'magnavox odyssey 2': 'Odyssey 2',
+  'pokemon mini': 'PokeMini',
+  'atari 2600': '2600',
+  dos: 'DOS',
+  arcade: 'Arcade',
+  'virtual boy': 'VB',
+  msx: 'MSX',
+  'commodore 64': 'C64',
+  zx81: 'ZX81',
+  oric: 'Oric',
+  'sg-1000': 'SG-1000',
+  'vic-20': 'VIC-20',
+  amiga: 'Amiga',
+  'atari st': 'Atari ST',
+  'amstrad cpc': 'CPC',
+  'apple ii': 'Apple II',
+  saturn: 'Saturn',
+  dreamcast: 'DC',
+  'playstation portable': 'PSP',
+  'philips cd-i': 'CD-i',
+  '3do interactive multiplayer': '3DO',
+  colecovision: 'Coleco',
+  intellivision: 'INTV',
+  vectrex: 'Vectrex',
+  'pc-8000/8800': 'PC-88',
+  'pc-9800': 'PC-98',
+  'pc-fx': 'PC-FX',
+  'atari 5200': '5200',
+  'atari 7800': '7800',
+  x68k: 'X68000',
+  wonderswan: 'WS',
+  'cassette vision': 'Cassette',
+  'super cassette vision': 'Super CV',
+  'neo geo cd': 'NGCD',
+  'fairchild channel f': 'Channel F',
+  'fm towns': 'FM Towns',
+  'zx spectrum': 'Spectrum',
+  'game & watch': 'G&W',
+  'nokia n-gage': 'N-Gage',
+  'nintendo 3ds': '3DS',
+  'watara supervision': 'Supervision',
+  'sharp x1': 'X1',
+  'tic-80': 'TIC-80',
+  'thomson to8': 'TO8',
+  'pc-6000': 'PC-60',
+  'sega pico': 'Pico',
+  'mega duck': 'Mega Duck',
+  zeebo: 'Zeebo',
+  arduboy: 'Arduboy',
+  'wasm-4': 'WASM-4',
+  'arcadia 2001': 'Arcadia',
+  'interton vc 4000': 'VC 4000',
+  'elektor tv games computer': 'Elektor',
+  'pc engine cd/turbografx-cd': 'TG-CD',
+  'atari jaguar cd': 'Jaguar CD',
+  'nintendo dsi': 'DSi',
+  'ti-83': 'TI-83',
+  uzebox: 'Uzebox',
+  'famicom disk system': 'FDS',
+  // RA files console-less games (Terraria, indie titles...) under "Standalone"; nearly all are PC games.
+  standalone: 'PC',
+};
+
+export function shortNameFor(name) {
+  const known = RA_SHORT_NAMES[String(name ?? '').trim().toLowerCase()];
+  if (known) return known;
+  const cleaned = String(name ?? '').replace(/[^A-Za-z0-9 /-]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (cleaned.length <= 10) return cleaned;
+  const words = cleaned.split(' ');
+  // Single long word: keep a readable prefix rather than a lone initial.
+  if (words.length === 1) return cleaned.slice(0, 10);
+  const initials = words.map((w) => (/^\d+$/.test(w) ? w : w[0].toUpperCase())).join('');
+  return initials.length >= 2 ? initials.slice(0, 8) : cleaned.slice(0, 10);
 }
 
 /** Adds a platform for an RA console if none exists yet. Returns the (possibly new) platform. */
@@ -216,7 +313,7 @@ function log(message) {
  *  2. recent unlocks, completion, awards     -> src/data/ra-profile.json
  *  3. every library game with a raGameId     -> src/content/ra-games/<id>.json (+ enrich the game entry)
  */
-export function startSync({ autoStatus = false } = {}) {
+export function startSync({ autoStatus = false, autoHours = true } = {}) {
   if (job.running) throw new HttpError(409, 'A sync is already running');
   const { username, apiKey } = raConfig();
   const client = new RaClient({ username, apiKey });
@@ -278,8 +375,11 @@ export function startSync({ autoStatus = false } = {}) {
           title: String(a.Title ?? ''),
           consoleName: String(a.ConsoleName ?? ''),
           imageIcon: raImage(a.ImageIcon),
+          // Position from "Reorder Site Awards" on retroachievements.org (0 = never reordered).
+          displayOrder: num(a.DisplayOrder),
         }))
-        .sort((a, b) => String(b.awardedAt).localeCompare(String(a.awardedAt)));
+        // Same order as the RA profile page: DisplayOrder, then the date the award was earned.
+        .sort((a, b) => a.displayOrder - b.displayOrder || String(a.awardedAt).localeCompare(String(b.awardedAt)));
       log(`${awards.length} game awards (${awardsRaw.MasteryAwardsCount ?? 0} masteries).`);
 
       const awarded = summary.Awarded ?? {};
@@ -335,6 +435,7 @@ export function startSync({ autoStatus = false } = {}) {
       log(`Fetching achievements for ${games.length} linked games...`);
       let enriched = 0;
       let statusChanges = 0;
+      let hourUpdates = 0;
       for (const game of games) {
         try {
           const raw = await client.getGameInfoAndUserProgress(game.raGameId);
@@ -355,11 +456,25 @@ export function startSync({ autoStatus = false } = {}) {
               statusChanges++;
             }
           }
+          if (autoHours && snapshot.playtimeSeconds > 0) {
+            // RA only counts sessions played while connected, so it may only ever raise the number,
+            // never lower a value you typed yourself (e.g. hours on real hardware).
+            const hours = playtimeHours(snapshot.playtimeSeconds);
+            if (hours > (game.hoursPlayed ?? 0)) {
+              patch.hoursPlayed = hours;
+              hourUpdates++;
+            }
+          }
           if (Object.keys(patch).length > 0) {
             await store.saveGame(game.slug, { ...game, ...patch, updatedAt: syncedAt });
             enriched++;
           }
-          log(`  ${snapshot.title}: ${snapshot.numAwarded}/${snapshot.numAchievements}${patch.status ? ` -> status ${patch.status}` : ''}`);
+          const extras = [
+            snapshot.playtimeSeconds > 0 ? `${playtimeHours(snapshot.playtimeSeconds)}h tracked` : '',
+            patch.hoursPlayed ? `hours -> ${patch.hoursPlayed}` : '',
+            patch.status ? `status -> ${patch.status}` : '',
+          ].filter(Boolean);
+          log(`  ${snapshot.title}: ${snapshot.numAwarded}/${snapshot.numAchievements}${extras.length ? ` (${extras.join(', ')})` : ''}`);
         } catch (err) {
           log(`  ${game.title}: FAILED (${err.message})`);
         }
@@ -375,8 +490,8 @@ export function startSync({ autoStatus = false } = {}) {
         }
       }
 
-      job.summary = { games: games.length, enriched, statusChanges, points: profile.points, recent: recentAchievements.length, completion: completion.length };
-      log(`Done. ${enriched} game entries enriched, ${statusChanges} status changes.`);
+      job.summary = { games: games.length, enriched, statusChanges, hourUpdates, points: profile.points, recent: recentAchievements.length, completion: completion.length };
+      log(`Done. ${enriched} game entries enriched, ${hourUpdates} hours-played updates, ${statusChanges} status changes.`);
     } catch (err) {
       job.error = err.message;
       log(`ERROR: ${err.message}`);

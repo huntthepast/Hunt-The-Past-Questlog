@@ -6,7 +6,8 @@ import Icon from '../../components/Icon.astro';
 import Cover from '../../components/Cover.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
 import ProgressBar from '../../components/ProgressBar.astro';
-import { allTrackers, allGuides, guidesForGame, trackerProgress, platformOf, formatDate, site } from '../../lib/data';
+import GuideHub from '../../components/GuideHub.astro';
+import { allTrackers, allGuides, guidesForGame, trackersForGame, trackerProgress, platformOf, formatDate, site } from '../../lib/data';
 import { trackerTypeById } from '../../lib/constants.js';
 
 export async function getStaticPaths() {
@@ -20,6 +21,7 @@ const type = trackerTypeById(d.type);
 const game = d.game ? await getEntry(d.game) : undefined;
 const platform = game ? platformOf(game.data.platform) : undefined;
 const relatedGuides = game ? guidesForGame(await allGuides(), game.id) : [];
+const relatedTrackers = game ? trackersForGame(await allTrackers(), game.id) : [];
 const progress = trackerProgress(tracker);
 ---
 
@@ -87,78 +89,80 @@ const progress = trackerProgress(tracker);
       </p>
     </section>
 
-    <!-- Sections -->
-    <div class="grid gap-6">
-      {
-        d.sections.map((section, sIndex) => (
-          <section class="card overflow-hidden">
-            <h2 class="border-b border-zinc-800 bg-zinc-900/80 px-4 py-3 font-display text-xl text-zinc-100">
-              <span class="mr-2 text-zinc-600">{String(sIndex + 1).padStart(2, '0')}</span>
-              {section.title}
-            </h2>
-            <ul class="divide-y divide-zinc-800/80">
-              {section.items.map((item) => (
-                <li>
-                  <label
-                    class="flex cursor-default items-start gap-3 px-4 py-3 transition"
-                    :class="mode === 'mine' ? 'cursor-pointer hover:bg-zinc-800/40' : ''"
-                  >
-                    <span class="relative mt-0.5 shrink-0">
-                      <input
-                        type="checkbox"
-                        class="peer size-5 rounded border-zinc-600 bg-zinc-950 accent-amber-400 disabled:cursor-default"
-                        :checked={`isDone(${JSON.stringify(item.id)}, ${item.done})`}
-                        :disabled="mode === 'owner'"
-                        checked={item.done}
-                        disabled
-                        @change={`toggle(${JSON.stringify(item.id)})`}
-                        aria-label={item.label}
-                      />
-                    </span>
-                    <span class="min-w-0 flex-1">
-                      <span
-                        class="block font-medium text-zinc-100 transition"
-                        :class={`{ 'text-zinc-500 line-through': isDone(${JSON.stringify(item.id)}, ${item.done}) }`}
-                        class:list={[item.done && 'text-zinc-500 line-through']}
+    <div class="grid gap-10 lg:grid-cols-[1fr_280px]">
+      <div class="min-w-0">
+        <!-- Sections -->
+        <div class="grid gap-6">
+          {
+            d.sections.map((section, sIndex) => (
+              <section class="card overflow-hidden">
+                <h2 class="border-b border-zinc-800 bg-zinc-900/80 px-4 py-3 font-display text-xl text-zinc-100">
+                  <span class="mr-2 text-zinc-600">{String(sIndex + 1).padStart(2, '0')}</span>
+                  {section.title}
+                </h2>
+                <ul class="divide-y divide-zinc-800/80">
+                  {section.items.map((item) => (
+                    <li>
+                      <label
+                        class="flex cursor-default items-start gap-3 px-4 py-3 transition"
+                        :class="mode === 'mine' ? 'cursor-pointer hover:bg-zinc-800/40' : ''"
                       >
-                        {item.label}
-                      </span>
-                      {item.note && <span class="mt-0.5 block text-sm text-zinc-400">{item.note}</span>}
-                    </span>
-                    <span x-show={`isDone(${JSON.stringify(item.id)}, ${item.done})`} class="mt-1 shrink-0 text-emerald-400">
-                      <Icon name="check-circle" class="size-4" />
-                    </span>
-                  </label>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))
-      }
-    </div>
+                        <span class="relative mt-0.5 shrink-0">
+                          <input
+                            type="checkbox"
+                            class="peer size-5 rounded border-zinc-600 bg-zinc-950 accent-amber-400 disabled:cursor-default"
+                            :checked={`isDone(${JSON.stringify(item.id)}, ${item.done})`}
+                            :disabled="mode === 'owner'"
+                            checked={item.done}
+                            disabled
+                            @change={`toggle(${JSON.stringify(item.id)})`}
+                            aria-label={item.label}
+                          />
+                        </span>
+                        <span class="min-w-0 flex-1">
+                          <span
+                            class="block font-medium text-zinc-100 transition"
+                            :class={`{ 'text-zinc-500 line-through': isDone(${JSON.stringify(item.id)}, ${item.done}) }`}
+                            class:list={[item.done && 'text-zinc-500 line-through']}
+                          >
+                            {item.label}
+                          </span>
+                          {item.note && <span class="mt-0.5 block text-sm text-zinc-400">{item.note}</span>}
+                        </span>
+                        <span x-show={`isDone(${JSON.stringify(item.id)}, ${item.done})`} class="mt-1 shrink-0 text-emerald-400">
+                          <Icon name="check-circle" class="size-4" />
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))
+          }
+        </div>
 
-    <footer class="mt-8 flex flex-wrap items-center justify-between gap-4 text-xs text-zinc-500">
-      <span>Updated {formatDate(d.updatedAt)}</span>
-      {
-        (game || relatedGuides.length > 0) && (
-          <div class="flex flex-wrap items-center gap-3">
-            {game && platform && (
-              <a href={`/games/${game.id}`} class="inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 p-1.5 pr-3 hover:border-zinc-600">
-                <span class="block h-10 w-8 overflow-hidden rounded bg-zinc-800">
-                  <Cover src={game.data.cover} title={game.data.title} platformShort={platform.short} />
+        <p class="mt-8 text-xs text-zinc-500">Updated {formatDate(d.updatedAt)}</p>
+      </div>
+
+      <aside class="space-y-6 lg:sticky lg:top-24 lg:self-start">
+        {
+          game && platform && (
+            <a href={`/games/${game.id}`} class="card card-hover flex items-center gap-3 p-3">
+              <span class="block h-16 w-12 shrink-0 overflow-hidden rounded bg-zinc-800">
+                <Cover src={game.data.cover} title={game.data.title} platformShort={platform.short} />
+              </span>
+              <span class="min-w-0">
+                <span class="eyebrow block text-[10px]">Game</span>
+                <span class="block truncate font-medium text-zinc-100">{game.data.title}</span>
+                <span class="mt-1 block">
+                  <StatusBadge status={game.data.status} short />
                 </span>
-                <span class="text-zinc-300">{game.data.title}</span>
-                <StatusBadge status={game.data.status} short />
-              </a>
-            )}
-            {relatedGuides.map((g) => (
-              <a href={`/guides/${g.id}`} class="inline-flex items-center gap-1 text-zinc-300 hover:text-amber-300">
-                <Icon name="book" class="size-4" /> {g.data.title}
-              </a>
-            ))}
-          </div>
-        )
-      }
-    </footer>
+              </span>
+            </a>
+          )
+        }
+        {game && <GuideHub game={game} guides={relatedGuides} trackers={relatedTrackers} currentId={tracker.id} />}
+      </aside>
+    </div>
   </div>
 </Base>

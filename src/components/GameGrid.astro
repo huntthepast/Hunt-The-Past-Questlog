@@ -1,6 +1,8 @@
 ---
 import GameCard from './GameCard.astro';
 import Icon from './Icon.astro';
+import Pagination from './Pagination.astro';
+import ListCounter from './ListCounter.astro';
 import EmptyState from './EmptyState.astro';
 import { platformOf, type Game } from '../lib/data';
 import { STATUSES } from '../lib/constants.js';
@@ -18,12 +20,18 @@ const { games, showStatus = true, showFavorite = true, emptyTitle = 'Nothing her
 const platforms = [...new Set(games.map((g) => g.data.platform))].map(platformOf).sort((a, b) => a.name.localeCompare(b.name));
 const statuses = STATUSES.filter((s) => games.some((g) => g.data.status === s.id));
 
+const PAGE_SIZES = [12, 24, 36, 48];
+
 const filterConfig = {
   facets: ['platform', 'status'],
   flags: ['favorite'],
   defaultSort: 'title',
+  pageSize: 24,
+  pageSizes: PAGE_SIZES,
+  storageKey: 'questlog:library',
   sorts: {
     title: { attr: 'sort' },
+    titleDesc: { attr: 'sort', dir: 'desc' },
     recent: { attr: 'updated', dir: 'desc' },
     finished: { attr: 'finished', dir: 'desc' },
     rating: { attr: 'rating', dir: 'desc', numeric: true },
@@ -40,60 +48,65 @@ const filterConfig = {
       {emptyText}
     </EmptyState>
   ) : (
-    <div x-data={`listFilter(${JSON.stringify(filterConfig)})`}>
-      <div class="card mb-6 flex flex-col gap-3 p-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <label class="relative flex-1 sm:min-w-56">
-          <span class="sr-only">Search games</span>
-          <Icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
-          <input type="search" x-model.debounce.150ms="q" placeholder="Search title, platform, genre..." class="input pl-9" />
-        </label>
+    <div x-data={`listFilter(${JSON.stringify(filterConfig)})`} class="scroll-mt-24">
+      <div class="card mb-6 p-3">
+        <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <label class="relative flex-1 sm:min-w-56">
+            <span class="sr-only">Search games</span>
+            <Icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+            <input type="search" x-model.debounce.150ms="q" placeholder="Search title, platform, genre..." class="input pl-9" />
+          </label>
 
-        <label class="flex items-center gap-2 text-sm text-zinc-400">
-          <span class="sr-only">Platform</span>
-          <select x-model="facet.platform" class="input sm:w-44">
+          <select x-model="facet.platform" class="input sm:w-44" aria-label="Platform">
             <option value="">All platforms</option>
             {platforms.map((p) => (
               <option value={p.id}>{p.name}</option>
             ))}
           </select>
-        </label>
 
-        {showStatus && (
-          <label class="flex items-center gap-2 text-sm text-zinc-400">
-            <span class="sr-only">Status</span>
-            <select x-model="facet.status" class="input sm:w-40">
+          {showStatus && (
+            <select x-model="facet.status" class="input sm:w-40" aria-label="Status">
               <option value="">Any status</option>
               {statuses.map((s) => (
                 <option value={s.id}>{s.label}</option>
               ))}
             </select>
-          </label>
-        )}
+          )}
 
-        <label class="flex items-center gap-2 text-sm text-zinc-400">
-          <span class="sr-only">Sort</span>
-          <select x-model="sort" class="input sm:w-44">
-            <option value="title">Sort: Title</option>
-            <option value="recent">Sort: Recently updated</option>
-            <option value="finished">Sort: Recently finished</option>
-            <option value="rating">Sort: Rating</option>
-            <option value="hours">Sort: Hours played</option>
-            <option value="year">Sort: Release year</option>
-            <option value="status">Sort: Status</option>
+          <select x-model="sort" class="input sm:w-40" aria-label="Sort by">
+            <option value="title">A-Z</option>
+            <option value="titleDesc">Z-A</option>
+            <option value="recent">Recently updated</option>
+            <option value="finished">Recently finished</option>
+            <option value="rating">Rating</option>
+            <option value="hours">Hours played</option>
+            <option value="year">Release year</option>
+            <option value="status">Status</option>
           </select>
-        </label>
 
-        {showFavorite && (
-          <label class="inline-flex cursor-pointer items-center gap-2 text-sm text-zinc-400 select-none">
-            <input type="checkbox" x-model="flag.favorite" class="size-4 rounded border-zinc-700 bg-zinc-950 accent-amber-400" />
-            <Icon name="heart" class="size-4 text-rose-400" /> Favorites
-          </label>
-        )}
+          <select x-model.number="pageSize" class="input sm:w-28" aria-label="Games per page">
+            {PAGE_SIZES.map((size) => (
+              <option value={size}>{size} / page</option>
+            ))}
+          </select>
 
-        <p class="text-xs text-zinc-500 sm:ml-auto" x-cloak>
-          Showing <span class="font-semibold text-zinc-300" x-text="visible"></span> of <span x-text="total"></span>
-          <button type="button" class="ml-2 text-amber-400 hover:underline" x-show="active" @click="reset()">Reset</button>
-        </p>
+          {showFavorite && (
+            <button
+              type="button"
+              role="switch"
+              :aria-checked="flag.favorite ? 'true' : 'false'"
+              @click="flag.favorite = !flag.favorite"
+              class="btn select-none"
+              :class="flag.favorite ? 'border-rose-400/60 bg-rose-500/10 text-rose-300 hover:border-rose-300 hover:text-rose-200' : ''"
+              title="Show favorites only"
+            >
+              <Icon name="heart" class="size-4 text-rose-400 transition" :fill="flag.favorite ? 'currentColor' : 'none'" />
+              Favorites
+            </button>
+          )}
+        </div>
+
+        <ListCounter total={games.length} pageSize={24} noun="games" />
       </div>
 
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -107,6 +120,8 @@ const filterConfig = {
           Try a different search or <button type="button" class="text-amber-400 hover:underline" @click="reset()">reset the filters</button>.
         </EmptyState>
       </div>
+
+      <Pagination />
     </div>
   )
 }

@@ -6,8 +6,7 @@ import Badge from '../../components/Badge.astro';
 import Rating from '../../components/Rating.astro';
 import Icon from '../../components/Icon.astro';
 import ProgressBar from '../../components/ProgressBar.astro';
-import GuideCard from '../../components/GuideCard.astro';
-import TrackerCard from '../../components/TrackerCard.astro';
+import GuideHub from '../../components/GuideHub.astro';
 import {
   allGames,
   allGuides,
@@ -19,6 +18,7 @@ import {
   formatDate,
   formatDateTime,
   formatHours,
+  formatPlaytime,
   renderMarkdown,
 } from '../../lib/data';
 import { statusById, RA_SITE } from '../../lib/constants.js';
@@ -110,7 +110,7 @@ const description = d.review?.slice(0, 160) || `${d.title} on ${platform.name}: 
           )
         }
       </div>
-      <h1 class="h-display text-4xl sm:text-5xl">{d.title}</h1>
+      <h1 class="text-3xl font-bold leading-tight tracking-tight text-zinc-50 sm:text-4xl">{d.title}</h1>
       <p class="mt-2 text-zinc-400">
         {platform.name}{d.releaseYear && <span> &middot; {d.releaseYear}</span>}
       </p>
@@ -188,7 +188,14 @@ const description = d.review?.slice(0, 160) || `${d.title} on ${platform.name}: 
                 )}
               </div>
               <ProgressBar value={raPct} color={raPct === 100 ? 'amber' : 'emerald'} label="Achievement progress" />
-              <p class="mt-2 text-xs text-zinc-500">Synced {formatDateTime(ra.data.syncedAt)}</p>
+              <p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
+                {ra.data.playtimeSeconds > 0 && (
+                  <span class="inline-flex items-center gap-1" title="Time spent in this game while the emulator was connected to RetroAchievements">
+                    <Icon name="clock" class="size-3.5" /> {formatPlaytime(ra.data.playtimeSeconds)} tracked by RA
+                  </span>
+                )}
+                <span>Synced {formatDateTime(ra.data.syncedAt)}</span>
+              </p>
             </div>
 
             <ul class="mt-4 grid gap-2 sm:grid-cols-2">
@@ -239,13 +246,8 @@ const description = d.review?.slice(0, 160) || `${d.title} on ${platform.name}: 
         (guides.length > 0 || trackers.length > 0) && (
           <section class="mt-10">
             <h2 class="h-display mb-3 text-2xl">Guides & Trackers</h2>
-            <div class="grid gap-4 sm:grid-cols-2">
-              {guides.map((guide) => (
-                <GuideCard guide={guide} />
-              ))}
-              {trackers.map((tracker) => (
-                <TrackerCard tracker={tracker} />
-              ))}
+            <div class="card p-4">
+              <GuideHub game={game} guides={guides} trackers={trackers} variant="panel" />
             </div>
           </section>
         )

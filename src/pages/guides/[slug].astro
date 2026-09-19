@@ -5,8 +5,10 @@ import Badge from '../../components/Badge.astro';
 import Icon from '../../components/Icon.astro';
 import Cover from '../../components/Cover.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
-import { allGuides, allTrackers, trackersForGame, platformOf, formatDate } from '../../lib/data';
-import { guideTypeById } from '../../lib/constants.js';
+import GuideHub from '../../components/GuideHub.astro';
+import Lightbox from '../../components/Lightbox.astro';
+import { allGuides, allTrackers, guidesForGame, trackersForGame, platformOf, formatDate } from '../../lib/data';
+import { guideType } from '../../lib/constants.js';
 
 export async function getStaticPaths() {
   const guides = await allGuides();
@@ -15,24 +17,35 @@ export async function getStaticPaths() {
 
 const { guide } = Astro.props;
 const d = guide.data;
-const type = guideTypeById(d.type);
+const type = guideType(d.type);
 const game = d.game ? await getEntry(d.game) : undefined;
 const platform = game ? platformOf(game.data.platform) : undefined;
-const relatedTrackers = game ? trackersForGame(await allTrackers(), game.id) : [];
-const otherGuides = game ? (await allGuides()).filter((g) => g.data.game?.id === game.id && g.id !== guide.id) : [];
+const gameGuides = game ? guidesForGame(await allGuides(), game.id) : [];
+const gameTrackers = game ? trackersForGame(await allTrackers(), game.id) : [];
 
 const { Content, headings } = await render(guide);
 const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const gallery = d.gallery;
+const ogImage = gallery[0]?.src ?? game?.data.cover;
 ---
 
-<Base title={d.title} description={d.summary ?? `${type.label} for ${game?.data.title ?? 'the collection'}.`} image={game?.data.cover}>
-  <nav class="mb-6 text-sm text-zinc-500" aria-label="Breadcrumb">
+<Base title={d.title} description={d.summary ?? `${type.label} for ${game?.data.title ?? 'the collection'}.`} image={ogImage}>
+  <nav class="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-500" aria-label="Breadcrumb">
     <a href="/guides" class="inline-flex items-center gap-1 hover:text-amber-300"><Icon name="arrow-left" class="size-4" /> Guides</a>
+    {
+      game && (
+        <>
+          <span class="text-zinc-700">/</span>
+          <a href={`/games/${game.id}`} class="hover:text-amber-300">{game.data.title}</a>
+        </>
+      )
+    }
   </nav>
 
   <header class="mb-8">
     <div class="mb-3 flex flex-wrap items-center gap-2">
       <Badge color={type.color} label={type.label} />
+      {d.version && <span class="chip bg-zinc-800 text-zinc-300 ring-zinc-700">v{d.version}</span>}
       {d.tags.map((tag) => <span class="chip bg-zinc-800 text-zinc-300 ring-zinc-700">{tag}</span>)}
     </div>
     <h1 class="h-display text-4xl sm:text-5xl">{d.title}</h1>
@@ -43,10 +56,49 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
     </p>
   </header>
 
-  <div class="grid gap-10 lg:grid-cols-[1fr_260px]">
-    <article class="guide-prose min-w-0">
-      <Content />
-    </article>
+  <div class="grid gap-10 lg:grid-cols-[1fr_280px]" x-data="lightbox">
+    <div class="min-w-0">
+      {
+        gallery.length > 0 && (
+          <section class="mb-10" aria-label="Gallery">
+            <ul class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {gallery.map((image) => (
+                <li>
+                  <a
+                    href={image.src}
+                    data-lightbox={image.src}
+                    data-title={image.title}
+                    data-caption={image.caption ?? ''}
+                    class="card card-hover group block overflow-hidden"
+                    title={image.caption ? `${image.title} - ${image.caption}` : image.title}
+                  >
+                    <span class="block aspect-[4/3] overflow-hidden bg-zinc-950">
+                      <img src={image.src} alt={image.title} loading="lazy" decoding="async" class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
+                    </span>
+                    <span class="block px-3 py-2">
+                      <span class="block truncate text-sm font-medium text-zinc-100">{image.title}</span>
+                      {image.caption && <span class="block truncate text-xs text-zinc-500">{image.caption}</span>}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <p class="mt-2 text-xs text-zinc-500">{gallery.length} {gallery.length === 1 ? 'image' : 'images'} &middot; click to enlarge</p>
+          </section>
+        )
+      }
+
+      <div x-data={`guideChecklist(${JSON.stringify(guide.id)})`}>
+        <div x-show="total > 0" x-cloak class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-400">
+          <Icon name="checklist" class="size-4 text-amber-400" />
+          <span>Checklist: <span class="font-semibold text-zinc-200" x-text="done"></span> / <span x-text="total"></span> ticked &middot; saved in this browser only</span>
+          <button type="button" class="ml-auto text-amber-400 hover:underline" @click="reset()">Reset ticks</button>
+        </div>
+        <article class="guide-prose">
+          <Content />
+        </article>
+      </div>
+    </div>
 
     <aside class="space-y-6 lg:sticky lg:top-24 lg:self-start">
       {
@@ -66,11 +118,13 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
         )
       }
 
+      {game && <GuideHub game={game} guides={gameGuides} trackers={gameTrackers} currentId={guide.id} />}
+
       {
         toc.length > 1 && (
           <nav class="card p-4" aria-label="Table of contents">
             <p class="eyebrow mb-2">On this page</p>
-            <ol class="space-y-1 text-sm">
+            <ol class="max-h-[50vh] space-y-1 overflow-y-auto text-sm">
               {toc.map((h) => (
                 <li class:list={[h.depth === 3 && 'pl-3']}>
                   <a href={`#${h.slug}`} class="block truncate text-zinc-400 hover:text-amber-300">
@@ -84,21 +138,18 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
       }
 
       {
-        (relatedTrackers.length > 0 || otherGuides.length > 0) && (
+        d.downloads.length > 0 && (
           <div class="card p-4">
-            <p class="eyebrow mb-2">Related</p>
-            <ul class="space-y-2 text-sm">
-              {relatedTrackers.map((t) => (
+            <p class="eyebrow mb-2">Downloads</p>
+            <ul class="space-y-2">
+              {d.downloads.map((file) => (
                 <li>
-                  <a href={`/trackers/${t.id}`} class="flex items-center gap-2 text-zinc-300 hover:text-amber-300">
-                    <Icon name="checklist" class="size-4 shrink-0 text-zinc-500" /> <span class="truncate">{t.data.title}</span>
-                  </a>
-                </li>
-              ))}
-              {otherGuides.map((g) => (
-                <li>
-                  <a href={`/guides/${g.id}`} class="flex items-center gap-2 text-zinc-300 hover:text-amber-300">
-                    <Icon name="book" class="size-4 shrink-0 text-zinc-500" /> <span class="truncate">{g.data.title}</span>
+                  <a href={file.url} class="btn w-full justify-start" target="_blank" rel="noopener" download>
+                    <Icon name="arrow-right" class="size-4 rotate-90 text-amber-400" />
+                    <span class="min-w-0">
+                      <span class="block truncate">{file.label}</span>
+                      {file.note && <span class="block text-[11px] font-normal text-zinc-500">{file.note}</span>}
+                    </span>
                   </a>
                 </li>
               ))}
@@ -107,5 +158,7 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
         )
       }
     </aside>
+
+    <Lightbox />
   </div>
 </Base>

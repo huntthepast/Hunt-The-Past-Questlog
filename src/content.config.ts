@@ -1,7 +1,7 @@
 import { defineCollection, reference } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
-import { STATUS_IDS, OWNERSHIP_IDS, GUIDE_TYPE_IDS, TRACKER_TYPE_IDS } from './lib/constants.js';
+import { STATUS_IDS, OWNERSHIP_IDS, TRACKER_TYPE_IDS } from './lib/constants.js';
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}/, 'Expected an ISO date (YYYY-MM-DD)');
 const enumOf = (ids: string[]) => z.enum(ids as [string, ...string[]]);
@@ -38,11 +38,22 @@ const guides = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/guides' }),
   schema: z.object({
     title: z.string().min(1),
-    type: enumOf(GUIDE_TYPE_IDS).default('notes'),
+    /** Free text (Walkthrough, Maps, Items, Persona List...). Guides of a game are grouped by it. */
+    type: z.string().min(1).default('Notes'),
     game: reference('games').optional(),
     summary: z.string().optional(),
+    /** GameFAQs-style version label, e.g. "1.2". */
+    version: z.string().optional(),
+    /** Manual position inside its type group in per-game navigation (lower first, then title). */
+    order: z.number().int().default(0),
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
+    /** Image gallery shown above the text (maps, charts...). src is a /guides/<slug>/... path or a URL. */
+    gallery: z
+      .array(z.object({ src: z.string().min(1), title: z.string().min(1), caption: z.string().optional() }))
+      .default([]),
+    /** External downloads (e.g. a zip attached to a GitHub release). */
+    downloads: z.array(z.object({ label: z.string().min(1), url: z.string().min(1), note: z.string().optional() })).default([]),
     createdAt: z.string(),
     updatedAt: z.string(),
   }),
@@ -93,6 +104,7 @@ const raGames = defineCollection({
     completionHardcore: z.number().default(0),
     highestAwardKind: z.string().nullable().default(null),
     highestAwardDate: z.string().nullable().default(null),
+    playtimeSeconds: z.number().default(0),
     syncedAt: z.string(),
     achievements: z
       .array(

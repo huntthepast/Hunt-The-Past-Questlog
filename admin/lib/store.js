@@ -101,7 +101,7 @@ export function stringifyMarkdown(data, body) {
   return `---\n${front}\n---\n\n${body.replace(/\r\n/g, '\n').trimEnd()}\n`;
 }
 
-const GUIDE_KEY_ORDER = ['title', 'type', 'game', 'summary', 'tags', 'draft', 'createdAt', 'updatedAt'];
+const GUIDE_KEY_ORDER = ['title', 'type', 'game', 'summary', 'version', 'order', 'tags', 'draft', 'gallery', 'downloads', 'createdAt', 'updatedAt'];
 const guideFile = (slug) => path.join(PATHS.guides, `${assertSlug(slug)}.md`);
 
 export const guideExists = async (slug) => isSlug(slug) && existsSync(guideFile(slug));
@@ -174,6 +174,10 @@ export const savePlatforms = (data) => writeJson(PATHS.platforms, data);
 
 export const getRaProfile = () => readJson(PATHS.raProfile);
 export const saveRaProfile = (data) => writeJson(PATHS.raProfile, data);
+
+/** Manual trophy-shelf overrides; missing file = follow RetroAchievements' order. */
+export const getShelf = async () => (existsSync(PATHS.shelf) ? readJson(PATHS.shelf) : { order: [], hidden: [] });
+export const saveShelf = (data) => writeJson(PATHS.shelf, data);
 
 /* ---------------- RetroAchievements per-game snapshots ---------------- */
 

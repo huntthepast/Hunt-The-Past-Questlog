@@ -16,6 +16,9 @@
   html {
     color-scheme: dark;
     scroll-behavior: smooth;
+    /* Keep the scrollbar's space reserved so short pages (e.g. a filtered-down library) don't get
+       15px wider and shift every control when the scrollbar disappears. */
+    scrollbar-gutter: stable;
   }
 
   body {
@@ -35,6 +38,31 @@
   [x-cloak] {
     display: none !important;
   }
+
+  /* Tailwind v4's preflight leaves buttons, selects and checkboxes with the default arrow cursor.
+     Every interactive control should read as clickable; disabled ones read as blocked. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="switch"]:not(:disabled),
+  [role="tab"]:not(:disabled),
+  select:not(:disabled),
+  summary,
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="file"]:not(:disabled),
+  input[type="range"]:not(:disabled),
+  label:has(input[type="checkbox"]:not(:disabled)),
+  label:has(input[type="radio"]:not(:disabled)),
+  label:has(input[type="file"]:not(:disabled)) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  input[type="checkbox"]:disabled,
+  input[type="radio"]:disabled {
+    cursor: not-allowed;
+  }
 }
 
 @layer components {
@@ -48,6 +76,10 @@
 
   .btn {
     @apply inline-flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60;
+  }
+
+  .btn-sm {
+    @apply px-2.5 py-1 text-xs;
   }
 
   .btn-accent {
@@ -96,6 +128,7 @@
 
 .guide-prose input[type="checkbox"] {
   @apply mr-2 size-4 accent-amber-400 align-[-2px];
+  cursor: default; /* rendered read-only from markdown, so no not-allowed cursor */
 }
 
 .guide-prose li:has(> input[type="checkbox"]) {

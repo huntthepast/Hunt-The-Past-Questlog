@@ -6,14 +6,14 @@ import TrackerCard from '../../components/TrackerCard.astro';
 import EmptyState from '../../components/EmptyState.astro';
 import Icon from '../../components/Icon.astro';
 import { allGames, allGuides, allTrackers } from '../../lib/data';
-import { GUIDE_TYPES, TRACKER_TYPES } from '../../lib/constants.js';
+import { guideType, normalizeGuideType, TRACKER_TYPES } from '../../lib/constants.js';
 
 const games = await allGames();
 const guides = await allGuides();
 const trackers = await allTrackers();
 const gameById = new Map(games.map((g) => [g.id, g]));
 
-const guideTypes = GUIDE_TYPES.filter((t) => guides.some((g) => g.data.type === t.id));
+const guideTypes = [...new Map(guides.map((g) => [normalizeGuideType(g.data.type), guideType(g.data.type)])).values()].sort((a, b) => a.weight - b.weight || a.label.localeCompare(b.label));
 const trackerTypes = TRACKER_TYPES.filter((t) => trackers.some((g) => g.data.type === t.id));
 
 const filterConfig = {
@@ -38,7 +38,8 @@ const filterConfig = {
       </EmptyState>
     ) : (
       <div x-data={`listFilter(${JSON.stringify(filterConfig)})`}>
-        <div class="card mb-6 flex flex-col gap-3 p-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div class="card mb-6 p-3">
+        <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <label class="relative flex-1 sm:min-w-56">
             <span class="sr-only">Search</span>
             <Icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
@@ -67,13 +68,14 @@ const filterConfig = {
             )}
           </select>
           <select x-model="sort" class="input sm:w-44" aria-label="Sort">
-            <option value="recent">Sort: Recently updated</option>
-            <option value="title">Sort: Title</option>
+            <option value="recent">Recently updated</option>
+            <option value="title">Title</option>
           </select>
-          <p class="text-xs text-zinc-500 sm:ml-auto" x-cloak>
-            <span class="font-semibold text-zinc-300" x-text="visible"></span> of <span x-text="total"></span>
-            <button type="button" class="ml-2 text-amber-400 hover:underline" x-show="active" @click="reset()">Reset</button>
-          </p>
+        </div>
+        <p class="mt-3 border-t border-zinc-800 pt-2.5 text-xs text-zinc-500">
+          Showing <span class="font-semibold text-zinc-300" x-text="visible">{guides.length + trackers.length}</span> of <span x-text="total">{guides.length + trackers.length}</span> entries
+          <button type="button" class="ml-2 text-amber-400 hover:underline" x-show="active" x-cloak @click="reset()">Reset filters</button>
+        </p>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

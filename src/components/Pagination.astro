@@ -1,0 +1,37 @@
+---
+/**
+ * Pagination bar for a `listFilter` Alpine component. Must be rendered inside that
+ * component's root so `page`, `pageCount`, `pageNumbers` and `goTo()` are in scope.
+ */
+import Icon from './Icon.astro';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className = 'mt-8' } = Astro.props;
+---
+
+<nav x-show="pageCount > 1" x-cloak class:list={['flex flex-wrap items-center justify-center gap-1.5', className]} aria-label="Pagination">
+  <button type="button" class="btn btn-sm" :disabled="page === 1" :class="page === 1 && 'opacity-40'" @click="goTo(page - 1)">
+    <Icon name="arrow-left" class="size-3.5" /> Prev
+  </button>
+  <template x-for="(p, i) in pageNumbers" :key="i">
+    <span>
+      <span x-show="p === '...'" class="px-1.5 text-zinc-600">&hellip;</span>
+      <button
+        x-show="p !== '...'"
+        type="button"
+        class="btn btn-sm min-w-8 justify-center tabular-nums"
+        :class="p === page ? 'btn-accent' : ''"
+        :aria-current="p === page ? 'page' : null"
+        @click="goTo(p)"
+        x-text="p"
+      ></button>
+    </span>
+  </template>
+  <button type="button" class="btn btn-sm" :disabled="page === pageCount" :class="page === pageCount && 'opacity-40'" @click="goTo(page + 1)">
+    Next <Icon name="arrow-right" class="size-3.5" />
+  </button>
+  <span class="ml-2 text-xs text-zinc-500">Page <span x-text="page"></span> of <span x-text="pageCount"></span></span>
+</nav>

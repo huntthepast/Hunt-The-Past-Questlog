@@ -22,18 +22,62 @@ export const OWNERSHIP = [
 
 export const OWNERSHIP_IDS = OWNERSHIP.map((o) => o.id);
 
-/** Kinds of written content. `notes` is the catch-all for "other data". */
-export const GUIDE_TYPES = [
-  { id: 'walkthrough',  label: 'Walkthrough',    color: 'sky' },
-  { id: 'cheats',       label: 'Cheats & Codes', color: 'rose' },
-  { id: 'tips',         label: 'Tips & Tricks',  color: 'emerald' },
-  { id: 'boss',         label: 'Boss Guide',     color: 'orange' },
-  { id: 'collectibles', label: 'Collectibles',   color: 'violet' },
-  { id: 'review',       label: 'Review',         color: 'amber' },
-  { id: 'notes',        label: 'Notes',          color: 'zinc' },
+/**
+ * Guide types are free text (GameFAQs-style: Walkthrough, Maps, Items, Persona List, ...).
+ * These are only suggestions for the admin's dropdown; anything else is allowed.
+ */
+export const GUIDE_TYPE_SUGGESTIONS = [
+  'Walkthrough', 'Maps', 'Items', 'Equipment', 'Weapons', 'Characters', 'Bosses', 'Enemies',
+  'Mini-games', 'Side Quests', 'Cheats & Codes', 'Tips & Tricks', 'Collectibles', 'Missables', 'FAQ', 'Review', 'Notes',
 ];
 
-export const GUIDE_TYPE_IDS = GUIDE_TYPES.map((t) => t.id);
+/* Known types get a fixed colour and a position in per-game navigation (lower = earlier). */
+const GUIDE_TYPE_STYLE = {
+  walkthrough: { color: 'sky', weight: 0 },
+  walkthroughs: { color: 'sky', weight: 0 },
+  maps: { color: 'emerald', weight: 1 },
+  map: { color: 'emerald', weight: 1 },
+  characters: { color: 'orange', weight: 2 },
+  party: { color: 'orange', weight: 2 },
+  items: { color: 'violet', weight: 3 },
+  'item list': { color: 'violet', weight: 3 },
+  equipment: { color: 'violet', weight: 3 },
+  weapons: { color: 'violet', weight: 3 },
+  armor: { color: 'violet', weight: 3 },
+  bosses: { color: 'rose', weight: 4 },
+  'boss guide': { color: 'rose', weight: 4 },
+  enemies: { color: 'orange', weight: 4 },
+  bestiary: { color: 'orange', weight: 4 },
+  'mini-games': { color: 'teal', weight: 5 },
+  minigames: { color: 'teal', weight: 5 },
+  'side quests': { color: 'sky', weight: 5 },
+  sidequests: { color: 'sky', weight: 5 },
+  collectibles: { color: 'violet', weight: 5 },
+  missables: { color: 'rose', weight: 5 },
+  'cheats & codes': { color: 'rose', weight: 6 },
+  cheats: { color: 'rose', weight: 6 },
+  'tips & tricks': { color: 'emerald', weight: 6 },
+  tips: { color: 'emerald', weight: 6 },
+  faq: { color: 'zinc', weight: 8 },
+  review: { color: 'amber', weight: 9 },
+  notes: { color: 'zinc', weight: 10 },
+};
+
+const GUIDE_TYPE_PALETTE = ['sky', 'emerald', 'violet', 'orange', 'teal', 'rose', 'amber'];
+
+/** Grouping key for a type label: case- and whitespace-insensitive. */
+export const normalizeGuideType = (label) => String(label ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+/** Style info for any type label. Unknown labels get a stable colour picked from the palette. */
+export function guideType(label) {
+  const text = String(label ?? '').trim() || 'Notes';
+  const id = normalizeGuideType(text);
+  const known = GUIDE_TYPE_STYLE[id];
+  if (known) return { id, label: text, ...known };
+  let hash = 0;
+  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return { id, label: text, color: GUIDE_TYPE_PALETTE[hash % GUIDE_TYPE_PALETTE.length], weight: 7 };
+}
 
 /** Kinds of checklists (trackers). */
 export const TRACKER_TYPES = [
@@ -49,7 +93,6 @@ export const TRACKER_TYPE_IDS = TRACKER_TYPES.map((t) => t.id);
 
 /** Lookup helpers (always return something so templates never crash). */
 export const statusById = (id) => STATUSES.find((s) => s.id === id) ?? STATUSES[0];
-export const guideTypeById = (id) => GUIDE_TYPES.find((t) => t.id === id) ?? GUIDE_TYPES[GUIDE_TYPES.length - 1];
 export const trackerTypeById = (id) => TRACKER_TYPES.find((t) => t.id === id) ?? TRACKER_TYPES[TRACKER_TYPES.length - 1];
 
 /** RetroAchievements hosts. Image paths returned by the API are relative to RA_MEDIA. */

@@ -16,6 +16,8 @@ export const PATHS = {
   site: path.join(ROOT, 'src', 'data', 'site.json'),
   platforms: path.join(ROOT, 'src', 'data', 'platforms.json'),
   raProfile: path.join(ROOT, 'src', 'data', 'ra-profile.json'),
+  shelf: path.join(ROOT, 'src', 'data', 'shelf.json'),
+  public: path.join(ROOT, 'public'),
   covers: path.join(ROOT, 'public', 'covers'),
   env: path.join(ROOT, '.env'),
 };

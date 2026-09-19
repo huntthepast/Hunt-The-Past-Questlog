@@ -39,7 +39,7 @@ Requires Node 22.12 or newer.
 | `npm run build`     | Production build into `dist/` (this is all Vercel runs)                      |
 | `npm run preview`   | Serve the production build locally                                           |
 | `npm run check`     | Type-check the Astro/TypeScript code                                         |
-| `npm run admin`     | Compile the admin stylesheet and start the local admin server                |
+| `npm run admin`     | Compile the admin stylesheet and start the local admin server (auto-restarts when its code changes) |
 | `npm run admin:css` | Only rebuild the admin stylesheet (Tailwind CLI)                             |
 
 ## Daily workflow
@@ -56,11 +56,13 @@ Requires Node 22.12 or newer.
 ```
 src/content/games/<slug>.json      one file per game (library and wishlist)
 src/content/guides/<slug>.md       markdown guides with YAML frontmatter
+public/guides/<slug>/              images (maps etc.) uploaded through the admin for that guide
 src/content/trackers/<slug>.json   checklists (missables, collectibles, bosses, ...)
 src/content/ra-games/<id>.json     RetroAchievements per-game snapshots (written by the admin sync)
 src/data/site.json                 site title, tagline, owner, about text, footer links
 src/data/platforms.json            platform list (+ RetroAchievements console ids for auto-matching)
 src/data/ra-profile.json           RetroAchievements profile snapshot (written by the admin sync)
+src/data/shelf.json                manual trophy-shelf order / hidden badges (empty = follow RA)
 public/covers/                     cover images uploaded through the admin
 ```
 
@@ -103,19 +105,43 @@ Markdown (GitHub-flavored: tables, task lists, footnotes) with frontmatter:
 
 ```md
 ---
-title: "Sonic the Hedgehog - Cheat Codes"
-type: "cheats"            # walkthrough | cheats | tips | boss | collectibles | review | notes
-game: "sonic-the-hedgehog" # optional link to a game slug
-summary: "Level select, debug mode and the sound test."
-tags: ["genesis"]
+title: "Chrono Trigger - Maps"
+type: "Maps"                 # free text: Walkthrough, Maps, Items, Persona List... guides of a game are grouped by it
+game: "chrono-trigger"      # optional link to a game slug
+summary: "Every area map in one place."
+version: "1.0"              # optional, GameFAQs-style
+order: 1                    # position inside its type group (lower first)
+tags: ["snes"]
 draft: false
-createdAt: "2026-08-02T09:00:00.000Z"
-updatedAt: "2026-08-02T09:00:00.000Z"
+gallery:                    # optional image wall shown above the text, with a full-screen viewer
+  - src: "/guides/chrono-trigger-maps/guardia-forest.png"
+    title: "Guardia Forest"
+    caption: "600 AD"
+downloads:                  # optional buttons in the sidebar (e.g. a zip attached to a GitHub release)
+  - label: "All maps (zip)"
+    url: "https://github.com/<you>/<repo>/releases/download/v1/maps.zip"
+createdAt: "2026-09-19T09:00:00.000Z"
+updatedAt: "2026-09-19T09:00:00.000Z"
 ---
 
-## Level Select
+## Part 1: Guardia Forest
+
+### Map
+![Guardia Forest](/guides/chrono-trigger-maps/guardia-forest.png)
+
+### Checklist
+- [ ] Power Tab in the lower clearing
+
+### Walkthrough
 ...
 ```
+
+Every guide of a game is listed in a sidebar on each of that game's guide and tracker pages (grouped by type),
+so a reader can jump from the walkthrough to the item list or the map gallery. Headings become the page's table
+of contents; `- [ ]` task lists are tickable by readers (saved in their browser). Images uploaded through the
+admin's **Images & gallery** panel land in `public/guides/<slug>/`; the **Template** button inserts the
+walkthrough skeleton (intro, controls, characters, one map + checklist + walkthrough block per area, credits),
+and **Link to guide** inserts links to another guide's sections. Clicking any image opens a lightbox.
 
 ### Tracker
 
@@ -147,6 +173,9 @@ A sync:
 - for every library game with a `raGameId`, writes the full achievement list with your unlock dates to
   `src/content/ra-games/<id>.json` (shown on that game's page, including missable / progression markers);
 - fills in missing cover art, developer, publisher, genre and release year on those games (never overwrites what you typed);
+- with **Update hours played** enabled (default), sets `hoursPlayed` from RA's tracked playtime for each linked game. RA only
+  counts sessions played while the emulator was connected, so the sync only ever raises the number and never lowers hours
+  you logged yourself;
 - with **Auto-upgrade statuses** enabled, promotes games to Beaten / Completed / Mastered from your RA awards (never downgrades).
 
 Other RA helpers in the admin:
@@ -154,6 +183,9 @@ Other RA helpers in the admin:
 - **Fetch** next to the RA game id in the game editor pre-fills title, platform, box art, developer, publisher, genre and year.
 - **Find games to import** lists every game in your RA history that is not in the library yet and creates entries for the ones you pick.
 - **Import RA console list** adds RA systems to `platforms.json` so imports map to the right platform automatically.
+- **Trophy shelf** (bottom of the RetroAchievements tab) arranges the badge wall shown on the Achievements page. By default it
+  mirrors your RA profile order (what you set with "Reorder Site Awards" on RA); drag rows, use the arrows or hide badges to
+  arrange it by hand instead. Saved in `src/data/shelf.json`; "Follow RA order" clears it.
 
 The public site only ever reads the JSON snapshots, so the API key never leaves your machine and the site keeps
 working even if RetroAchievements is down.

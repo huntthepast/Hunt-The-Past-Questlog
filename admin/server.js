@@ -20,8 +20,10 @@ import { slugify, isSlug } from './lib/slug.js';
 import * as store from './lib/store.js';
 import * as git from './lib/git.js';
 import * as ra from './lib/ra.js';
+import * as shelf from './lib/shelf.js';
+import * as attachments from './lib/attachments.js';
 import { GameSchema, GuideSchema, TrackerSchema, SiteSchema, PlatformSchema, validate, ensureTrackerItemIds } from './lib/schemas.js';
-import { STATUSES, OWNERSHIP, GUIDE_TYPES, TRACKER_TYPES, raImage } from '../src/lib/constants.js';
+import { STATUSES, OWNERSHIP, GUIDE_TYPE_SUGGESTIONS, TRACKER_TYPES, raImage } from '../src/lib/constants.js';
 import { z } from 'zod';
 
 /* ---------------- environment ---------------- */
@@ -69,7 +71,7 @@ app.get('/api/meta', async (c) => {
   return c.json({
     statuses: STATUSES,
     ownership: OWNERSHIP,
-    guideTypes: GUIDE_TYPES,
+    guideTypes: GUIDE_TYPE_SUGGESTIONS,
     trackerTypes: TRACKER_TYPES,
     platforms,
     site,
@@ -225,12 +227,83 @@ app.put('/api/guides/:slug', async (c) => {
 });
 
 app.delete('/api/guides/:slug', async (c) => {
-  await store.deleteGuide(c.req.param('slug'));
+  const slug = c.req.param('slug');
+  await store.deleteGuide(slug);
+  await attachments.removeAll(slug);
   return c.json({ ok: true });
 });
 
+
 async function assertGameRef(slug) {
   if (slug && !(await store.gameExists(slug))) throw badRequest(`Linked game "${slug}" does not exist`);
+}
+
+/* ---- guide attachments (images in public/guides/<slug>/) ---- */
+
+app.get('/api/guides/:slug/attachments', async (c) => {
+  const slug = c.req.param('slug');
+  await store.getGuide(slug);
+  return c.json(await attachments.list(slug));
+});
+
+// Upload one or more images (multipart/form-data, field "files").
+app.post('/api/guides/:slug/attachments', async (c) => {
+  const slug = c.req.param('slug');
+  await store.getGuide(slug);
+  const body = await c.req.parseBody({ all: true });
+  const raw = body.files ?? body.file;
+  const files = (Array.isArray(raw) ? raw : [raw]).filter((f) => f instanceof File);
+  if (!files.length) throw badRequest('Send images as multipart fields named "files"');
+  const added = [];
+  for (const file of files) added.push(await attachments.add(slug, file));
+  return c.json({ added, files: await attachments.list(slug) }, 201);
+});
+
+app.delete('/api/guides/:slug/attachments/:name', async (c) => {
+  const slug = c.req.param('slug');
+  await attachments.remove(slug, c.req.param('name'));
+  return c.json({ files: await attachments.list(slug) });
+});
+
+// Zip of the gallery (or of every attachment) to attach to a GitHub release.
+app.get('/api/guides/:slug/gallery.zip', async (c) => {
+  const slug = c.req.param('slug');
+  const guide = await store.getGuide(slug);
+  const names = (guide.gallery ?? []).map((g) => path.basename(String(g.src)));
+  const bytes = await attachments.zip(slug, names);
+  return c.body(bytes, 200, {
+    'Content-Type': 'application/zip',
+    'Content-Disposition': `attachment; filename="${slug}-gallery.zip"`,
+  });
+});
+
+// Headings of a guide (for linking to another guide's section). Slugs follow github-slugger,
+// which is what Astro uses for heading ids.
+app.get('/api/guides/:slug/headings', async (c) => {
+  const guide = await store.getGuide(c.req.param('slug'));
+  return c.json(headingsOf(guide.body ?? ''));
+});
+
+function headingsOf(markdown) {
+  const seen = new Map();
+  const headings = [];
+  let inFence = false;
+  for (const line of markdown.split(/\r?\n/)) {
+    if (/^\s*(```|~~~)/.test(line)) inFence = !inFence;
+    if (inFence) continue;
+    const match = line.match(/^(#{1,6})\s+(.+?)\s*#*\s*$/);
+    if (!match) continue;
+    const text = match[2].replace(/[*_`~]/g, '').trim();
+    let slug = text
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\p{M}\s-]/gu, '')
+      .replace(/\s/g, '-');
+    const count = seen.get(slug) ?? 0;
+    seen.set(slug, count + 1);
+    if (count > 0) slug = `${slug}-${count}`;
+    headings.push({ depth: match[1].length, text, slug });
+  }
+  return headings;
 }
 
 /* ---------------- trackers ---------------- */
@@ -302,7 +375,7 @@ app.get('/api/ra/status', async (c) => {
 
 app.post('/api/ra/sync', async (c) => {
   const body = await c.req.json().catch(() => ({}));
-  return c.json(ra.startSync({ autoStatus: Boolean(body.autoStatus) }), 202);
+  return c.json(ra.startSync({ autoStatus: Boolean(body.autoStatus), autoHours: body.autoHours !== false }), 202);
 });
 
 app.get('/api/ra/sync/status', (c) => c.json(ra.syncStatus()));
@@ -343,6 +416,10 @@ app.post('/api/ra/import', async (c) => {
 });
 
 app.post('/api/ra/consoles', async (c) => c.json(await ra.importConsoles()));
+
+// Trophy shelf: RA order by default, manual order/hidden list stored in src/data/shelf.json.
+app.get('/api/shelf', async (c) => c.json(await shelf.shelfState()));
+app.put('/api/shelf', async (c) => c.json(await shelf.saveShelf(await c.req.json())));
 
 /* ---------------- git / publish ---------------- */
 
@@ -401,6 +478,13 @@ app.get('/vendor/fonts/:name', (c) => {
 app.get('/covers/:name', (c) => {
   const name = path.basename(c.req.param('name'));
   return sendFile(c, path.join(PATHS.covers, name));
+});
+
+// Guide attachments (the site serves these from /guides/<slug>/ on Vercel).
+app.get('/guides/:slug/:name', (c) => {
+  const slug = c.req.param('slug');
+  if (!isSlug(slug)) throw notFound();
+  return sendFile(c, path.join(PATHS.public, 'guides', slug, path.basename(c.req.param('name'))));
 });
 
 // The site's favicon, reused for the admin tab.

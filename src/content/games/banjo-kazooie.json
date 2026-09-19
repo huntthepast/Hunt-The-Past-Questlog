@@ -12,8 +12,9 @@
   "ownership": "owned",
   "favorite": false,
   "status": "played",
+  "hoursPlayed": 1,
   "raGameId": 10210,
   "tags": [],
   "addedAt": "2026-09-18T07:05:29.930Z",
-  "updatedAt": "2026-09-18T07:05:29.930Z"
+  "updatedAt": "2026-09-19T07:26:03.304Z"
 }

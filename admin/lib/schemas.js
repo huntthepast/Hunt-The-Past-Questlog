@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { STATUS_IDS, OWNERSHIP_IDS, GUIDE_TYPE_IDS, TRACKER_TYPE_IDS } from '../../src/lib/constants.js';
+import { STATUS_IDS, OWNERSHIP_IDS, TRACKER_TYPE_IDS } from '../../src/lib/constants.js';
 import { badRequest } from './errors.js';
 import { SLUG_RE, slugify } from './slug.js';
 
@@ -46,13 +46,29 @@ export const GameSchema = z.object({
   tags: stringList.default([]),
 });
 
+const GalleryItemSchema = z.object({
+  src: text.min(1, 'Gallery image is missing its path'),
+  title: text.min(1, 'Gallery image needs a title'),
+  caption: optionalText,
+});
+
+const DownloadSchema = z.object({
+  label: text.min(1, 'Download needs a label'),
+  url: text.min(1, 'Download needs a URL'),
+  note: optionalText,
+});
+
 export const GuideSchema = z.object({
   title: text.min(1, 'Title is required'),
-  type: z.enum(GUIDE_TYPE_IDS).default('notes'),
+  type: z.preprocess((v) => (v === '' || v === null ? undefined : v), text.min(1).default('Notes')),
   game: optionalSlug,
   summary: optionalText,
+  version: optionalText,
+  order: z.preprocess((v) => (v === '' || v === null || v === undefined ? 0 : Number(v)), z.number().int().default(0)),
   tags: stringList.default([]),
   draft: bool.default(false),
+  gallery: z.array(GalleryItemSchema).default([]),
+  downloads: z.array(DownloadSchema).default([]),
   body: z.string().default(''),
 });
 

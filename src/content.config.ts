@@ -46,6 +46,14 @@ const guides = defineCollection({
     version: z.string().optional(),
     /** Manual position inside its type group in per-game navigation (lower first, then title). */
     order: z.number().int().default(0),
+    /**
+     * Name of a multi-part series ("Main walkthrough"). Guides of the same game with the same series
+     * get previous/next links, in `order`. Nothing else is ever chained.
+     */
+    series: z.string().optional(),
+    /** Default layout for task lists (- [ ] items): columns 1-3, and whether they start collapsed. Readers can override. */
+    checklistColumns: z.number().int().min(1).max(3).default(1),
+    checklistCollapsed: z.boolean().default(false),
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
     /** Image gallery shown above the text (maps, charts...). src is a /guides/<slug>/... path or a URL. */
@@ -67,6 +75,9 @@ const trackers = defineCollection({
     type: enumOf(TRACKER_TYPE_IDS).default('checklist'),
     game: reference('games').optional(),
     summary: z.string().optional(),
+    /** Default layout: items in 1-3 columns, sections collapsed or open. Readers can override. */
+    checklistColumns: z.number().int().min(1).max(3).default(1),
+    checklistCollapsed: z.boolean().default(false),
     sections: z
       .array(
         z.object({

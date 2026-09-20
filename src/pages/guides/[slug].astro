@@ -7,7 +7,10 @@ import Cover from '../../components/Cover.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
 import GuideHub from '../../components/GuideHub.astro';
 import Lightbox from '../../components/Lightbox.astro';
-import { allGuides, allTrackers, guidesForGame, trackersForGame, platformOf, formatDate } from '../../lib/data';
+import SidebarToolbar from '../../components/SidebarToolbar.astro';
+import DrawerHeader from '../../components/DrawerHeader.astro';
+import { allGuides, allTrackers, guidesForGame, trackersForGame, guideSeries, platformOf, formatDate } from '../../lib/data';
+import type { MarkdownHeading } from 'astro';
 import { guideType } from '../../lib/constants.js';
 import { guideSeo, guideJsonLd, breadcrumbJsonLd } from '../../lib/seo';
 
@@ -24,8 +27,21 @@ const platform = game ? platformOf(game.data.platform) : undefined;
 const gameGuides = game ? guidesForGame(await allGuides(), game.id) : [];
 const gameTrackers = game ? trackersForGame(await allTrackers(), game.id) : [];
 
+const series = guideSeries(gameGuides, guide);
+
 const { Content, headings } = await render(guide);
-const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+// "On this page" lists h2s with their h3s nested underneath; tocSpy folds the h3s of every
+// section except the one being read, so long guides keep a short list.
+type TocGroup = { heading: MarkdownHeading; children: MarkdownHeading[] };
+const toc = headings
+  .filter((h) => h.depth === 2 || h.depth === 3)
+  .reduce<TocGroup[]>((groups, h) => {
+    const last = groups[groups.length - 1];
+    if (h.depth === 3 && last) last.children.push(h);
+    else groups.push({ heading: h, children: [] });
+    return groups;
+  }, []);
+const tocCount = toc.reduce((n, g) => n + 1 + g.children.length, 0);
 const gallery = d.gallery;
 const ogImage = gallery[0]?.src ?? game?.data.cover;
 const seo = guideSeo(guide, game, guide.body ?? '');
@@ -62,11 +78,18 @@ const jsonLd = [
     <h1 class="h-display text-4xl sm:text-5xl">{d.title}</h1>
     {d.summary && <p class="mt-3 max-w-3xl text-lg text-zinc-400">{d.summary}</p>}
     <p class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
+      {series && (
+        <span class="inline-flex items-center gap-1 text-zinc-400" title={`Part ${series.index + 1} of ${series.parts.length} in "${series.name}"`}>
+          <Icon name="book" class="size-3.5 text-amber-400" /> {series.name} &middot; {series.index + 1} / {series.parts.length}
+        </span>
+      )}
       <span class="inline-flex items-center gap-1"><Icon name="calendar" class="size-3.5" /> Updated {formatDate(d.updatedAt)}</span>
       <span class="inline-flex items-center gap-1"><Icon name="clock" class="size-3.5" /> Written {formatDate(d.createdAt)}</span>
     </p>
   </header>
 
+  <div x-data="sidebarDrawer" @keydown.escape.window="closeDrawer()">
+  <SidebarToolbar toc={tocCount > 1} hub={Boolean(game && gameGuides.length + gameTrackers.length > 0)} tocLabel="Contents" />
   <div class="grid gap-10 lg:grid-cols-[1fr_280px]" x-data="lightbox">
     <div class="min-w-0">
       {
@@ -80,11 +103,12 @@ const jsonLd = [
                     data-lightbox={image.src}
                     data-title={image.title}
                     data-caption={image.caption ?? ''}
-                    class="card card-hover group block overflow-hidden"
+                    class="card card-hover group block cursor-zoom-in overflow-hidden"
                     title={image.caption ? `${image.title} - ${image.caption}` : image.title}
                   >
-                    <span class="block aspect-[4/3] overflow-hidden bg-zinc-950">
+                    <span class="relative block aspect-[4/3] overflow-hidden bg-zinc-950">
                       <img src={image.src} alt={image.title} loading="lazy" decoding="async" class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
+                      <span class="zoomable-badge" aria-hidden="true"><Icon name="search" class="size-3.5" /> Enlarge</span>
                     </span>
                     <span class="block px-3 py-2">
                       <span class="block truncate text-sm font-medium text-zinc-100">{image.title}</span>
@@ -99,7 +123,7 @@ const jsonLd = [
         )
       }
 
-      <div x-data={`guideChecklist(${JSON.stringify(guide.id)})`}>
+      <div x-data={`guideChecklist(${JSON.stringify(guide.id)}, ${JSON.stringify({ columns: d.checklistColumns, collapsed: d.checklistCollapsed })})`}>
         <div x-show="total > 0" x-cloak class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-400">
           <Icon name="checklist" class="size-4 text-amber-400" />
           <span>Checklist: <span class="font-semibold text-zinc-200" x-text="done"></span> / <span x-text="total"></span> ticked &middot; saved in this browser only</span>
@@ -109,9 +133,35 @@ const jsonLd = [
           <Content />
         </article>
       </div>
+
+      {
+        series && (series.prev || series.next) && (
+          <nav class="mt-10 grid gap-3 sm:grid-cols-2" aria-label={`${series.name}: previous and next part`}>
+            {series.prev && (
+              <a href={`/guides/${series.prev.id}`} rel="prev" class="card card-hover flex items-center gap-3 p-4">
+                <Icon name="arrow-left" class="size-4 shrink-0 text-amber-400" />
+                <span class="min-w-0">
+                  <span class="eyebrow block text-[10px]">Previous &middot; {series.name}</span>
+                  <span class="block truncate font-medium text-zinc-100">{series.prev.data.title}</span>
+                </span>
+              </a>
+            )}
+            {series.next && (
+              <a href={`/guides/${series.next.id}`} rel="next" class="card card-hover flex items-center justify-end gap-3 p-4 text-right sm:col-start-2">
+                <span class="min-w-0">
+                  <span class="eyebrow block text-[10px]">Next &middot; {series.name}</span>
+                  <span class="block truncate font-medium text-zinc-100">{series.next.data.title}</span>
+                </span>
+                <Icon name="arrow-right" class="size-4 shrink-0 text-amber-400" />
+              </a>
+            )}
+          </nav>
+        )
+      }
     </div>
 
-    <aside class="space-y-6 lg:sticky lg:top-24 lg:self-start">
+    <aside class="page-sidebar" x-show="drawer || desktop" @click="onSidebarClick($event)" aria-label="Guide navigation">
+      <DrawerHeader title="Guide navigation" />
       {
         game && platform && (
           <a href={`/games/${game.id}`} class="card card-hover flex items-center gap-3 p-3">
@@ -129,24 +179,36 @@ const jsonLd = [
         )
       }
 
-      {game && <GuideHub game={game} guides={gameGuides} trackers={gameTrackers} currentId={guide.id} />}
-
       {
-        toc.length > 1 && (
-          <nav class="card p-4" aria-label="Table of contents">
+        tocCount > 1 && (
+          <nav class="card p-4" aria-label="Table of contents" x-data="tocSpy" data-drawer-section="toc">
             <p class="eyebrow mb-2">On this page</p>
-            <ol class="max-h-[50vh] space-y-1 overflow-y-auto text-sm">
-              {toc.map((h) => (
-                <li class:list={[h.depth === 3 && 'pl-3']}>
-                  <a href={`#${h.slug}`} class="block truncate text-zinc-400 hover:text-amber-300">
-                    {h.text}
+            <ol class="space-y-1 text-sm">
+              {toc.map(({ heading, children }) => (
+                <li data-toc-group>
+                  <a href={`#${heading.slug}`} data-slug={heading.slug} class="flex items-center gap-1 rounded px-1 text-zinc-400 transition hover:text-amber-300">
+                    <span class="min-w-0 flex-1 truncate">{heading.text}</span>
+                    {children.length > 0 && <Icon name="chevron-right" class="toc-marker size-3 shrink-0 text-zinc-600 transition-transform" />}
                   </a>
+                  {children.length > 0 && (
+                    <ol class="toc-sub mt-1 ml-2 space-y-1 border-l border-zinc-800 pl-2">
+                      {children.map((h) => (
+                        <li>
+                          <a href={`#${h.slug}`} data-slug={h.slug} class="block truncate rounded px-1 text-zinc-400 transition hover:text-amber-300">
+                            {h.text}
+                          </a>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
                 </li>
               ))}
             </ol>
           </nav>
         )
       }
+
+      <div data-drawer-section="hub">{game && <GuideHub game={game} guides={gameGuides} trackers={gameTrackers} currentId={guide.id} />}</div>
 
       {
         d.downloads.length > 0 && (
@@ -171,5 +233,6 @@ const jsonLd = [
     </aside>
 
     <Lightbox />
+  </div>
   </div>
 </Base>

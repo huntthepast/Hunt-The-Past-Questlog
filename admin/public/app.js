@@ -352,7 +352,7 @@ document.addEventListener('alpine:init', () => {
 
   /* ---------------- guides ---------------- */
 
-  const blankGuide = () => ({ slug: '', title: '', type: 'Walkthrough', game: '', summary: '', version: '', order: 0, tags: '', draft: false, gallery: [], downloads: [], body: '' });
+  const blankGuide = () => ({ slug: '', title: '', type: 'Walkthrough', game: '', summary: '', version: '', order: 0, series: '', checklistColumns: 1, checklistCollapsed: false, tags: '', draft: false, gallery: [], downloads: [], body: '' });
 
   /* GameFAQs-style skeleton. Headings feed the auto-generated table of contents. */
   const WALKTHROUGH_TEMPLATE = `## Introduction
@@ -448,6 +448,24 @@ Step by step through the area.
       return [...new Set([...(Alpine.store('app').meta.guideTypes ?? []), ...used])];
     },
 
+    /** Series names already used by other guides of the selected game, so parts get the exact same spelling. */
+    get seriesSuggestions() {
+      const game = this.form?.game;
+      if (!game) return [];
+      return [...new Set(this.guides.filter((g) => g.game === game && g.series).map((g) => g.series))];
+    },
+
+    /** The other parts of the series being edited, in reading order - shown under the field as a preview. */
+    get seriesParts() {
+      const series = (this.form?.series ?? '').trim().toLowerCase();
+      if (!series || !this.form?.game) return [];
+      return this.guides
+        .filter((g) => g.game === this.form.game && g.slug !== this.form.slug && String(g.series ?? '').trim().toLowerCase() === series)
+        .map((g) => ({ slug: g.slug, title: g.title, order: Number(g.order) || 0 }))
+        .concat([{ slug: this.form.slug || '(this guide)', title: this.form.title || 'This guide', order: Number(this.form.order) || 0, current: true }])
+        .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
+    },
+
     async load() {
       this.guides = await api('GET', '/api/guides');
     },
@@ -485,6 +503,9 @@ Step by step through the area.
           summary: g.summary ?? '',
           version: g.version ?? '',
           order: g.order ?? 0,
+          series: g.series ?? '',
+          checklistColumns: g.checklistColumns ?? 1,
+          checklistCollapsed: Boolean(g.checklistCollapsed),
           tags: (g.tags ?? []).join(', '),
           gallery: (g.gallery ?? []).map((item) => ({ ...item, caption: item.caption ?? '' })),
           downloads: (g.downloads ?? []).map((item) => ({ ...item, note: item.note ?? '' })),
@@ -669,7 +690,7 @@ Step by step through the area.
 
   /* ---------------- trackers ---------------- */
 
-  const blankTracker = () => ({ slug: '', title: '', type: 'checklist', game: '', summary: '', sections: [] });
+  const blankTracker = () => ({ slug: '', title: '', type: 'checklist', game: '', summary: '', checklistColumns: 1, checklistCollapsed: false, sections: [] });
   const blankSection = () => ({ title: '', items: [], bulk: '' });
   const blankItem = () => ({ id: '', label: '', note: '', done: false });
 
@@ -743,6 +764,8 @@ Step by step through the area.
           ...t,
           game: t.game ?? '',
           summary: t.summary ?? '',
+          checklistColumns: t.checklistColumns ?? 1,
+          checklistCollapsed: Boolean(t.checklistCollapsed),
           sections: (t.sections ?? []).map((s) => ({ ...blankSection(), ...s, items: (s.items ?? []).map((i) => ({ ...blankItem(), ...i, note: i.note ?? '' })) })),
         });
       } catch (err) {

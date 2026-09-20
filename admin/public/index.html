@@ -389,8 +389,31 @@
                   </label>
                   <label class="field"><span class="label">Version</span><input class="input" x-model.trim="form.version" placeholder="1.0" /></label>
                   <label class="field"><span class="label">Order in group</span><input class="input" type="number" x-model="form.order" title="Lower comes first inside its type (e.g. Part 1 = 1, Part 2 = 2)" /></label>
+                  <label class="field lg:col-span-2">
+                    <span class="label">Series</span>
+                    <input class="input" x-model.trim="form.series" list="guide-series-suggestions" placeholder="Main walkthrough" title="Guides of this game with the same series name get previous / next links, in Order. Leave empty for a standalone guide." />
+                    <datalist id="guide-series-suggestions">
+                      <template x-for="s in seriesSuggestions" :key="s"><option :value="s"></option></template>
+                    </datalist>
+                  </label>
                   <label class="field lg:col-span-2"><span class="label">Tags</span><input class="input" x-model="form.tags" placeholder="comma, separated" /></label>
+                  <div class="text-xs text-zinc-500 sm:col-span-2 lg:col-span-6" x-show="seriesParts.length > 1" x-cloak>
+                    <span class="text-zinc-400">Reading order:</span>
+                    <template x-for="(part, i) in seriesParts" :key="part.slug">
+                      <span><span x-show="i > 0" class="text-zinc-700"> &rarr; </span><span :class="part.current ? 'font-semibold text-amber-300' : ''" x-text="part.title"></span></span>
+                    </template>
+                    <span class="text-zinc-600">&middot; set by Order</span>
+                  </div>
                   <label class="flex items-center gap-2 self-end pb-2 text-sm lg:col-span-1"><input type="checkbox" class="size-4 accent-amber-400" x-model="form.draft" /> Draft</label>
+                  <label class="field lg:col-span-2">
+                    <span class="label">Checklist layout</span>
+                    <select class="input" x-model.number="form.checklistColumns" title="How - [ ] task lists are laid out on the site (readers can change it)">
+                      <option :value="1">Single column</option>
+                      <option :value="2">2 columns</option>
+                      <option :value="3">3 columns</option>
+                    </select>
+                  </label>
+                  <label class="flex items-center gap-2 self-end pb-2 text-sm lg:col-span-2"><input type="checkbox" class="size-4 accent-amber-400" x-model="form.checklistCollapsed" /> Collapse checklists by default</label>
                   <label class="field sm:col-span-2 lg:col-span-6"><span class="label">Summary</span><input class="input" x-model="form.summary" placeholder="One sentence shown in lists" /></label>
                 </div>
 
@@ -583,6 +606,15 @@
                     </select>
                   </label>
                   <label class="field lg:col-span-2"><span class="label">Summary</span><input class="input" x-model="form.summary" /></label>
+                  <label class="field">
+                    <span class="label">Item layout</span>
+                    <select class="input" x-model.number="form.checklistColumns" title="How items are laid out on the site (readers can change it)">
+                      <option :value="1">Single column</option>
+                      <option :value="2">2 columns</option>
+                      <option :value="3">3 columns</option>
+                    </select>
+                  </label>
+                  <label class="flex items-center gap-2 self-end pb-2 text-sm lg:col-span-3"><input type="checkbox" class="size-4 accent-amber-400" x-model="form.checklistCollapsed" /> Collapse sections by default</label>
                 </div>
 
                 <div class="space-y-4">

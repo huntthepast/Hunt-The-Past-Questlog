@@ -7,6 +7,8 @@ import Cover from '../../components/Cover.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
 import ProgressBar from '../../components/ProgressBar.astro';
 import GuideHub from '../../components/GuideHub.astro';
+import SidebarToolbar from '../../components/SidebarToolbar.astro';
+import DrawerHeader from '../../components/DrawerHeader.astro';
 import { allTrackers, allGuides, guidesForGame, trackersForGame, trackerProgress, platformOf, formatDate, site } from '../../lib/data';
 import { trackerTypeById } from '../../lib/constants.js';
 import { trackerSeo, breadcrumbJsonLd } from '../../lib/seo';
@@ -24,6 +26,11 @@ const platform = game ? platformOf(game.data.platform) : undefined;
 const relatedGuides = game ? guidesForGame(await allGuides(), game.id) : [];
 const relatedTrackers = game ? trackersForGame(await allTrackers(), game.id) : [];
 const progress = trackerProgress(tracker);
+const trackerOptions = {
+  columns: d.checklistColumns,
+  collapsed: d.checklistCollapsed,
+  sections: d.sections.map((s) => ({ ids: s.items.map((i) => i.id), done: s.items.filter((i) => i.done).length })),
+};
 const seo = trackerSeo(tracker, game);
 const jsonLd = breadcrumbJsonLd(Astro.site, [
   { name: 'Home', path: '/' },
@@ -38,7 +45,7 @@ const jsonLd = breadcrumbJsonLd(Astro.site, [
     <a href="/guides" class="inline-flex items-center gap-1 hover:text-amber-300"><Icon name="arrow-left" class="size-4" /> Guides &amp; Trackers</a>
   </nav>
 
-  <div x-data={`tracker(${JSON.stringify(tracker.id)}, ${progress.total})`}>
+  <div x-data={`tracker(${JSON.stringify(tracker.id)}, ${progress.total}, ${JSON.stringify(trackerOptions)})`}>
     <header class="mb-6">
       <div class="mb-3 flex flex-wrap items-center gap-2">
         <Badge color={type.color} label={type.label} />
@@ -95,20 +102,62 @@ const jsonLd = breadcrumbJsonLd(Astro.site, [
         <Icon name="info" class="mr-1 inline size-3.5 align-[-2px]" />
         Tick items as you go. Your progress is saved in this browser only and never leaves your device.
       </p>
+
+      <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-zinc-800 pt-3 text-xs text-zinc-500" x-cloak>
+        <span class="inline-flex items-center gap-2">
+          Layout
+          <span class="inline-flex overflow-hidden rounded-md border border-zinc-700" role="group" aria-label="Columns">
+            {[1, 2, 3].map((n) => (
+              <button
+                type="button"
+                class="px-2 py-0.5 font-mono text-[11px] leading-4 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-200 [&+&]:border-l [&+&]:border-zinc-700"
+                :class={`cols === ${n} && 'bg-amber-400 text-zinc-950 hover:bg-amber-300 hover:text-zinc-950'`}
+                :aria-pressed={`cols === ${n}`}
+                @click={`setCols(${n})`}
+                title={`${n} column${n > 1 ? 's' : ''}`}
+              >
+                {'|'.repeat(n)}
+              </button>
+            ))}
+          </span>
+        </span>
+        {d.sections.length > 1 && (
+          <span class="inline-flex items-center gap-2">
+            Sections
+            <button type="button" class="text-amber-400 hover:underline" @click="setAllCollapsed(true)">Collapse all</button>
+            <span class="text-zinc-700">/</span>
+            <button type="button" class="text-amber-400 hover:underline" @click="setAllCollapsed(false)">Expand all</button>
+          </span>
+        )}
+      </div>
     </section>
 
+    <div x-data="sidebarDrawer" @keydown.escape.window="closeDrawer()">
+    <SidebarToolbar toc={d.sections.length > 1} hub={Boolean(game && relatedGuides.length + relatedTrackers.length > 0)} tocLabel="Sections" />
     <div class="grid gap-10 lg:grid-cols-[1fr_280px]">
       <div class="min-w-0">
         <!-- Sections -->
         <div class="grid gap-6">
           {
             d.sections.map((section, sIndex) => (
-              <section class="card overflow-hidden">
-                <h2 class="border-b border-zinc-800 bg-zinc-900/80 px-4 py-3 font-display text-xl text-zinc-100">
-                  <span class="mr-2 text-zinc-600">{String(sIndex + 1).padStart(2, '0')}</span>
-                  {section.title}
+              <section class="card scroll-mt-28 overflow-hidden lg:scroll-mt-24" id={`section-${sIndex + 1}`}>
+                <h2 class="bg-zinc-900/80 font-display text-xl text-zinc-100" :class={`!isCollapsed(${sIndex}) && 'border-b border-zinc-800'`}>
+                  <button
+                    type="button"
+                    class="flex w-full items-center gap-2 px-4 py-3 text-left transition hover:bg-zinc-800/40"
+                    :aria-expanded={`!isCollapsed(${sIndex})`}
+                    aria-controls={`section-${sIndex + 1}-items`}
+                    @click={`toggleSection(${sIndex})`}
+                  >
+                    <Icon name="chevron-right" class="size-4 shrink-0 text-zinc-500 transition-transform" :class={`!isCollapsed(${sIndex}) && 'rotate-90'`} />
+                    <span class="text-zinc-600">{String(sIndex + 1).padStart(2, '0')}</span>
+                    <span class="min-w-0 flex-1 truncate">{section.title}</span>
+                    <span class="shrink-0 font-sans text-xs font-medium tabular-nums text-zinc-400" :class={`sectionTotal(${sIndex}) > 0 && sectionDone(${sIndex}) === sectionTotal(${sIndex}) && 'text-emerald-300'`}>
+                      <span x-text={`sectionDone(${sIndex})`}>{section.items.filter((i) => i.done).length}</span> / {section.items.length}
+                    </span>
+                  </button>
                 </h2>
-                <ul class="divide-y divide-zinc-800/80">
+                <ul id={`section-${sIndex + 1}-items`} class="tracker-items divide-y divide-zinc-800/80" :class={`cols > 1 && 'divide-y-0'`} :data-cols="cols" {...(d.checklistCollapsed ? { 'x-cloak': true } : {})} x-show={`!isCollapsed(${sIndex})`}>
                   {section.items.map((item) => (
                     <li>
                       <label
@@ -152,7 +201,8 @@ const jsonLd = breadcrumbJsonLd(Astro.site, [
         <p class="mt-8 text-xs text-zinc-500">Updated {formatDate(d.updatedAt)}</p>
       </div>
 
-      <aside class="space-y-6 lg:sticky lg:top-24 lg:self-start">
+      <aside class="page-sidebar" x-show="drawer || desktop" @click="onSidebarClick($event)" aria-label="Tracker navigation">
+        <DrawerHeader title="Tracker navigation" />
         {
           game && platform && (
             <a href={`/games/${game.id}`} class="card card-hover flex items-center gap-3 p-3">
@@ -169,8 +219,27 @@ const jsonLd = breadcrumbJsonLd(Astro.site, [
             </a>
           )
         }
-        {game && <GuideHub game={game} guides={relatedGuides} trackers={relatedTrackers} currentId={tracker.id} />}
+        {
+          d.sections.length > 1 && (
+            <nav class="card p-4" aria-label="Sections" x-data="tocSpy" data-drawer-section="toc">
+              <p class="eyebrow mb-2">Sections</p>
+              <ol class="space-y-1 text-sm">
+                {d.sections.map((section, sIndex) => (
+                  <li>
+                    <a href={`#section-${sIndex + 1}`} data-slug={`section-${sIndex + 1}`} class="flex items-baseline gap-2 rounded px-1 text-zinc-400 transition hover:text-amber-300">
+                      <span class="shrink-0 font-mono text-[11px] text-zinc-600">{String(sIndex + 1).padStart(2, '0')}</span>
+                      <span class="truncate">{section.title}</span>
+                      <span class="ml-auto shrink-0 text-[11px] text-zinc-600">{section.items.filter((i) => i.done).length}/{section.items.length}</span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          )
+        }
+        <div data-drawer-section="hub">{game && <GuideHub game={game} guides={relatedGuides} trackers={relatedTrackers} currentId={tracker.id} />}</div>
       </aside>
+    </div>
     </div>
   </div>
 </Base>

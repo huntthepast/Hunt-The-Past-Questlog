@@ -65,6 +65,9 @@ export const GuideSchema = z.object({
   summary: optionalText,
   version: optionalText,
   order: z.preprocess((v) => (v === '' || v === null || v === undefined ? 0 : Number(v)), z.number().int().default(0)),
+  series: optionalText,
+  checklistColumns: z.preprocess((v) => (v === '' || v === null || v === undefined ? 1 : Number(v)), z.number().int().min(1).max(3).default(1)),
+  checklistCollapsed: bool.default(false),
   tags: stringList.default([]),
   draft: bool.default(false),
   gallery: z.array(GalleryItemSchema).default([]),
@@ -89,6 +92,8 @@ export const TrackerSchema = z.object({
   type: z.enum(TRACKER_TYPE_IDS).default('checklist'),
   game: optionalSlug,
   summary: optionalText,
+  checklistColumns: z.preprocess((v) => (v === '' || v === null || v === undefined ? 1 : Number(v)), z.number().int().min(1).max(3).default(1)),
+  checklistCollapsed: bool.default(false),
   sections: z.array(TrackerSectionSchema).default([]),
 });
 

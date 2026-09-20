@@ -172,6 +172,31 @@ export async function allTrackers(): Promise<Tracker[]> {
 export const guidesForGame = (guides: Guide[], gameId: string) => guides.filter((g) => g.data.game?.id === gameId);
 export const trackersForGame = (trackers: Tracker[], gameId: string) => trackers.filter((t) => t.data.game?.id === gameId);
 
+const seriesKey = (guide: Guide) => (guide.data.series ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+/**
+ * The multi-part series a guide belongs to: the other guides of the same game that carry the same
+ * `series` name, in `order`. Only an explicit series name chains guides - a guide without one is
+ * standalone, whatever its type - so `prev`/`next` never point at an unrelated guide or a tracker.
+ */
+export function guideSeries(guides: Guide[], guide: Guide) {
+  const key = seriesKey(guide);
+  const gameId = guide.data.game?.id;
+  if (!key || !gameId) return null;
+  const parts = guides
+    .filter((g) => g.data.game?.id === gameId && seriesKey(g) === key)
+    .sort((a, b) => a.data.order - b.data.order || a.data.title.localeCompare(b.data.title));
+  if (parts.length < 2) return null;
+  const index = parts.findIndex((g) => g.id === guide.id);
+  return {
+    name: guide.data.series!.trim(),
+    parts,
+    index,
+    prev: index > 0 ? parts[index - 1] : undefined,
+    next: index >= 0 && index < parts.length - 1 ? parts[index + 1] : undefined,
+  };
+}
+
 export function trackerProgress(tracker: Tracker) {
   const items = tracker.data.sections.flatMap((s) => s.items);
   const done = items.filter((i) => i.done).length;

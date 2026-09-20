@@ -102,6 +102,30 @@
     @apply bg-amber-400 text-zinc-950 ring-amber-400;
   }
 
+  /* Page sidebar: a sticky, self-scrolling column on lg and up; a slide-in drawer below that
+     (opened from the SidebarToolbar, see the sidebarDrawer Alpine component). */
+  .page-sidebar {
+    @apply space-y-6
+      max-lg:fixed max-lg:inset-y-0 max-lg:right-0 max-lg:z-50 max-lg:w-[88vw] max-lg:max-w-sm max-lg:overflow-y-auto max-lg:overscroll-contain max-lg:border-l max-lg:border-zinc-800 max-lg:bg-zinc-950 max-lg:px-4 max-lg:pb-4 max-lg:shadow-2xl
+      lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-zinc-700) transparent;
+  }
+
+  /* "On this page": h3 entries stay folded under every h2 except the section being read.
+     tocSpy adds data-toc-folded / data-open; without JS the whole list shows. */
+  [data-toc-folded] .toc-sub {
+    display: none;
+  }
+
+  [data-toc-folded] [data-toc-group][data-open] > .toc-sub {
+    display: block;
+  }
+
+  [data-toc-group][data-open] > a .toc-marker {
+    transform: rotate(90deg);
+  }
+
   .eyebrow {
     @apply text-xs font-semibold uppercase tracking-[0.2em] text-amber-400/90;
   }
@@ -134,4 +158,133 @@
 .guide-prose li:has(> input[type="checkbox"]) {
   list-style: none;
   margin-left: -1.25rem;
+}
+
+/* Inline images are wrapped by the lightbox component into .zoomable: zoom cursor, a lift + amber ring
+   on hover, and a persistent "Enlarge" badge so phones (no hover) get the hint too. */
+.guide-prose .zoomable {
+  @apply relative my-6 inline-block max-w-full cursor-zoom-in rounded-lg align-top;
+}
+
+.guide-prose .zoomable img {
+  @apply my-0 transition duration-200;
+}
+
+.guide-prose .zoomable:hover img,
+.guide-prose .zoomable:focus-visible img {
+  @apply border-amber-400/70 brightness-110;
+  box-shadow: 0 0 0 3px rgb(251 191 36 / 0.25), 0 12px 30px -12px rgb(0 0 0 / 0.8);
+  transform: translateY(-2px);
+}
+
+.guide-prose .zoomable:focus-visible {
+  @apply outline-none;
+}
+
+.zoomable-badge {
+  @apply pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-950/85 px-2 py-0.5 text-[11px] font-medium text-zinc-200 opacity-80 backdrop-blur transition duration-200;
+}
+
+.zoomable:hover .zoomable-badge,
+.zoomable:focus-visible .zoomable-badge,
+.group:hover .zoomable-badge {
+  @apply border-amber-400 bg-amber-400 text-zinc-950 opacity-100;
+}
+
+/* Tracker item lists: single column with dividers, or a 2-3 column grid with hairline dividers.
+   Every cell draws a right + bottom border; the outermost ones are pushed under the card's own
+   border by the negative margins and clipped by its overflow-hidden. */
+.tracker-items[data-cols="2"],
+.tracker-items[data-cols="3"] {
+  @apply grid;
+  margin-right: -1px;
+  margin-bottom: -1px;
+}
+
+.tracker-items[data-cols="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tracker-items[data-cols="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tracker-items[data-cols="2"] > li,
+.tracker-items[data-cols="3"] > li {
+  @apply border-b border-r border-zinc-800/80;
+}
+
+@media (width < 40rem) {
+  .tracker-items[data-cols="2"],
+  .tracker-items[data-cols="3"] {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Task lists get wrapped by the guideChecklist component: a header with a collapse toggle, a done
+   counter and a 1/2/3-column switch. Without JS the plain list is shown. */
+.guide-prose .checklist {
+  @apply my-6 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/40;
+}
+
+.guide-prose .checklist[data-complete="true"] {
+  @apply border-emerald-500/40;
+}
+
+.guide-prose .checklist-bar {
+  @apply flex items-center justify-between gap-3 border-b border-zinc-800 bg-zinc-900/70 px-3 py-1.5 text-xs text-zinc-400;
+}
+
+.guide-prose .checklist-toggle {
+  @apply inline-flex items-center gap-1.5 font-medium text-zinc-300 hover:text-amber-300;
+}
+
+.guide-prose .checklist[data-collapsed="false"] .checklist-toggle svg {
+  transform: rotate(90deg);
+}
+
+.guide-prose .checklist[data-complete="true"] .checklist-count {
+  @apply text-emerald-300;
+}
+
+.guide-prose .checklist-cols {
+  @apply inline-flex overflow-hidden rounded-md border border-zinc-700;
+}
+
+.guide-prose .checklist-cols button {
+  @apply px-2 py-0.5 font-mono text-[11px] leading-4 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200;
+}
+
+.guide-prose .checklist-cols button + button {
+  @apply border-l border-zinc-700;
+}
+
+.guide-prose .checklist-cols button[aria-pressed="true"] {
+  @apply bg-amber-400 text-zinc-950;
+}
+
+.guide-prose .checklist > ul {
+  @apply my-0 grid gap-x-6 gap-y-1 px-3 py-2;
+}
+
+.guide-prose .checklist > ul > li {
+  @apply my-0 ml-0 py-0.5;
+}
+
+.guide-prose .checklist[data-cols="2"] > ul {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.guide-prose .checklist[data-cols="3"] > ul {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (width < 40rem) {
+  .guide-prose .checklist > ul {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.guide-prose .checklist[data-collapsed="true"] > ul {
+  display: none;
 }

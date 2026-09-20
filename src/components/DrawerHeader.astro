@@ -1,0 +1,17 @@
+---
+/** Title row with a close button, shown only while the sidebar is acting as a drawer (below lg). */
+import Icon from './Icon.astro';
+
+interface Props {
+  title?: string;
+}
+
+const { title = 'Navigation' } = Astro.props;
+---
+
+<div class="sticky top-0 z-10 -mx-4 mb-2 flex items-center justify-between border-b border-zinc-800 bg-zinc-950/95 px-4 py-3 backdrop-blur lg:hidden">
+  <p class="font-display text-xl text-zinc-100">{title}</p>
+  <button type="button" class="btn btn-sm" @click="closeDrawer()" aria-label="Close navigation">
+    <Icon name="x" class="size-4" />
+  </button>
+</div>

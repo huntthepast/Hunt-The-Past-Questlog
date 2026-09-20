@@ -1,0 +1,1766 @@
+{
+  "title": "Mega Man Battle Network 5: Double Team DS - Battle Chip Library",
+  "type": "collectibles",
+  "game": "mega-man-battle-network-5-double-team-ds",
+  "summary": "Every chip in the library: 180 Standard, 42 shared Mega plus 18 per version, 6 Giga per version, 4 Secret and 12 Dark. Chip data from the Mega Man Wiki (megaman.fandom.com, CC BY-SA).",
+  "sections": [
+    {
+      "title": "Standard Chips (001-180)",
+      "items": [
+        {
+          "id": "std-001",
+          "label": "001 Cannon",
+          "note": "Codes A, B, C, * · Null · 40 dmg · Cannon to attack 1 enemy",
+          "done": false
+        },
+        {
+          "id": "std-002",
+          "label": "002 HiCannon",
+          "note": "Codes D, E, F · Null · 80 dmg · Cannon to attack 1 enemy",
+          "done": false
+        },
+        {
+          "id": "std-003",
+          "label": "003 M-Cannon",
+          "note": "Codes F, G, H · Null · 120 dmg · Cannon to attack 1 enemy",
+          "done": false
+        },
+        {
+          "id": "std-004",
+          "label": "004 AirShot",
+          "note": "Codes * · Wind · 20 dmg · Knock enmy back 1 square",
+          "done": false
+        },
+        {
+          "id": "std-005",
+          "label": "005 Vulcan1",
+          "note": "Codes C, D, E, * · Null · 10 dmg · 3-shot to pierce 1 panel!",
+          "done": false
+        },
+        {
+          "id": "std-006",
+          "label": "006 Vulcan2",
+          "note": "Codes A, B, C · Null · 10 dmg · 5-shot to pierce 1 panel!",
+          "done": false
+        },
+        {
+          "id": "std-007",
+          "label": "007 Vulcan3",
+          "note": "Codes L, M, N · Null · 10 dmg · 7-shot to pierce 1 panel!",
+          "done": false
+        },
+        {
+          "id": "std-008",
+          "label": "008 Spreader",
+          "note": "Codes C, D, E, * · Null · 30 dmg · Creates a large explosion",
+          "done": false
+        },
+        {
+          "id": "std-009",
+          "label": "009 MrkCan1",
+          "note": "Codes K, M, S · Cursor · 70 dmg · DoomerEX locks on 3 rows",
+          "done": false
+        },
+        {
+          "id": "std-010",
+          "label": "010 MrkCan2",
+          "note": "Codes D, F, Z · Cursor · 100 dmg · DoomerEX locks on 3 rows",
+          "done": false
+        },
+        {
+          "id": "std-011",
+          "label": "011 MrkCan3",
+          "note": "Codes E, R, Y · Cursor · 130 dmg · DoomerEX locks on 3 rows",
+          "done": false
+        },
+        {
+          "id": "std-012",
+          "label": "012 Pulsar1",
+          "note": "Codes F, P, T · Null · 70 dmg · Sonic attack spreads when hits",
+          "done": false
+        },
+        {
+          "id": "std-013",
+          "label": "013 Pulsar2",
+          "note": "Codes E, G, M · Null · 90 dmg · Sonic attack spreads when hits",
+          "done": false
+        },
+        {
+          "id": "std-014",
+          "label": "014 Pulsar3",
+          "note": "Codes C, R, S · Null · 110 dmg · Sonic attack spreads when hits",
+          "done": false
+        },
+        {
+          "id": "std-015",
+          "label": "015 TankCan1",
+          "note": "Codes A, E, P · Null · 80 dmg · 3sq blast if hits end row",
+          "done": false
+        },
+        {
+          "id": "std-016",
+          "label": "016 TankCan2",
+          "note": "Codes B, T, Y · Null · 120 dmg · 3sq blast if hits end row",
+          "done": false
+        },
+        {
+          "id": "std-017",
+          "label": "017 TankCan3",
+          "note": "Codes F, M, R · Null · 160 dmg · 3sq blast if hits end row",
+          "done": false
+        },
+        {
+          "id": "std-018",
+          "label": "018 WideSht1",
+          "note": "Codes L, M, N · Aqua · 70 dmg · Fires 3sq shotgun blast!",
+          "done": false
+        },
+        {
+          "id": "std-019",
+          "label": "019 WideSht2",
+          "note": "Codes E, F, G · Aqua · 90 dmg · Fires 3sq shotgun blast!",
+          "done": false
+        },
+        {
+          "id": "std-020",
+          "label": "020 WideSht3",
+          "note": "Codes S, T, U · Aqua · 110 dmg · Fires 3sq shotgun blast!",
+          "done": false
+        },
+        {
+          "id": "std-021",
+          "label": "021 ElcReel1",
+          "note": "Codes C, V, Z · Elec · 80 dmg · Elec wire shocks enemies",
+          "done": false
+        },
+        {
+          "id": "std-022",
+          "label": "022 ElcReel2",
+          "note": "Codes B, Q, Y · Elec · 100 dmg · Elec wire shocks enemies",
+          "done": false
+        },
+        {
+          "id": "std-023",
+          "label": "023 ElcReel3",
+          "note": "Codes E, L, R · Elec · 120 dmg · Elec wire shocks enemies",
+          "done": false
+        },
+        {
+          "id": "std-024",
+          "label": "024 CactBal1",
+          "note": "Codes H, I, J · Wood · 30 dmg · Jumps forward 4 times",
+          "done": false
+        },
+        {
+          "id": "std-025",
+          "label": "025 CactBal2",
+          "note": "Codes Q, R, S · Wood · 40 dmg · Jumps forward 4 times",
+          "done": false
+        },
+        {
+          "id": "std-026",
+          "label": "026 CactBal3",
+          "note": "Codes L, M, N · Wood · 50 dmg · Jumps forward 4 times",
+          "done": false
+        },
+        {
+          "id": "std-027",
+          "label": "027 GunDelS1",
+          "note": "Codes A, S, U, * · Null · 2~120 dmg · Sunshine appear w/ Button",
+          "done": false
+        },
+        {
+          "id": "std-028",
+          "label": "028 GunDelS2",
+          "note": "Codes G, U, Y · Null · 2~180 dmg · Sunshine appear w/ Button",
+          "done": false
+        },
+        {
+          "id": "std-029",
+          "label": "029 GunDelS3",
+          "note": "Codes D, M, O · Null · 2~240 dmg · Sunshine appear w/ Button",
+          "done": false
+        },
+        {
+          "id": "std-030",
+          "label": "030 ElemRage",
+          "note": "Codes E, K, W, * (DS Only) · Null · 90 dmg · Powers Up when over elemental square",
+          "done": false
+        },
+        {
+          "id": "std-031",
+          "label": "031 Thunder",
+          "note": "Codes B, L, P, * · Elec · 40 dmg · Paralyzing electric attack",
+          "done": false
+        },
+        {
+          "id": "std-032",
+          "label": "032 Tornado",
+          "note": "Codes D, L, R · Wind · 20 dmg · 8 hit storm 2 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-033",
+          "label": "033 Static",
+          "note": "Codes N, S, V · Wind · 20 dmg · A static blast 2 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-034",
+          "label": "034 MiniBomb",
+          "note": "Codes B, G, L, * · Null · 50 dmg · Throws a minibomb 3 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-035",
+          "label": "035 EnergBom",
+          "note": "Codes E, P, W · Null · 40 dmg · Throws a bomb 3 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-036",
+          "label": "036 MegEnBom",
+          "note": "Codes C, K, Z · Null · 60 dmg · Throws a bomb 3 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-037",
+          "label": "037 CrakBom",
+          "note": "Codes C, R, V, * · Null · 80 dmg · Bomb cracks 3 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-038",
+          "label": "038 ParaBom",
+          "note": "Codes H, N, P · Null · 90 dmg · Bomb paralyzes 3 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-039",
+          "label": "039 ResetBom",
+          "note": "Codes D, I, O · Null · 100 dmg · Reduces power 3 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-040",
+          "label": "040 Quake1",
+          "note": "Codes A, K, P · Break · 100 dmg · Quake cracks 3 squares head",
+          "done": false
+        },
+        {
+          "id": "std-041",
+          "label": "041 Quake2",
+          "note": "Codes B, L, Y · Break · 150 dmg · Quake cracks 3 squares head",
+          "done": false
+        },
+        {
+          "id": "std-042",
+          "label": "042 Quake3",
+          "note": "Codes F, H, N · Break · 200 dmg · Quake cracks 3 squares head",
+          "done": false
+        },
+        {
+          "id": "std-043",
+          "label": "043 BugBomb",
+          "note": "Codes A, R, T, * · Null · Throws a BugBomb 3 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-044",
+          "label": "044 CannBall",
+          "note": "Codes C, T, Z, * · Break · 140 dmg · Breaks 3rd panel ahead",
+          "done": false
+        },
+        {
+          "id": "std-045",
+          "label": "045 BlkBomb",
+          "note": "Codes L, R, Z · Heat · 210 dmg · Firebomb hits 3 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-046",
+          "label": "046 Geyser",
+          "note": "Codes G, M, S · Aqua · 200 dmg · Geyser 3 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-047",
+          "label": "047 LavaSeed",
+          "note": "Codes H, K, P, * (DS Only) · Null · Makes 9 square lava zone 3 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-048",
+          "label": "048 SeaSeed",
+          "note": "Codes D, J, M, * · Null · Makes 9 square water zone 3 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-049",
+          "label": "049 IceSeed",
+          "note": "Codes A, K, Q, * · Null · Makes 9 square ice zone 3 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-050",
+          "label": "050 GrasSeed",
+          "note": "Codes A, M, W, * · Null · Makes 9 square meadow 3 squares ahead",
+          "done": false
+        },
+        {
+          "id": "std-051",
+          "label": "051 Sword",
+          "note": "Codes C, L, S, * (DS Only) · Sword · 80 dmg · Cuts enemy in front range: 1",
+          "done": false
+        },
+        {
+          "id": "std-052",
+          "label": "052 WideSwrd",
+          "note": "Codes K, S, Z · Sword · 80 dmg · Cuts enemy in front range: 3",
+          "done": false
+        },
+        {
+          "id": "std-053",
+          "label": "053 LongSwrd",
+          "note": "Codes C, M, S · Sword · 80 dmg · Cuts enemy in front range : 2",
+          "done": false
+        },
+        {
+          "id": "std-054",
+          "label": "054 WideBlde",
+          "note": "Codes A, L, V · Sword · 150 dmg · Cuts enemy in front range : 3",
+          "done": false
+        },
+        {
+          "id": "std-055",
+          "label": "055 LongBlde",
+          "note": "Codes E, L, P · Sword · 150 dmg · Cuts enemy in front rang : 2",
+          "done": false
+        },
+        {
+          "id": "std-056",
+          "label": "056 CustSwrd",
+          "note": "Codes E, L, R · Sword · 10~256 dmg · Cust Gauge = attack strength",
+          "done": false
+        },
+        {
+          "id": "std-057",
+          "label": "057 VarSwrd",
+          "note": "Codes B, C, V · Sword · 160 dmg · A magical shifting sword",
+          "done": false
+        },
+        {
+          "id": "std-058",
+          "label": "058 Slasher",
+          "note": "Codes B, I, R · Sword · 240 dmg · Cuts while A button is held",
+          "done": false
+        },
+        {
+          "id": "std-059",
+          "label": "059 WindRack",
+          "note": "Codes B, F, J, * · Wind · 100 dmg · Blow enemy in front! Range: 3",
+          "done": false
+        },
+        {
+          "id": "std-060",
+          "label": "060 MoonBld1",
+          "note": "Codes E, N, Z · Sword · 90 dmg · Slices enemies around",
+          "done": false
+        },
+        {
+          "id": "std-061",
+          "label": "061 MoonBld2",
+          "note": "Codes G, O, V · Sword · 110 dmg · Slices enemies around",
+          "done": false
+        },
+        {
+          "id": "std-062",
+          "label": "062 MoonBld3",
+          "note": "Codes C, L, T · Sword · 130 dmg · Slices enemies around",
+          "done": false
+        },
+        {
+          "id": "std-063",
+          "label": "063 Katana1",
+          "note": "Codes D, H, S · Sword · 60 dmg · Cuts twice once wide once long",
+          "done": false
+        },
+        {
+          "id": "std-064",
+          "label": "064 Katana2",
+          "note": "Codes B, R, W · Sword · 80 dmg · Cuts twice once wide once long",
+          "done": false
+        },
+        {
+          "id": "std-065",
+          "label": "065 Katana3",
+          "note": "Codes A, J, Z · Sword · 100 dmg · Cuts twice once wide once long",
+          "done": false
+        },
+        {
+          "id": "std-066",
+          "label": "066 YoYo",
+          "note": "Codes D, E, F · Null · 50 dmg · Yoyo attack reaches 3sq ahead",
+          "done": false
+        },
+        {
+          "id": "std-067",
+          "label": "067 DrilArm1",
+          "note": "Codes A, J, W · Break · 60 dmg · Knocks enmy 2sq away",
+          "done": false
+        },
+        {
+          "id": "std-068",
+          "label": "068 DrilArm2",
+          "note": "Codes D, L, S · Break · 70 dmg · Knocks enmy 2sq away",
+          "done": false
+        },
+        {
+          "id": "std-069",
+          "label": "069 DrilArm3",
+          "note": "Codes I, P, Z · Break · 80 dmg · Knocks enmy 2sq away",
+          "done": false
+        },
+        {
+          "id": "std-070",
+          "label": "070 AirHoc",
+          "note": "Codes Q, R, S · Break · 40 dmg · Ricochet attack to right",
+          "done": false
+        },
+        {
+          "id": "std-071",
+          "label": "071 Skully1",
+          "note": "Codes C, K, S · Null · 100 dmg · Confuses enemy if it hits",
+          "done": false
+        },
+        {
+          "id": "std-072",
+          "label": "072 Skully2",
+          "note": "Codes A, H, V · Null · 120 dmg · Confuses enemy if it hits",
+          "done": false
+        },
+        {
+          "id": "std-073",
+          "label": "073 Skully3",
+          "note": "Codes G, N, U · Null · 140 dmg · Confuses enemy if it hits",
+          "done": false
+        },
+        {
+          "id": "std-074",
+          "label": "074 AqWhirl1",
+          "note": "Codes B, F, N · Aqua · 70 dmg · Whirlwind makes water sq",
+          "done": false
+        },
+        {
+          "id": "std-075",
+          "label": "075 AqWhirl2",
+          "note": "Codes A, H, O · Aqua · 100 dmg · Whirlwind makes water sq",
+          "done": false
+        },
+        {
+          "id": "std-076",
+          "label": "076 AqWhirl3",
+          "note": "Codes D, I, R · Aqua · 130 dmg · Whirlwind makes water sq",
+          "done": false
+        },
+        {
+          "id": "std-077",
+          "label": "077 AirSpin1",
+          "note": "Codes C, E, O · Wind · 40 dmg · Spits out hurricane attack",
+          "done": false
+        },
+        {
+          "id": "std-078",
+          "label": "078 AirSpin2",
+          "note": "Codes B, H, W · Wind · 40 dmg · Spits out hurricane attack",
+          "done": false
+        },
+        {
+          "id": "std-079",
+          "label": "079 AirSpin3",
+          "note": "Codes A, G, J · Wind · 40 dmg · Spits out hurricane attack",
+          "done": false
+        },
+        {
+          "id": "std-080",
+          "label": "080 FireHit1",
+          "note": "Codes O, P, Q · Heat · 60 dmg · Slams closest enemy",
+          "done": false
+        },
+        {
+          "id": "std-081",
+          "label": "081 FireHit2",
+          "note": "Codes H, I, J · Heat · 100 dmg · Slams closest enemy",
+          "done": false
+        },
+        {
+          "id": "std-082",
+          "label": "082 FireHit3",
+          "note": "Codes E, F, G · Heat · 140 dmg · Slams closest enemy",
+          "done": false
+        },
+        {
+          "id": "std-083",
+          "label": "083 HotBody1",
+          "note": "Codes A, F, P · Heat · 110 dmg · Burns all enemies around",
+          "done": false
+        },
+        {
+          "id": "std-084",
+          "label": "084 HotBody2",
+          "note": "Codes C, R, W · Heat · 130 dmg · Burns all enemies around",
+          "done": false
+        },
+        {
+          "id": "std-085",
+          "label": "085 HotBody3",
+          "note": "Codes J, M, S · Heat · 150 dmg · Burns all enemies around",
+          "done": false
+        },
+        {
+          "id": "std-086",
+          "label": "086 SideBub1",
+          "note": "Codes D, Q, S · Aqua · 90 dmg · Bubbles spread in a big V",
+          "done": false
+        },
+        {
+          "id": "std-087",
+          "label": "087 SideBub2",
+          "note": "Codes H, L, W · Aqua · 110 dmg · Bubbles spread in a big V",
+          "done": false
+        },
+        {
+          "id": "std-088",
+          "label": "088 SideBub3",
+          "note": "Codes E, N, P · Aqua · 130 dmg · Bubbles spread in a big V",
+          "done": false
+        },
+        {
+          "id": "std-089",
+          "label": "089 CusVolt1",
+          "note": "Codes A, V, Y, * · Elec · 10~110 dmg · Consumes Custom Gauge",
+          "done": false
+        },
+        {
+          "id": "std-090",
+          "label": "090 CusVolt2",
+          "note": "Codes C, E, G · Elec · 30~130 dmg · Consumes Custom Gauge",
+          "done": false
+        },
+        {
+          "id": "std-091",
+          "label": "091 CusVolt3",
+          "note": "Codes G, M, P · Elec · 50~150 dmg · Consumes Custom Gauge",
+          "done": false
+        },
+        {
+          "id": "std-092",
+          "label": "092 Boomer",
+          "note": "Codes A, L, V, * · Wood · 60 dmg · Boomerang encircles field",
+          "done": false
+        },
+        {
+          "id": "std-093",
+          "label": "093 Astroid1",
+          "note": "Codes A, Q, T · Heat · 60 dmg · Meteors crack panels!",
+          "done": false
+        },
+        {
+          "id": "std-094",
+          "label": "094 Astroid2",
+          "note": "Codes E, M, U · Heat · 70 dmg · Meteors crack panels!",
+          "done": false
+        },
+        {
+          "id": "std-095",
+          "label": "095 Astroid3",
+          "note": "Codes C, P, Y · Heat · 80 dmg · Meteors crack panels!",
+          "done": false
+        },
+        {
+          "id": "std-096",
+          "label": "096 SpShake1",
+          "note": "Codes G, H, I · Elec · 60 dmg · Shakey shivers 3sq ahead",
+          "done": false
+        },
+        {
+          "id": "std-097",
+          "label": "097 SpShake2",
+          "note": "Codes B, C, D · Elec · 80 dmg · Shakey shivers 3sq ahead",
+          "done": false
+        },
+        {
+          "id": "std-098",
+          "label": "098 SpShake3",
+          "note": "Codes S, T, U · Elec · 100 dmg · Shakey shivers 3sq ahead",
+          "done": false
+        },
+        {
+          "id": "std-099",
+          "label": "099 Voltz1",
+          "note": "Codes K, O, Y · Elec · 100 dmg · Sensor2 ElecShock 3sq ahead",
+          "done": false
+        },
+        {
+          "id": "std-100",
+          "label": "100 Voltz2",
+          "note": "Codes J, U, Z · Elec · 120 dmg · Sensor2 ElecShock 3sq ahead",
+          "done": false
+        },
+        {
+          "id": "std-101",
+          "label": "101 Voltz3",
+          "note": "Codes A, H, V · Elec · 140 dmg · Sensor2 ElecShock 3sq ahead",
+          "done": false
+        },
+        {
+          "id": "std-102",
+          "label": "102 WoodNos1",
+          "note": "Codes F, R, W · Wood · 100 dmg · Branch grows out from side",
+          "done": false
+        },
+        {
+          "id": "std-103",
+          "label": "103 WoodNos2",
+          "note": "Codes J, T, Z · Wood · 130 dmg · Branch grows out from side",
+          "done": false
+        },
+        {
+          "id": "std-104",
+          "label": "104 WoodNos3",
+          "note": "Codes I, S, V · Wood · 160 dmg · Branch grows out from side",
+          "done": false
+        },
+        {
+          "id": "std-105",
+          "label": "105 Lance",
+          "note": "Codes C, L, R, * · Wood · 130 dmg · Lance through back line",
+          "done": false
+        },
+        {
+          "id": "std-106",
+          "label": "106 WavePit",
+          "note": "Codes B, E, Z, * (DS Only) · Aqua · 160 dmg · Wave from water sq",
+          "done": false
+        },
+        {
+          "id": "std-107",
+          "label": "107 RedWave",
+          "note": "Codes A, F, H, * (DS Only) · Heat · 190 dmg · RedWave out of lava sq",
+          "done": false
+        },
+        {
+          "id": "std-108",
+          "label": "108 MudWave",
+          "note": "Codes D, N, W, * (DS Only) · Wood · 170 dmg · MudWave out of hole",
+          "done": false
+        },
+        {
+          "id": "std-109",
+          "label": "109 RainyDay",
+          "note": "Codes B, G, L · Aqua · 40 dmg · Rains down on enemy area",
+          "done": false
+        },
+        {
+          "id": "std-110",
+          "label": "110 Snake",
+          "note": "Codes C, M, Z · Null · 30 dmg · Call snake from hole in area",
+          "done": false
+        },
+        {
+          "id": "std-111",
+          "label": "111 Magnum",
+          "note": "Codes E, O, V · Cursor · 130 dmg · Cursor destroys panels!",
+          "done": false
+        },
+        {
+          "id": "std-112",
+          "label": "112 CircGun",
+          "note": "Codes A, C, F · Cursor · 100 dmg · Stop site w/ Button and attack",
+          "done": false
+        },
+        {
+          "id": "std-113",
+          "label": "113 TimeBom1",
+          "note": "Codes H, N, T · Obstacle · 100 dmg · Explodes 3 seconds later",
+          "done": false
+        },
+        {
+          "id": "std-114",
+          "label": "114 TimeBom2",
+          "note": "Codes D, H, Z · Obstacle · 140 dmg · Explodes 3 seconds later",
+          "done": false
+        },
+        {
+          "id": "std-115",
+          "label": "115 TimeBom3",
+          "note": "Codes F, H, S · Obstacle · 200 dmg · Explodes 3 seconds later",
+          "done": false
+        },
+        {
+          "id": "std-116",
+          "label": "116 BoyBomb1",
+          "note": "Codes C, F, S · Obstacle · 130 dmg · BoyBomb 1sq ahead Push it!",
+          "done": false
+        },
+        {
+          "id": "std-117",
+          "label": "117 BoyBomb2",
+          "note": "Codes H, P, W · Obstacle · 180 dmg · BoyBomb 1sq ahead Push it!",
+          "done": false
+        },
+        {
+          "id": "std-118",
+          "label": "118 BoyBomb3",
+          "note": "Codes B, Q, Y · Obstacle · 230 dmg · BoyBomb 1sq ahead Push it!",
+          "done": false
+        },
+        {
+          "id": "std-119",
+          "label": "119 Mine",
+          "note": "Codes H, P, T · Invisible · 300 dmg · Place a mine in enmy area",
+          "done": false
+        },
+        {
+          "id": "std-120",
+          "label": "120 RockCube",
+          "note": "Codes * · Obstacle · Place a rock cube in front",
+          "done": false
+        },
+        {
+          "id": "std-121",
+          "label": "121 Wind",
+          "note": "Codes * · Wind · WindBox blows at enmy area",
+          "done": false
+        },
+        {
+          "id": "std-122",
+          "label": "122 Fan",
+          "note": "Codes * · Wind · Vacuum fan pulls enemy in",
+          "done": false
+        },
+        {
+          "id": "std-123",
+          "label": "123 Fanfare",
+          "note": "Codes F, P, Z, * · Obstacle · Take no dmg for a while",
+          "done": false
+        },
+        {
+          "id": "std-124",
+          "label": "124 Discord",
+          "note": "Codes B, J, Q, * · Obstacle · Confuses enemies w/ music",
+          "done": false
+        },
+        {
+          "id": "std-125",
+          "label": "125 Timpani",
+          "note": "Codes A, L, V, * · Obstacle · Paralyzes enemies w/ music",
+          "done": false
+        },
+        {
+          "id": "std-126",
+          "label": "126 Silence",
+          "note": "Codes C, J, N, * · Obstacle · MuteAnt blinds enemy",
+          "done": false
+        },
+        {
+          "id": "std-127",
+          "label": "127 RedFrut1",
+          "note": "Codes E, K, Z · Recovery · Hit apple for +300 HP",
+          "done": false
+        },
+        {
+          "id": "std-128",
+          "label": "128 RedFrut2",
+          "note": "Codes F, T, W · Recovery · Hit apple for temp no damage",
+          "done": false
+        },
+        {
+          "id": "std-129",
+          "label": "129 RedFrut3",
+          "note": "Codes H, O, U · Recovery · Hit apple for Full Synchro",
+          "done": false
+        },
+        {
+          "id": "std-130",
+          "label": "130 VDoll",
+          "note": "Codes O, T, Z · Obstacle · Throws V doll ahead",
+          "done": false
+        },
+        {
+          "id": "std-131",
+          "label": "131 Guard1",
+          "note": "Codes A, D, K, * · Null · 50 dmg · Repels an enemy's attack",
+          "done": false
+        },
+        {
+          "id": "std-132",
+          "label": "132 Guard2",
+          "note": "Codes B, L, Q, * · Null · 100 dmg · Repels an enemy's attack",
+          "done": false
+        },
+        {
+          "id": "std-133",
+          "label": "133 Guard3",
+          "note": "Codes C, M, S, * · Null · 150 dmg · Repels an enemy's attack",
+          "done": false
+        },
+        {
+          "id": "std-134",
+          "label": "134 CrsShld1",
+          "note": "Codes B, F, V · Null · 130 dmg · Attacks even when guarding!",
+          "done": false
+        },
+        {
+          "id": "std-135",
+          "label": "135 CrsShld2",
+          "note": "Codes C, M, R · Null · 160 dmg · Attacks even when guarding!",
+          "done": false
+        },
+        {
+          "id": "std-136",
+          "label": "136 CrsShld3",
+          "note": "Codes D, O, Z · Null · 190 dmg · Attacks even when guarding!",
+          "done": false
+        },
+        {
+          "id": "std-137",
+          "label": "137 CrakOut",
+          "note": "Codes * · Null · Destroys 1 panel in front",
+          "done": false
+        },
+        {
+          "id": "std-138",
+          "label": "138 DublCrak",
+          "note": "Codes * · Null · Destroys 2 panels in front",
+          "done": false
+        },
+        {
+          "id": "std-139",
+          "label": "139 TripCrak",
+          "note": "Codes * · Null · Destroys 3 panels in front",
+          "done": false
+        },
+        {
+          "id": "std-140",
+          "label": "140 Recov10",
+          "note": "Codes A, C, L, * · Recovery · Recover 10HP",
+          "done": false
+        },
+        {
+          "id": "std-141",
+          "label": "141 Recov30",
+          "note": "Codes C, H, L, * · Recovery · Recover 30HP",
+          "done": false
+        },
+        {
+          "id": "std-142",
+          "label": "142 Recov50",
+          "note": "Codes B, H, O, * · Recovery · Recover 50HP",
+          "done": false
+        },
+        {
+          "id": "std-143",
+          "label": "143 Recov80",
+          "note": "Codes B, K, O, * · Recovery · Recover 80HP",
+          "done": false
+        },
+        {
+          "id": "std-144",
+          "label": "144 Recov120",
+          "note": "Codes K · Recovery · Recover 120HP",
+          "done": false
+        },
+        {
+          "id": "std-145",
+          "label": "145 Recov150",
+          "note": "Codes Q · Recovery · Recover 150HP",
+          "done": false
+        },
+        {
+          "id": "std-146",
+          "label": "146 Recov200",
+          "note": "Codes I · Recovery · Recover 200HP",
+          "done": false
+        },
+        {
+          "id": "std-147",
+          "label": "147 Recov300",
+          "note": "Codes Y · Recovery · Recover 300HP",
+          "done": false
+        },
+        {
+          "id": "std-148",
+          "label": "148 PanlGrab",
+          "note": "Codes * · Null · Steals 1 enemy square",
+          "done": false
+        },
+        {
+          "id": "std-149",
+          "label": "149 AreaGrab",
+          "note": "Codes A, L, S, * · Null · Steals left edge from enmy",
+          "done": false
+        },
+        {
+          "id": "std-150",
+          "label": "150 MetaGel",
+          "note": "Codes F, N, T · Aqua · 120 dmg · Gel attack steals a panel!",
+          "done": false
+        },
+        {
+          "id": "std-151",
+          "label": "151 GrabBnsh",
+          "note": "Codes D, L, R · Null · 20 dmg · 20 damage for every stolen sq",
+          "done": false
+        },
+        {
+          "id": "std-152",
+          "label": "152 GrabRvng",
+          "note": "Codes F, N, P · Null · 40 dmg · 40 damage for every stolen sq",
+          "done": false
+        },
+        {
+          "id": "std-153",
+          "label": "153 PnlRetrn",
+          "note": "Codes * · Null · Fix your area's panels",
+          "done": false
+        },
+        {
+          "id": "std-154",
+          "label": "154 Geddon1",
+          "note": "Codes M, P, Z, * · Null · Cracks all panel on screen",
+          "done": false
+        },
+        {
+          "id": "std-155",
+          "label": "155 Geddon2",
+          "note": "Codes H, T, W · Null · Breaks all empty panels",
+          "done": false
+        },
+        {
+          "id": "std-156",
+          "label": "156 Geddon3",
+          "note": "Codes A, O, V · Null · Turn all panels to swamp",
+          "done": false
+        },
+        {
+          "id": "std-157",
+          "label": "157 SloGauge",
+          "note": "Codes H, Q, W, * · Null · CustGauge temporary slow down",
+          "done": false
+        },
+        {
+          "id": "std-158",
+          "label": "158 FstGauge",
+          "note": "Codes H, Q, W, * · Null · CustGauge temporary speed up",
+          "done": false
+        },
+        {
+          "id": "std-159",
+          "label": "159 BusterUp",
+          "note": "Codes * · Plus · Power goes up by 1",
+          "done": false
+        },
+        {
+          "id": "std-160",
+          "label": "160 Blinder",
+          "note": "Codes A, D, H, * · Invisible · Blinds enemy with light",
+          "done": false
+        },
+        {
+          "id": "std-161",
+          "label": "161 NrthWind",
+          "note": "Codes D, Q, V, * · Wind · Wind blows off auras, barriers",
+          "done": false
+        },
+        {
+          "id": "std-162",
+          "label": "162 HolyPanl",
+          "note": "Codes A, N, U, * · Null · Creates a HolyPanel in front",
+          "done": false
+        },
+        {
+          "id": "std-163",
+          "label": "163 Invisibl",
+          "note": "Codes * · Invisible · Invisible for a while",
+          "done": false
+        },
+        {
+          "id": "std-164",
+          "label": "164 Barrier",
+          "note": "Codes B, L, S, * · Null · Nullifies 10 HP of damage",
+          "done": false
+        },
+        {
+          "id": "std-165",
+          "label": "165 Barr100",
+          "note": "Codes P · Null · Nullifies 100 HP of damage",
+          "done": false
+        },
+        {
+          "id": "std-166",
+          "label": "166 Barr200",
+          "note": "Codes W · Null · Nullifies 200 HP of damage",
+          "done": false
+        },
+        {
+          "id": "std-167",
+          "label": "167 BblWrap",
+          "note": "Codes Y · Aqua · Weak against elec attack",
+          "done": false
+        },
+        {
+          "id": "std-168",
+          "label": "168 AntiFire",
+          "note": "Codes E, K, T, * · Heat · 200 dmg · Fire attack damages you",
+          "done": false
+        },
+        {
+          "id": "std-169",
+          "label": "169 AntiWatr",
+          "note": "Codes D, G, Q, * · Aqua · 200 dmg · Water attack damages you",
+          "done": false
+        },
+        {
+          "id": "std-170",
+          "label": "170 AntiElec",
+          "note": "Codes A, N, Y, * · Elec · 200 dmg · Elec attack damages you",
+          "done": false
+        },
+        {
+          "id": "std-171",
+          "label": "171 AntiWood",
+          "note": "Codes M, S, Z, * · Wood · 200 dmg · Wood attack damages you",
+          "done": false
+        },
+        {
+          "id": "std-172",
+          "label": "172 AntiDmg",
+          "note": "Codes C, F, M, * · Invisible · 120 dmg · Sets trap and throw stars",
+          "done": false
+        },
+        {
+          "id": "std-173",
+          "label": "173 AntiSwrd",
+          "note": "Codes D, O, R · Sword · 100 dmg · Retaliate for sword damage",
+          "done": false
+        },
+        {
+          "id": "std-174",
+          "label": "174 AntiNavi",
+          "note": "Codes M, T, V · Null · Takes the enemy's Navi away",
+          "done": false
+        },
+        {
+          "id": "std-175",
+          "label": "175 AntiRecv",
+          "note": "Codes B, J, P · Null · Damages enemy in recovery",
+          "done": false
+        },
+        {
+          "id": "std-176",
+          "label": "176 CopyDmg",
+          "note": "Codes * · Cursor · Duplicate damage to 2nd enemy",
+          "done": false
+        },
+        {
+          "id": "std-177",
+          "label": "177 LifeSync",
+          "note": "Codes B, R, S, * · Cursor · Makes HP same as enemy",
+          "done": false
+        },
+        {
+          "id": "std-178",
+          "label": "178 Attck+10",
+          "note": "Codes * · Plus · +10 for selected attack Chip",
+          "done": false
+        },
+        {
+          "id": "std-179",
+          "label": "179 Navi+20",
+          "note": "Codes * · Plus · +20 for selected Navi Chip",
+          "done": false
+        },
+        {
+          "id": "std-180",
+          "label": "180 ColorPt",
+          "note": "Codes * · Plus · +10 for next chip attack",
+          "done": false
+        }
+      ]
+    },
+    {
+      "title": "Mega Chips - both versions (1-21, 40-60)",
+      "items": [
+        {
+          "id": "mega-01-suprvulc",
+          "label": "01 SuprVulc",
+          "note": "Code S · Null · 10 dmg · 12-shot vulcan cannon",
+          "done": false
+        },
+        {
+          "id": "mega-02-neovari",
+          "label": "02 NeoVari",
+          "note": "Code V · Sword · 240 dmg · A magical shifting sword",
+          "done": false
+        },
+        {
+          "id": "mega-03-meteors",
+          "label": "03 Meteors",
+          "note": "Code R · Heat · 40 dmg · Drop many meteor on enmy area",
+          "done": false
+        },
+        {
+          "id": "mega-04-numbrbl",
+          "label": "04 NumbrBl",
+          "note": "Null · Last 2 HP digits = atk pwr",
+          "done": false
+        },
+        {
+          "id": "mega-05-guardian",
+          "label": "05 Guardian",
+          "note": "Obstacle · 200 dmg · Statue punishes when hit",
+          "done": false
+        },
+        {
+          "id": "mega-06-jealousy",
+          "label": "06 Jealousy",
+          "note": "Code J · Null · 80 dmg · More damage if enemy has chip",
+          "done": false
+        },
+        {
+          "id": "mega-07-poltrgst",
+          "label": "07 Poltrgst",
+          "note": "Code P · Null · 150 dmg · Objects thrown at enemies",
+          "done": false
+        },
+        {
+          "id": "mega-08-bugfix",
+          "label": "08 BugFix",
+          "note": "Code H, * · Null · Repairs & removes bugs",
+          "done": false
+        },
+        {
+          "id": "mega-09-fullcust",
+          "label": "09 FullCust",
+          "note": "Code * · Null · CustGauge instantly refills",
+          "done": false
+        },
+        {
+          "id": "mega-10-lifeaur",
+          "label": "10 LifeAur",
+          "note": "Null · Repel all attacks under 200",
+          "done": false
+        },
+        {
+          "id": "mega-11-snctuary",
+          "label": "11 Snctuary",
+          "note": "Code S · Null · Chng all own panel to holy",
+          "done": false
+        },
+        {
+          "id": "mega-12-attck-30",
+          "label": "12 Attck+30",
+          "note": "Code * · Plus · +30 for selected atk chip",
+          "done": false
+        },
+        {
+          "id": "mega-13-dblpoint",
+          "label": "13 DblPoint",
+          "note": "Code * · Plus · +20 for next chip attack",
+          "done": false
+        },
+        {
+          "id": "mega-14-muramasa",
+          "label": "14 Muramasa",
+          "note": "Code M · Sword · Atk power equal amt of lost HP",
+          "done": false
+        },
+        {
+          "id": "mega-15-anubis",
+          "label": "15 Anubis",
+          "note": "Code A · Obstacle · Anubis poisons enemies",
+          "done": false
+        },
+        {
+          "id": "mega-16-blakwing",
+          "label": "16 BlakWing",
+          "note": "Code W · Null · 20 dmg · Wing atk from a cave",
+          "done": false
+        },
+        {
+          "id": "mega-17-justcone",
+          "label": "17 JustcOne",
+          "note": "Code J · Break · 280 dmg · Fist atk on center panel",
+          "done": false
+        },
+        {
+          "id": "mega-18-z-saver",
+          "label": "18 Z Saver",
+          "note": "Code Z · Sword · 100 dmg · Repliroid swrd cuts 3 times",
+          "done": false
+        },
+        {
+          "id": "mega-19-roll",
+          "label": "19 Roll",
+          "note": "Code R · Recovery · 20 dmg · Attack an enmy, then heals you",
+          "done": false
+        },
+        {
+          "id": "mega-20-rollsp",
+          "label": "20 RollSP",
+          "note": "Code R · Recovery · Attack an enmy, then heals you",
+          "done": false
+        },
+        {
+          "id": "mega-21-rollds",
+          "label": "21 RollDS",
+          "note": "Code R · Recovery · Attack an enmy, then heals you",
+          "done": false
+        },
+        {
+          "id": "mega-40-blizman",
+          "label": "40 BlizMan",
+          "note": "Code B · Aqua · 100 dmg · Snowball expands when hit",
+          "done": false
+        },
+        {
+          "id": "mega-41-blizmnsp",
+          "label": "41 BlizMnSP",
+          "note": "Code B · Aqua · 130~180 dmg · Snowball expands when hit",
+          "done": false
+        },
+        {
+          "id": "mega-42-blizmnds",
+          "label": "42 BlizMnDS",
+          "note": "Code B · Aqua · Snowball expands when hit",
+          "done": false
+        },
+        {
+          "id": "mega-43-shademan",
+          "label": "43 ShadeMan",
+          "note": "Code S · Null · 120 dmg · CrshNoise attck all direction",
+          "done": false
+        },
+        {
+          "id": "mega-44-shademnsp",
+          "label": "44 ShadeMnSP",
+          "note": "Code S · Null · 140~240 dmg · CrshNoise attck all direction",
+          "done": false
+        },
+        {
+          "id": "mega-45-shademnds",
+          "label": "45 ShadeMnDS",
+          "note": "Code S · Null · CrshNoise attck all direction",
+          "done": false
+        },
+        {
+          "id": "mega-46-cloudman",
+          "label": "46 CloudMan",
+          "note": "Code C · Elec · 50 dmg · Thundr atk behind the enmy",
+          "done": false
+        },
+        {
+          "id": "mega-47-cloudmnsp",
+          "label": "47 CloudMnSP",
+          "note": "Code C · Elec · 60~110 dmg · Thundr atk behind the enmy",
+          "done": false
+        },
+        {
+          "id": "mega-48-cloudmnds",
+          "label": "48 CloudMnDS",
+          "note": "Code C · Elec · Thundr atk behind the enmy",
+          "done": false
+        },
+        {
+          "id": "mega-49-cosmoman",
+          "label": "49 CosmoMan",
+          "note": "Code C · Null · 70 dmg · Meteors hit enemy",
+          "done": false
+        },
+        {
+          "id": "mega-50-cosmomnsp",
+          "label": "50 CosmoMnSP",
+          "note": "Code C · Null · 80~130 dmg · Meteors hit enemy",
+          "done": false
+        },
+        {
+          "id": "mega-51-cosmomnds",
+          "label": "51 CosmoMnDS",
+          "note": "Code C · Null · Meteors hit enemy",
+          "done": false
+        },
+        {
+          "id": "mega-52-larkman",
+          "label": "52 LarkMan",
+          "note": "Code S · Null · 140 dmg · Whirl forward and atk",
+          "done": false
+        },
+        {
+          "id": "mega-53-larkmnsp",
+          "label": "53 LarkMnSP",
+          "note": "Code S · Null · 170~270 dmg · Whirl forward and atk",
+          "done": false
+        },
+        {
+          "id": "mega-54-larkmnds",
+          "label": "54 LarkMnDS",
+          "note": "Code S · Null · Whirl forward and atk",
+          "done": false
+        },
+        {
+          "id": "mega-55-gridman",
+          "label": "55 GridMan",
+          "note": "Code F · Null · 100 dmg · Explodes when touchdown",
+          "done": false
+        },
+        {
+          "id": "mega-56-gridmnsp",
+          "label": "56 GridMnSP",
+          "note": "Code F · Null · 150~250 dmg · Explodes when touchdown",
+          "done": false
+        },
+        {
+          "id": "mega-57-gridmnds",
+          "label": "57 GridMnDS",
+          "note": "Code F · Null · Explodes when touchdown",
+          "done": false
+        },
+        {
+          "id": "mega-58-django",
+          "label": "58 Django",
+          "note": "Code D · Null · Burns with sunlight",
+          "done": false
+        },
+        {
+          "id": "mega-59-djangosp",
+          "label": "59 DjangoSP",
+          "note": "Code D · Null · Burns with sunlight",
+          "done": false
+        },
+        {
+          "id": "mega-60-djangods",
+          "label": "60 DjangoDS",
+          "note": "Code D · Null · Burns with sunlight",
+          "done": false
+        }
+      ]
+    },
+    {
+      "title": "Mega Chips - Team ProtoMan only (22-39)",
+      "items": [
+        {
+          "id": "mega-tp-22-protoman",
+          "label": "22 ProtoMan",
+          "note": "Code B · Sword · 130 dmg · Move in and slice enemy",
+          "done": false
+        },
+        {
+          "id": "mega-tp-23-protomnsp",
+          "label": "23 ProtoMnSP",
+          "note": "Code B · Sword · 150~250 dmg · Move in and slice enemy",
+          "done": false
+        },
+        {
+          "id": "mega-tp-24-protomnds",
+          "label": "24 ProtoMnDS",
+          "note": "Code B · Sword · Move in and slice enemy",
+          "done": false
+        },
+        {
+          "id": "mega-tp-25-gyroman",
+          "label": "25 GyroMan",
+          "note": "Code G · Null · 80 dmg · Bombs the front of same row",
+          "done": false
+        },
+        {
+          "id": "mega-tp-26-gyromnsp",
+          "label": "26 GyroMnSP",
+          "note": "Code G · Null · 90~140 dmg · Bombs the front of same row",
+          "done": false
+        },
+        {
+          "id": "mega-tp-27-gyromnds",
+          "label": "27 GyroMnDS",
+          "note": "Code G · Null · Bombs the front of same row",
+          "done": false
+        },
+        {
+          "id": "mega-tp-28-searchman",
+          "label": "28 SearchMan",
+          "note": "Code S · Cursor · 20 dmg · Aim and fire 5 shots",
+          "done": false
+        },
+        {
+          "id": "mega-tp-29-searchmnsp",
+          "label": "29 SearchMnSP",
+          "note": "Code S · Cursor · 25~75 dmg · Aim and fire 5 shots",
+          "done": false
+        },
+        {
+          "id": "mega-tp-30-searchmnds",
+          "label": "30 SearchMnDS",
+          "note": "Code S · Cursor · Aim and fire 5 shots",
+          "done": false
+        },
+        {
+          "id": "mega-tp-31-napalmman",
+          "label": "31 NapalmMan",
+          "note": "Code N · Heat · 120 dmg · Explosion spreads 9 panels",
+          "done": false
+        },
+        {
+          "id": "mega-tp-32-napalmmnsp",
+          "label": "32 NapalmMnSP",
+          "note": "Code N · Heat · 150~250 dmg · Explosion spreads 9 panels",
+          "done": false
+        },
+        {
+          "id": "mega-tp-33-napalmmnds",
+          "label": "33 NapalmMnDS",
+          "note": "Code N · Heat · Explosion spreads 9 panels",
+          "done": false
+        },
+        {
+          "id": "mega-tp-34-magnetman",
+          "label": "34 MagnetMan",
+          "note": "Code M · Elec · 90 dmg · NS tackle and chrge",
+          "done": false
+        },
+        {
+          "id": "mega-tp-35-magnetmnsp",
+          "label": "35 MagnetMnSP",
+          "note": "Code M · Elec · 100~200 dmg · NS tackle and chrge",
+          "done": false
+        },
+        {
+          "id": "mega-tp-36-magnetmnds",
+          "label": "36 MagnetMnDS",
+          "note": "Code M · Elec · NS tackle and chrge",
+          "done": false
+        },
+        {
+          "id": "mega-tp-37-meddy",
+          "label": "37 Meddy",
+          "note": "Code M · Null · 80 dmg · Throws 2 bombs to enmy area",
+          "done": false
+        },
+        {
+          "id": "mega-tp-38-meddysp",
+          "label": "38 MeddySP",
+          "note": "Code M · Null · 100~200 dmg · Throws 2 bombs to enmy area",
+          "done": false
+        },
+        {
+          "id": "mega-tp-39-meddyds",
+          "label": "39 MeddyDS",
+          "note": "Code M · Null · Throws 2 bombs to enmy area",
+          "done": false
+        }
+      ]
+    },
+    {
+      "title": "Mega Chips - Team Colonel only (22-39)",
+      "items": [
+        {
+          "id": "mega-tc-22-colonel",
+          "label": "22 Colonel",
+          "note": "Code C · Null · 160 dmg · Slice enemy in same row",
+          "done": false
+        },
+        {
+          "id": "mega-tc-23-colonelsp",
+          "label": "23 ColonelSP",
+          "note": "Code C · Null · 200~300 dmg · Slice enemy in same row",
+          "done": false
+        },
+        {
+          "id": "mega-tc-24-colonelds",
+          "label": "24 ColonelDS",
+          "note": "Code C · Null · Slice enemy in same row",
+          "done": false
+        },
+        {
+          "id": "mega-tc-25-shadoman",
+          "label": "25 ShadoMan",
+          "note": "Code S · Null · 40 dmg · Throw 3 ninja stars",
+          "done": false
+        },
+        {
+          "id": "mega-tc-26-shadomnsp",
+          "label": "26 ShadoMnSP",
+          "note": "Code S · Null · 45~70 dmg · Throw 3 ninja stars",
+          "done": false
+        },
+        {
+          "id": "mega-tc-27-shadomnds",
+          "label": "27 ShadoMnDS",
+          "note": "Code S · Null · Throw 3 ninja stars",
+          "done": false
+        },
+        {
+          "id": "mega-tc-28-numbrman",
+          "label": "28 NumbrMan",
+          "note": "Code N · Null · 30 dmg · Bomb 3 ahead! Hits 9sq",
+          "done": false
+        },
+        {
+          "id": "mega-tc-29-numbrmnsp",
+          "label": "29 NumbrMnSP",
+          "note": "Code N · Null · 40~90 dmg · Bomb 3 ahead! Hits 9sq",
+          "done": false
+        },
+        {
+          "id": "mega-tc-30-numbrmnds",
+          "label": "30 NumbrMnDS",
+          "note": "Code N · Null · Bomb 3 ahead! Hits 9sq",
+          "done": false
+        },
+        {
+          "id": "mega-tc-31-tmhwkman",
+          "label": "31 TmhwkMan",
+          "note": "Code T · Wood · 140 dmg · Slice 2sq side, 3sq vertical",
+          "done": false
+        },
+        {
+          "id": "mega-tc-32-tmhwkmnsp",
+          "label": "32 TmhwkMnSP",
+          "note": "Code T · Wood · 180~280 dmg · Slice 2sq side, 3sq vertical",
+          "done": false
+        },
+        {
+          "id": "mega-tc-33-tmhwkmnds",
+          "label": "33 TmhwkMnDS",
+          "note": "Code T · Wood · Slice 2sq side, 3sq vertical",
+          "done": false
+        },
+        {
+          "id": "mega-tc-34-knightman",
+          "label": "34 KnightMan",
+          "note": "Code K · Break · 170 dmg · Circle around and atk",
+          "done": false
+        },
+        {
+          "id": "mega-tc-35-knigtmnsp",
+          "label": "35 KnigtMnSP",
+          "note": "Code K · Break · 220~320 dmg · Circle around and atk",
+          "done": false
+        },
+        {
+          "id": "mega-tc-36-knigtmnds",
+          "label": "36 KnigtMnDS",
+          "note": "Code K · Break · Circle around and atk",
+          "done": false
+        },
+        {
+          "id": "mega-tc-37-toadman",
+          "label": "37 ToadMan",
+          "note": "Code T · Elec · 80 dmg · Sing and paralyze the enemy",
+          "done": false
+        },
+        {
+          "id": "mega-tc-38-toadmnsp",
+          "label": "38 ToadMnSP",
+          "note": "Code T · Elec · 120~220 dmg · Sing and paralyze the enemy",
+          "done": false
+        },
+        {
+          "id": "mega-tc-39-toadmnds",
+          "label": "39 ToadMnDS",
+          "note": "Code T · Elec · Sing and paralyze the enemy",
+          "done": false
+        }
+      ]
+    },
+    {
+      "title": "Giga Chips - Team ProtoMan only",
+      "items": [
+        {
+          "id": "giga-tp-01-deltaray",
+          "label": "01 DeltaRay",
+          "note": "Code Z · Sword · 220 dmg · A Button power up by 3 swrd",
+          "done": false
+        },
+        {
+          "id": "giga-tp-02-bighook",
+          "label": "02 BigHook",
+          "note": "Code G · Break · 240 dmg · Hook atk 2 sq wide",
+          "done": false
+        },
+        {
+          "id": "giga-tp-03-bass",
+          "label": "03 Bass",
+          "note": "Code F · Null · 60 dmg · Buster rake wide enmy area",
+          "done": false
+        },
+        {
+          "id": "giga-tp-04-holydrem",
+          "label": "04 HolyDrem",
+          "note": "Code H · Null · 50 dmg · Holy shot sucks in HolyPanl!",
+          "done": false
+        },
+        {
+          "id": "giga-tp-05-bugcurse",
+          "label": "05 BugCurse",
+          "note": "Code C · Null · Make enemy buggy",
+          "done": false
+        },
+        {
+          "id": "giga-tp-06-dethphnx",
+          "label": "06 DethPhnx",
+          "note": "Code D · Null · 150 dmg · Fire Atk! Recycle Navi too",
+          "done": false
+        }
+      ]
+    },
+    {
+      "title": "Giga Chips - Team Colonel only",
+      "items": [
+        {
+          "id": "giga-tc-01-crossdiv",
+          "label": "01 CrossDiv",
+          "note": "Code C · Null · 220 dmg · Cross-slice!",
+          "done": false
+        },
+        {
+          "id": "giga-tc-02-metrknuk",
+          "label": "02 MetrKnuk",
+          "note": "Code M · Break · 100 dmg · Meteors bombard from sky",
+          "done": false
+        },
+        {
+          "id": "giga-tc-03-bassanly",
+          "label": "03 BassAnly",
+          "note": "Code F · Null · 160 dmg · A ring the hits 4 times",
+          "done": false
+        },
+        {
+          "id": "giga-tc-04-omegarkt",
+          "label": "04 OmegaRkt",
+          "note": "Code R · Null · 270 dmg · A rocket moves straight",
+          "done": false
+        },
+        {
+          "id": "giga-tc-05-bugcharg",
+          "label": "05 BugCharg",
+          "note": "Code B · Null · 200 dmg · All your bugs will attack!",
+          "done": false
+        },
+        {
+          "id": "giga-tc-06-phoenix",
+          "label": "06 Phoenix",
+          "note": "Code P · Heat · 150 dmg · Fire Atk! Recover HP, too!",
+          "done": false
+        }
+      ]
+    },
+    {
+      "title": "Secret Chips",
+      "items": [
+        {
+          "id": "secret-19-otenko",
+          "label": "19 Otenko",
+          "note": "Code O · Null · Put Otnko to raise atk pwr",
+          "done": false
+        },
+        {
+          "id": "secret-20-gundelex",
+          "label": "20 GunDelEX",
+          "note": "Code G · Null · Fires a spread sunbeam",
+          "done": false
+        },
+        {
+          "id": "secret-21-leadraid",
+          "label": "21 LeadRaid",
+          "note": "Code L · Null · 200 dmg · ProtoMan & Colonel together! · DS only (Lotto Number)",
+          "done": false
+        },
+        {
+          "id": "secret-22-chaoslrd",
+          "label": "22 ChaosLrd",
+          "note": "Code X · Null · 500 dmg · Hatred formed into Bass · DS only (Lotto Number)",
+          "done": false
+        }
+      ]
+    },
+    {
+      "title": "Dark Chips",
+      "items": [
+        {
+          "id": "dark-01-drksword",
+          "label": "01 DrkSword",
+          "note": "Code Z · Sword · 400 dmg · USE LARGE SWORD AND SLICE",
+          "done": false
+        },
+        {
+          "id": "dark-02-darktorn",
+          "label": "02 DarkTorn",
+          "note": "Code T · Wind · 50 (x8) dmg · TORNADO EXPANDS WHEN HIT",
+          "done": false
+        },
+        {
+          "id": "dark-03-darkcirc",
+          "label": "03 DarkCirc",
+          "note": "Code R · Cursor · 300 dmg · STOP CURSR AND ATTACK",
+          "done": false
+        },
+        {
+          "id": "dark-04-darkmetr",
+          "label": "04 DarkMetr",
+          "note": "Code F · Heat · 100 (x12/14/16) dmg · METEOR SHOWER ON ENMY",
+          "done": false
+        },
+        {
+          "id": "dark-05-darkthnd",
+          "label": "05 DarkThnd",
+          "note": "Code M · Elec · 200 dmg · CORNER ENMY BY THUNDER",
+          "done": false
+        },
+        {
+          "id": "dark-06-drkrecov",
+          "label": "06 DrkRecov",
+          "note": "Code H · Recovery · BECOME ALMOST INVINCBLE",
+          "done": false
+        },
+        {
+          "id": "dark-07-drksonic",
+          "label": "07 DrkSonic",
+          "note": "Code E · Obstacle · PARALYZE THE ENEMY",
+          "done": false
+        },
+        {
+          "id": "dark-08-darkinvs",
+          "label": "08 DarkInvs",
+          "note": "Code I · Invisible · RELEASE YOUR DARKNESS",
+          "done": false
+        },
+        {
+          "id": "dark-09-darkplus",
+          "label": "09 DarkPlus",
+          "note": "Code * · Plus · NEXT CHIP ATK +50",
+          "done": false
+        },
+        {
+          "id": "dark-10-drklance",
+          "label": "10 DrkLance",
+          "note": "Code W · Wood · 400 dmg · ATK ENMY FROM BEHIND",
+          "done": false
+        },
+        {
+          "id": "dark-11-darkdril",
+          "label": "11 DarkDril",
+          "note": "Code D · Break · 100 (x6) dmg · LETHAL DRILL OF DARKNESS",
+          "done": false
+        },
+        {
+          "id": "dark-12-darkwide",
+          "label": "12 DarkWide",
+          "note": "Code T · Aqua · 300 dmg · WIDE SHOT PIERCES THE ENMY",
+          "done": false
+        }
+      ]
+    }
+  ],
+  "createdAt": "2026-09-20T16:17:54.354Z",
+  "updatedAt": "2026-09-20T16:17:54.354Z"
+}

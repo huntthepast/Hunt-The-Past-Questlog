@@ -111,6 +111,7 @@ game: "chrono-trigger"      # optional link to a game slug
 summary: "Every area map in one place."
 version: "1.0"              # optional, GameFAQs-style
 order: 1                    # position inside its type group (lower first)
+series: "Main walkthrough"  # optional: guides of this game with the same series name get previous/next links, in `order`
 tags: ["snes"]
 draft: false
 gallery:                    # optional image wall shown above the text, with a full-screen viewer
@@ -137,8 +138,13 @@ updatedAt: "2026-09-19T09:00:00.000Z"
 ```
 
 Every guide of a game is listed in a sidebar on each of that game's guide and tracker pages (grouped by type),
-so a reader can jump from the walkthrough to the item list or the map gallery. Headings become the page's table
-of contents; `- [ ]` task lists are tickable by readers (saved in their browser). Images uploaded through the
+so a reader can jump from the walkthrough to the item list or the map gallery. A multi-part guide (Part 1 / 2 / 3)
+gets **previous / next** links at the bottom of each part when the parts share a `series` name - only that name
+chains guides, so a differently named walkthrough, an item list or a tracker is never pulled in. Headings become
+the page's table of contents (`##` entries, with `###` entries shown only under the section being read);
+`- [ ]` task lists are tickable by readers (saved in their browser), collapsible, and can be laid out in
+1-3 columns - the guide's **Checklist layout** and **Collapse checklists by default** settings are the starting point, and
+readers can change both for themselves. Images uploaded through the
 admin's **Images & gallery** panel land in `public/guides/<slug>/`; the **Template** button inserts the
 walkthrough skeleton (intro, controls, characters, one map + checklist + walkthrough block per area, credits),
 and **Link to guide** inserts links to another guide's sections. Clicking any image opens a lightbox.
@@ -150,6 +156,8 @@ and **Link to guide** inserts links to another guide's sections. Clicking any im
   "title": "Chrono Trigger - Missables",
   "type": "missables",      // missables | collectibles | sidequests | achievements | bosses | checklist
   "game": "chrono-trigger",
+  "checklistColumns": 1,      // 1-3: how items are laid out (the admin's "Item layout")
+  "checklistCollapsed": false, // start with every section folded up
   "sections": [
     { "title": "1000 AD", "items": [ { "id": "power-tab", "label": "Power Tab - Guardia Forest", "note": "...", "done": true } ] }
   ],
@@ -158,7 +166,9 @@ and **Link to guide** inserts links to another guide's sections. Clicking any im
 ```
 
 On the public site a tracker shows your progress, and visitors can switch to "My own progress" to tick items for
-themselves (stored only in their browser's localStorage).
+themselves (stored only in their browser's localStorage). Each section can be collapsed (its header shows the done
+count for whichever progress is displayed) and the items can be shown in 1-3 columns; `checklistColumns` and
+`checklistCollapsed` are the starting point, readers can change both for themselves.
 
 ## RetroAchievements
 

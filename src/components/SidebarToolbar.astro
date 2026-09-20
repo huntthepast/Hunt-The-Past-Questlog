@@ -1,0 +1,42 @@
+---
+/**
+ * Phone/tablet controls for a page sidebar. Renders the sticky bar under the site header plus the
+ * backdrop of the drawer. Must sit inside an element with x-data="sidebarDrawer" that also
+ * contains the <aside>. Hidden on lg and up, where the sidebar is shown in place.
+ */
+import Icon from './Icon.astro';
+
+interface Props {
+  /** Show the "On this page" button (page has a table of contents). */
+  toc?: boolean;
+  /** Show the "Guides" button (page has the per-game hub). */
+  hub?: boolean;
+  tocLabel?: string;
+}
+
+const { toc = false, hub = false, tocLabel = 'Contents' } = Astro.props;
+---
+
+<div class="sticky top-16 z-30 -mx-4 mb-6 flex items-center gap-2 border-b border-zinc-800 bg-zinc-950/90 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6 lg:hidden">
+  {
+    toc && (
+      <button type="button" class="btn min-w-0 flex-1 justify-start" @click="openDrawer('toc')" aria-haspopup="dialog" :aria-expanded="drawer">
+        <Icon name="menu" class="size-4 shrink-0 text-amber-400" />
+        <span class="truncate">
+          <span class="text-zinc-500">On this page:</span>
+          <span x-text={`current || ${JSON.stringify(tocLabel)}`}>{tocLabel}</span>
+        </span>
+      </button>
+    )
+  }
+  {
+    hub && (
+      <button type="button" class:list={['btn shrink-0', !toc && 'flex-1 justify-start']} @click="openDrawer('hub')" aria-haspopup="dialog" :aria-expanded="drawer">
+        <Icon name="book" class="size-4 text-amber-400" />
+        Guides
+      </button>
+    )
+  }
+</div>
+
+<div x-show="drawer && !desktop" x-cloak x-transition.opacity.duration.150ms class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" @click="closeDrawer()" aria-hidden="true"></div>

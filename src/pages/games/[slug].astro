@@ -37,7 +37,17 @@ const guides = guidesForGame(await allGuides(), game.id);
 const trackers = trackersForGame(await allTrackers(), game.id);
 const ra = await raGameById(d.raGameId);
 
-const raAchievements = ra ? [...ra.data.achievements].sort((a, b) => a.displayOrder - b.displayOrder) : [];
+// Unlocked achievements first, newest unlock at the top; the locked ones follow in RA's own order.
+const unlockedAt = (a: { earnedAt: string | null; earnedHardcoreAt: string | null }) => a.earnedHardcoreAt ?? a.earnedAt ?? '';
+const raAchievements = ra
+  ? [...ra.data.achievements].sort((a, b) => {
+      const ua = unlockedAt(a);
+      const ub = unlockedAt(b);
+      if (ua && ub) return ub.localeCompare(ua) || a.displayOrder - b.displayOrder;
+      if (ua || ub) return ua ? -1 : 1;
+      return a.displayOrder - b.displayOrder;
+    })
+  : [];
 const raEarned = raAchievements.filter((a) => a.earnedAt || a.earnedHardcoreAt).length;
 const raPct = ra && ra.data.numAchievements ? Math.round((raEarned / ra.data.numAchievements) * 100) : 0;
 const raPoints = raAchievements.reduce((sum, a) => sum + a.points, 0);

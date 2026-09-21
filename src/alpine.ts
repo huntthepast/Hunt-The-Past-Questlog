@@ -345,6 +345,30 @@ export default (Alpine: Alpine) => {
    * Page sidebar that turns into a slide-in drawer below the lg breakpoint. The sidebar markup is
    * rendered once; on phones a sticky toolbar opens it (optionally scrolled to a given panel).
    */
+  /**
+   * The site header's phone menu: a slide-in panel like the guide/tracker sidebars. Closes on
+   * Escape, on the backdrop, after picking a link, and when the viewport grows past md.
+   */
+  Alpine.data('navDrawer', () => ({
+    open: false,
+
+    init() {
+      const mq = window.matchMedia('(min-width: 48rem)');
+      mq.addEventListener('change', (e) => {
+        if (e.matches) this.open = false;
+      });
+      this.$watch('open', (value: boolean) => document.body.classList.toggle('overflow-hidden', value));
+    },
+
+    toggle() {
+      this.open = !this.open;
+    },
+
+    close() {
+      this.open = false;
+    },
+  }));
+
   Alpine.data('sidebarDrawer', () => ({
     drawer: false,
     desktop: false,
@@ -454,7 +478,14 @@ export default (Alpine: Alpine) => {
    * the defaults, and the author's layout defaults come from the guide's frontmatter.
    */
   type ChecklistOptions = { columns?: number; collapsed?: boolean };
-  type ChecklistBlock = { wrap: HTMLElement; list: HTMLUListElement; count: HTMLElement; toggle: HTMLButtonElement };
+  type ChecklistBlock = {
+    wrap: HTMLElement;
+    list: HTMLUListElement;
+    count: HTMLElement;
+    toggle: HTMLButtonElement;
+    tickAll: HTMLButtonElement;
+    clear: HTMLButtonElement;
+  };
   const CHEVRON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-3.5 transition-transform"><path d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>';
 
   Alpine.data('guideChecklist', (guideId: string, options: ChecklistOptions = {}) => ({
@@ -539,12 +570,31 @@ export default (Alpine: Alpine) => {
         cols.append(button);
       }
 
-      bar.append(toggle, cols);
+      // Whole-block shortcuts: tick or untick every item of this one checklist (one area of a walkthrough).
+      const actions = document.createElement('span');
+      actions.className = 'checklist-actions';
+      const tickAll = document.createElement('button');
+      tickAll.type = 'button';
+      tickAll.textContent = 'Tick all';
+      tickAll.title = 'Tick every item in this checklist';
+      const clear = document.createElement('button');
+      clear.type = 'button';
+      clear.textContent = 'Clear';
+      clear.title = 'Untick every item in this checklist';
+      actions.append(tickAll, clear);
+
+      const tools = document.createElement('span');
+      tools.className = 'checklist-tools';
+      tools.append(actions, cols);
+
+      bar.append(toggle, tools);
       list.replaceWith(wrap);
       wrap.append(bar, list);
 
-      const block: ChecklistBlock = { wrap, list, count, toggle };
+      const block: ChecklistBlock = { wrap, list, count, toggle, tickAll, clear };
       this.blocks.push(block);
+      tickAll.addEventListener('click', () => this.setBlock(block, true));
+      clear.addEventListener('click', () => this.setBlock(block, false));
       const collapsed = this.ui.collapsed[index] ?? Boolean(options.collapsed);
       this.setCollapsed(block, collapsed, false);
       toggle.addEventListener('click', () => this.setCollapsed(block, wrap.dataset.collapsed !== 'true'));
@@ -574,6 +624,19 @@ export default (Alpine: Alpine) => {
       }
     },
 
+    /** Ticks (or unticks) every item of one checklist block. Unticking asks first, since it throws away ticks. */
+    setBlock(block: ChecklistBlock, checked: boolean) {
+      const inputs = Array.from(block.list.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+      const ticked = inputs.filter((b) => b.checked).length;
+      if (!checked && ticked > 0 && !confirm(`Untick ${ticked === 1 ? 'the 1 item' : `all ${ticked} items`} in this checklist?`)) return;
+      for (const box of inputs) {
+        box.checked = checked;
+        this.state[this.boxes.indexOf(box)] = checked;
+      }
+      this.persist();
+      this.recount();
+    },
+
     recount() {
       this.done = this.boxes.filter((box) => box.checked).length;
       for (const block of this.blocks) {
@@ -581,6 +644,8 @@ export default (Alpine: Alpine) => {
         const ticked = inputs.filter((b) => b.checked).length;
         block.count.textContent = `${ticked} / ${inputs.length} done`;
         block.wrap.dataset.complete = String(inputs.length > 0 && ticked === inputs.length);
+        block.tickAll.disabled = ticked === inputs.length;
+        block.clear.disabled = ticked === 0;
       }
     },
 
@@ -687,6 +752,19 @@ export default (Alpine: Alpine) => {
 
     sectionTotal(index: number): number {
       return options.sections?.[index]?.ids.length ?? 0;
+    },
+
+    /** Ticks (or unticks) every item of one section in the reader's own progress. Unticking asks first. */
+    setSection(index: number, done: boolean) {
+      const section = options.sections?.[index];
+      if (this.mode !== 'mine' || !section) return;
+      const ticked = this.sectionDone(index);
+      if (!done && ticked > 0 && !confirm(`Untick ${ticked === 1 ? 'the 1 item' : `all ${ticked} items`} in this section?`)) return;
+      for (const id of section.ids) {
+        if (done) this.mine[id] = true;
+        else delete this.mine[id];
+      }
+      this.persist();
     },
 
     persistUi() {

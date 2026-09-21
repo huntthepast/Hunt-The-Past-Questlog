@@ -90,6 +90,24 @@ document.addEventListener('alpine:init', () => {
       location.hash = param ? `#/${view}/${encodeURIComponent(param)}` : `#/${view}`;
     },
 
+    /* Games / guides / trackers: hide the picker list while editing to get a wider, quieter editor. Remembered. */
+    listHidden: (() => {
+      try {
+        return localStorage.getItem('questlog-admin:list-hidden') === '1';
+      } catch {
+        return false;
+      }
+    })(),
+
+    toggleList() {
+      this.listHidden = !this.listHidden;
+      try {
+        localStorage.setItem('questlog-admin:list-hidden', this.listHidden ? '1' : '0');
+      } catch {
+        /* ignore */
+      }
+    },
+
     toast(message, type = 'ok') {
       const id = ++toastId;
       this.toasts.push({ id, message, type });
@@ -576,6 +594,88 @@ Step by step through the area.
       });
     },
 
+    /**
+     * Ticks or unticks the `- [ ]` lines in the selection - or, with no selection, the whole task
+     * list around the cursor (contiguous `- [ ]` lines).
+     */
+    setTasks(checked) {
+      const el = this.$refs.body;
+      if (!el) return;
+      const TASK = /^(\s*[-*+]\s+\[)( |x|X)(\])/;
+      const value = el.value;
+      const lines = value.split('\n');
+      const lineAt = (offset) => value.slice(0, offset).split('\n').length - 1;
+      let from = lineAt(el.selectionStart ?? 0);
+      let to = lineAt(el.selectionEnd ?? el.selectionStart ?? 0);
+      if (from === to && el.selectionStart === el.selectionEnd) {
+        if (!TASK.test(lines[from])) {
+          Alpine.store('app').toast('Put the cursor on a "- [ ]" line, or select the lines to change', 'error');
+          return;
+        }
+        while (from > 0 && TASK.test(lines[from - 1])) from--;
+        while (to < lines.length - 1 && TASK.test(lines[to + 1])) to++;
+      }
+      let count = 0;
+      for (let i = from; i <= to; i++) {
+        if (!TASK.test(lines[i])) continue;
+        lines[i] = lines[i].replace(TASK, `$1${checked ? 'x' : ' '}$3`);
+        count++;
+      }
+      if (!count) {
+        Alpine.store('app').toast('No "- [ ]" lines in the selection', 'error');
+        return;
+      }
+      const start = lines.slice(0, from).join('\n').length + (from > 0 ? 1 : 0);
+      const end = lines.slice(0, to + 1).join('\n').length;
+      this.form.body = lines.join('\n');
+      this.$nextTick(() => {
+        el.focus();
+        el.selectionStart = start;
+        el.selectionEnd = end;
+      });
+      Alpine.store('app').toast(`${checked ? 'Ticked' : 'Unticked'} ${count} item${count === 1 ? '' : 's'}`);
+    },
+
+    /** The body's ## / ### headings with their line numbers - the Outline panel. Code fences are skipped. */
+    get outline() {
+      const out = [];
+      let fence = false;
+      String(this.form?.body ?? '')
+        .split('\n')
+        .forEach((line, index) => {
+          if (/^\s*(```|~~~)/.test(line)) fence = !fence;
+          if (fence) return;
+          const m = /^(#{2,3})\s+(.+?)\s*#*\s*$/.exec(line);
+          if (m) out.push({ line: index, depth: m[1].length, text: m[2] });
+        });
+      return out;
+    },
+
+    /** Puts the cursor on a line of the body and scrolls the editor so that line sits near the top. */
+    jumpToLine(line) {
+      const el = this.$refs.body;
+      if (!el) return;
+      this.preview = false;
+      this.$nextTick(() => {
+        const lines = el.value.split('\n');
+        const start = lines.slice(0, line).join('\n').length + (line > 0 ? 1 : 0);
+        // Measure where the line lands by laying the text before it out in a hidden copy of the textarea.
+        const cs = getComputedStyle(el);
+        const mirror = document.createElement('div');
+        for (const p of ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'padding', 'tabSize']) mirror.style[p] = cs[p];
+        Object.assign(mirror.style, { position: 'absolute', top: '0', left: '0', visibility: 'hidden', border: '0', boxSizing: 'border-box', whiteSpace: 'pre-wrap', overflowWrap: 'break-word', width: `${el.clientWidth}px` });
+        mirror.textContent = `${el.value.slice(0, start)}​`;
+        document.body.append(mirror);
+        const lineHeight = parseFloat(cs.lineHeight) || 22;
+        const top = mirror.offsetHeight - parseFloat(cs.paddingBottom) - lineHeight;
+        mirror.remove();
+        el.scrollTop = Math.max(0, top - lineHeight);
+        el.setSelectionRange(start, start + (lines[line] ?? '').length);
+        el.focus({ preventScroll: true });
+        el.scrollIntoView({ block: 'nearest' });
+      });
+    },
+
     /** Inserts a block (image, template) on its own paragraph. */
     insertBlock(text) {
       const el = this.$refs.body;
@@ -691,7 +791,9 @@ Step by step through the area.
   /* ---------------- trackers ---------------- */
 
   const blankTracker = () => ({ slug: '', title: '', type: 'checklist', game: '', summary: '', checklistColumns: 1, checklistCollapsed: false, sections: [] });
-  const blankSection = () => ({ title: '', items: [], bulk: '' });
+  // _uid only identifies a section inside the editor (collapse state, jump targets); the schema drops it on save.
+  let sectionUid = 0;
+  const blankSection = () => ({ _uid: ++sectionUid, title: '', items: [], bulk: '' });
   const blankItem = () => ({ id: '', label: '', note: '', done: false });
 
   Alpine.data('trackersView', () => ({
@@ -703,6 +805,8 @@ Step by step through the area.
     form: null,
     dirty: false,
     saving: false,
+    /* Editor-only state, kept outside `form` so folding sections never counts as an unsaved change. */
+    ui: { collapsed: {}, sections: false },
 
     async init() {
       await this.load();
@@ -713,6 +817,11 @@ Step by step through the area.
       this.$watch('form', () => {
         if (this._loading) return;
         this.dirty = true;
+      });
+      // The Sections drawer locks page scrolling behind it, like the drawers on the public site.
+      this.$watch('ui.sections', (open) => document.body.classList.toggle('overflow-hidden', open));
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.ui.sections) this.ui.sections = false;
       });
     },
 
@@ -739,6 +848,10 @@ Step by step through the area.
       this._loading = true;
       this.form = value;
       this.dirty = false;
+      // Long trackers open folded so the page is a list of section headers, not hundreds of rows.
+      const fold = value.sections.length > 1;
+      this.ui.collapsed = Object.fromEntries(value.sections.map((s) => [s._uid, fold]));
+      this.ui.sections = false;
       this.$nextTick(() => {
         this._loading = false;
       });
@@ -751,6 +864,30 @@ Step by step through the area.
       const form = blankTracker();
       form.sections.push({ ...blankSection(), title: 'Part 1' });
       this.setForm(form);
+    },
+
+    /* ---- folding + jumping between sections ---- */
+
+    isCollapsed(section) {
+      return Boolean(this.ui.collapsed[section._uid]);
+    },
+    toggleSection(section) {
+      this.ui.collapsed[section._uid] = !this.isCollapsed(section);
+    },
+    setAllCollapsed(collapsed) {
+      for (const section of this.form.sections) this.ui.collapsed[section._uid] = collapsed;
+    },
+    /** Opens a section and scrolls its card to just below the sticky section strip. */
+    jumpTo(section) {
+      this.ui.collapsed[section._uid] = false;
+      this.ui.sections = false;
+      this.$nextTick(() => {
+        const card = document.getElementById(`tracker-section-${section._uid}`);
+        if (!card) return;
+        const strip = this.$root.querySelector('[data-section-strip]');
+        const offset = (strip?.offsetHeight ?? 0) + 8;
+        window.scrollTo({ top: card.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth' });
+      });
     },
 
     async open(slug) {
@@ -778,10 +915,13 @@ Step by step through the area.
       this.form = null;
       this.selected = null;
       this.dirty = false;
+      this.ui.sections = false;
     },
 
     addSection() {
-      this.form.sections.push({ ...blankSection(), title: `Part ${this.form.sections.length + 1}` });
+      const section = { ...blankSection(), title: `Part ${this.form.sections.length + 1}` };
+      this.form.sections.push(section);
+      this.jumpTo(section);
     },
     removeSection(i) {
       if (this.form.sections[i].items.length && !confirm('Remove this section and all its items?')) return;
@@ -812,6 +952,15 @@ Step by step through the area.
     },
     removeItem(section, i) {
       section.items.splice(i, 1);
+    },
+    sectionDone(section) {
+      return section.items.filter((item) => item.done).length;
+    },
+    /** Marks every item of one section done (or not). Clearing asks first. */
+    setSectionDone(section, done) {
+      const ticked = this.sectionDone(section);
+      if (!done && ticked > 0 && !confirm(`Untick ${ticked === 1 ? 'the 1 item' : `all ${ticked} items`} in "${section.title || 'this section'}"?`)) return;
+      for (const item of section.items) item.done = done;
     },
 
     payload() {

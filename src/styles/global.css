@@ -138,7 +138,7 @@
 /* Markdown (guides). Tailwind typography with a dark, slightly retro treatment. */
 .guide-prose {
   @apply prose prose-invert prose-zinc max-w-none
-    prose-headings:font-display prose-headings:tracking-wide prose-headings:scroll-mt-24
+    prose-headings:font-bold prose-headings:tracking-tight prose-headings:scroll-mt-24
     prose-h2:mt-10 prose-h2:border-b prose-h2:border-zinc-800 prose-h2:pb-2
     prose-a:text-amber-400 prose-a:no-underline hover:prose-a:underline
     prose-strong:text-zinc-100
@@ -189,6 +189,11 @@
 .zoomable:focus-visible .zoomable-badge,
 .group:hover .zoomable-badge {
   @apply border-amber-400 bg-amber-400 text-zinc-950 opacity-100;
+}
+
+/* "Tick all" / "Clear" in a tracker section header. */
+.tracker-action {
+  @apply rounded px-2 py-1 font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-amber-300 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-zinc-400;
 }
 
 /* Tracker item lists: single column with dividers, or a 2-3 column grid with hairline dividers.
@@ -245,6 +250,18 @@
 
 .guide-prose .checklist[data-complete="true"] .checklist-count {
   @apply text-emerald-300;
+}
+
+.guide-prose .checklist-tools {
+  @apply inline-flex items-center gap-2;
+}
+
+.guide-prose .checklist-actions {
+  @apply inline-flex items-center gap-0.5;
+}
+
+.guide-prose .checklist-actions button {
+  @apply rounded px-1.5 py-0.5 font-medium text-zinc-400 hover:bg-zinc-800 hover:text-amber-300 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-zinc-400;
 }
 
 .guide-prose .checklist-cols {

@@ -147,7 +147,9 @@ the page's table of contents (`##` entries, with `###` entries shown only under 
 readers can change both for themselves. Images uploaded through the
 admin's **Images & gallery** panel land in `public/guides/<slug>/`; the **Template** button inserts the
 walkthrough skeleton (intro, controls, characters, one map + checklist + walkthrough block per area, credits),
-and **Link to guide** inserts links to another guide's sections. Clicking any image opens a lightbox.
+and **Link to guide** inserts links to another guide's sections; **Outline** lists every heading of the body and jumps the
+editor to it, and **Tick all / Untick all** flip the `- [ ]` lines in the selection (or the checklist under the cursor).
+Clicking any image opens a lightbox.
 
 ### Tracker
 
@@ -167,8 +169,11 @@ and **Link to guide** inserts links to another guide's sections. Clicking any im
 
 On the public site a tracker shows your progress, and visitors can switch to "My own progress" to tick items for
 themselves (stored only in their browser's localStorage). Each section can be collapsed (its header shows the done
-count for whichever progress is displayed) and the items can be shown in 1-3 columns; `checklistColumns` and
-`checklistCollapsed` are the starting point, readers can change both for themselves.
+count for whichever progress is displayed) and has **Tick all / Clear** shortcuts in "My own progress"; the items can
+be shown in 1-3 columns. `checklistColumns` and `checklistCollapsed` are the starting point, readers can change both
+for themselves. Guide checklists (`- [ ]` lists) get the same Tick all / Clear per list. In the admin, a tracker with
+several sections opens folded: the sticky **Sections** button opens a side panel that jumps to (and unfolds) any section, and each section header
+has its own done count with Tick all / Clear.
 
 ## RetroAchievements
 

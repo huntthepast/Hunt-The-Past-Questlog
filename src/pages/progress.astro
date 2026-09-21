@@ -16,7 +16,12 @@ import { bar, text } from '../lib/ui';
 const games = await libraryGames();
 const stats = libraryStats(games);
 const groups = groupByStatus(games);
-const counts = STATUSES.map((s) => ({ status: s, count: games.filter((g) => g.data.status === s.id).length }));
+// Breakdown bar + legend run from the most finished status down, like the award bar on the
+// Achievements page: Mastered on the left, Not Started and Dropped on the right.
+const BREAKDOWN_ORDER = ['mastered', 'completed', 'beaten', 'played', 'on-hold', 'playing', 'unplayed', 'dropped'];
+const counts = [...STATUSES]
+  .sort((a, b) => BREAKDOWN_ORDER.indexOf(a.id) - BREAKDOWN_ORDER.indexOf(b.id))
+  .map((s) => ({ status: s, count: games.filter((g) => g.data.status === s.id).length }));
 const platforms = [...new Set(games.map((g) => g.data.platform))].map(platformOf).sort((a, b) => a.name.localeCompare(b.name));
 
 // Status presets, RetroAchievements-profile style: one click to focus on a slice of the library.

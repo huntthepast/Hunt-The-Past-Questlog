@@ -5,10 +5,16 @@ game: "chrono-trigger"
 summary: "Part 1: the Millennial Fair to the End of Time, with every hidden Tab and sealed chest called out along the way."
 version: "1.1"
 order: 1
-tags: ["snes", "rpg"]
+checklistColumns: 1
+checklistCollapsed: false
+tags:
+  - "snes"
+  - "rpg"
 draft: false
+gallery: []
+downloads: []
 createdAt: "2026-06-05T10:00:00.000Z"
-updatedAt: "2026-09-19T09:00:00.000Z"
+updatedAt: "2026-09-21T05:56:37.166Z"
 ---
 
 ## Introduction

@@ -103,6 +103,16 @@ export function splitRaTitle(title) {
   return { title: match[2].trim(), tag: slugify(match[1]) };
 }
 
+/** RA names subsets "Game [Subset - Name]" (older ones "~Bonus~ Game"). */
+export const isSubsetTitle = (title) => /\[subset\b/i.test(String(title ?? '')) || /^~(bonus|subset)~/i.test(String(title ?? ''));
+
+/** "Terraria [Subset - Completionist]" -> "Terraria" */
+export const subsetParentTitle = (title) =>
+  String(title ?? '')
+    .replace(/\s*\[subset[^\]]*\]\s*/i, '')
+    .replace(/^~(bonus|subset)~\s*/i, '')
+    .trim();
+
 export function releaseYearFrom(released) {
   const match = String(released ?? '').match(/^(\d{4})/);
   return match ? Number(match[1]) : undefined;
@@ -130,6 +140,8 @@ export function normalizeGameProgress(raw, syncedAt) {
   return {
     gameId: num(raw.ID),
     title: String(raw.Title ?? ''),
+    // Subsets ("Game [Subset - Name]") point at their main game; the site shows them as tabs on that game's page.
+    parentGameId: raw.ParentGameID != null && num(raw.ParentGameID) > 0 ? num(raw.ParentGameID) : null,
     consoleId: num(raw.ConsoleID),
     consoleName: String(raw.ConsoleName ?? ''),
     imageIcon: raImage(raw.ImageIcon),
@@ -146,6 +158,22 @@ export function normalizeGameProgress(raw, syncedAt) {
     syncedAt,
     achievements,
   };
+}
+
+/**
+ * RA has no "first played" date in its API; the earliest unlock in a set is the closest thing.
+ * Returns YYYY-MM-DD or null when nothing is unlocked.
+ */
+export function firstUnlockDate(snapshot) {
+  const dates = (snapshot.achievements ?? []).flatMap((a) => [a.earnedAt, a.earnedHardcoreAt]).filter(Boolean).map(String);
+  return dates.length ? dates.sort()[0].slice(0, 10) : null;
+}
+
+const FINISH_AWARDS = new Set(['beaten-hardcore', 'beaten-softcore', 'completed', 'mastered']);
+
+/** The date RA says the game was finished (beaten / completed / mastered award), YYYY-MM-DD, or null. */
+export function finishDate(snapshot) {
+  return snapshot.highestAwardDate && FINISH_AWARDS.has(snapshot.highestAwardKind) ? String(snapshot.highestAwardDate).slice(0, 10) : null;
 }
 
 /** RA playtime (seconds) -> hours with one decimal, e.g. 18720 -> 5.2 */
@@ -313,7 +341,7 @@ function log(message) {
  *  2. recent unlocks, completion, awards     -> src/data/ra-profile.json
  *  3. every library game with a raGameId     -> src/content/ra-games/<id>.json (+ enrich the game entry)
  */
-export function startSync({ autoStatus = false, autoHours = true } = {}) {
+export function startSync({ autoStatus = false, autoHours = true, autoDates = true } = {}) {
   if (job.running) throw new HttpError(409, 'A sync is already running');
   const { username, apiKey } = raConfig();
   const client = new RaClient({ username, apiKey });
@@ -436,6 +464,7 @@ export function startSync({ autoStatus = false, autoHours = true } = {}) {
       let enriched = 0;
       let statusChanges = 0;
       let hourUpdates = 0;
+      let dateUpdates = 0;
       for (const game of games) {
         try {
           const raw = await client.getGameInfoAndUserProgress(game.raGameId);
@@ -456,6 +485,19 @@ export function startSync({ autoStatus = false, autoHours = true } = {}) {
               statusChanges++;
             }
           }
+          if (autoDates) {
+            // Only ever fills blanks: a date you typed stays.
+            const started = firstUnlockDate(snapshot);
+            const finished = finishDate(snapshot);
+            if (!game.startedAt && started) {
+              patch.startedAt = started;
+              dateUpdates++;
+            }
+            if (!game.finishedAt && finished) {
+              patch.finishedAt = finished;
+              dateUpdates++;
+            }
+          }
           if (autoHours && snapshot.playtimeSeconds > 0) {
             // RA only counts sessions played while connected, so it may only ever raise the number,
             // never lower a value you typed yourself (e.g. hours on real hardware).
@@ -472,6 +514,8 @@ export function startSync({ autoStatus = false, autoHours = true } = {}) {
           const extras = [
             snapshot.playtimeSeconds > 0 ? `${playtimeHours(snapshot.playtimeSeconds)}h tracked` : '',
             patch.hoursPlayed ? `hours -> ${patch.hoursPlayed}` : '',
+            patch.startedAt ? `started ${patch.startedAt}` : '',
+            patch.finishedAt ? `finished ${patch.finishedAt}` : '',
             patch.status ? `status -> ${patch.status}` : '',
           ].filter(Boolean);
           log(`  ${snapshot.title}: ${snapshot.numAwarded}/${snapshot.numAchievements}${extras.length ? ` (${extras.join(', ')})` : ''}`);
@@ -481,17 +525,66 @@ export function startSync({ autoStatus = false, autoHours = true } = {}) {
         job.progress.done++;
       }
 
-      // Drop snapshots for games that are no longer linked.
+      // Subsets of linked games: RA lists them as separate games in the completion progress, but the
+      // site folds them into the main game's page, so fetch them here rather than as library entries.
       const linked = new Set(games.map((g) => Number(g.raGameId)));
+      const subsetIds = new Set();
+      const subsetCandidates = completion.filter((c) => isSubsetTitle(c.title) && !linked.has(c.gameId));
+      if (subsetCandidates.length) log(`Checking ${subsetCandidates.length} RA subset(s)...`);
+      for (const candidate of subsetCandidates) {
+        try {
+          const raw = await client.getGameInfoAndUserProgress(candidate.gameId);
+          const snapshot = normalizeGameProgress(raw, syncedAt);
+          if (snapshot.parentGameId && linked.has(snapshot.parentGameId)) {
+            await store.saveRaGame(candidate.gameId, snapshot);
+            subsetIds.add(candidate.gameId);
+            const parent = games.find((g) => Number(g.raGameId) === snapshot.parentGameId);
+            const notes = [];
+            if (parent && (autoHours || autoDates)) {
+              // Same rules as for games, applied to the subset's journal row on the parent.
+              const current = await store.getGame(parent.slug);
+              const subsets = [...(current.subsets ?? [])];
+              const row = subsets.find((s) => Number(s.raGameId) === candidate.gameId) ?? (subsets.push({ raGameId: candidate.gameId }), subsets[subsets.length - 1]);
+              const hours = playtimeHours(snapshot.playtimeSeconds);
+              if (autoHours && hours > (row.hoursPlayed ?? 0)) {
+                row.hoursPlayed = hours;
+                hourUpdates++;
+                notes.push(`hours -> ${hours}`);
+              }
+              if (autoDates) {
+                const started = firstUnlockDate(snapshot);
+                const finished = finishDate(snapshot);
+                if (!row.startedAt && started) {
+                  row.startedAt = started;
+                  dateUpdates++;
+                  notes.push(`started ${started}`);
+                }
+                if (!row.finishedAt && finished) {
+                  row.finishedAt = finished;
+                  dateUpdates++;
+                  notes.push(`finished ${finished}`);
+                }
+              }
+              if (notes.length) await store.saveGame(parent.slug, { ...current, subsets, updatedAt: syncedAt });
+            }
+            const note = notes.length ? `, ${notes.join(', ')}` : '';
+            log(`  ${snapshot.title}: ${snapshot.numAwarded}/${snapshot.numAchievements} (subset of ${parent?.title ?? snapshot.parentGameId}${note})`);
+          }
+        } catch (err) {
+          log(`  ${candidate.title}: FAILED (${err.message})`);
+        }
+      }
+
+      // Drop snapshots for games that are no longer linked (subsets of linked games stay).
       for (const id of await store.listRaGameIds()) {
-        if (!linked.has(id)) {
+        if (!linked.has(id) && !subsetIds.has(id)) {
           await store.deleteRaGame(id);
           log(`  Removed stale snapshot ra-games/${id}.json`);
         }
       }
 
-      job.summary = { games: games.length, enriched, statusChanges, hourUpdates, points: profile.points, recent: recentAchievements.length, completion: completion.length };
-      log(`Done. ${enriched} game entries enriched, ${hourUpdates} hours-played updates, ${statusChanges} status changes.`);
+      job.summary = { games: games.length, subsets: subsetIds.size, enriched, statusChanges, hourUpdates, dateUpdates, points: profile.points, recent: recentAchievements.length, completion: completion.length };
+      log(`Done. ${enriched} game entries enriched, ${hourUpdates} hours-played updates, ${dateUpdates} dates filled in, ${statusChanges} status changes.`);
     } catch (err) {
       job.error = err.message;
       log(`ERROR: ${err.message}`);
@@ -506,12 +599,18 @@ export function startSync({ autoStatus = false, autoHours = true } = {}) {
 
 /* ---------------- import helpers ---------------- */
 
-/** Games from the last sync's completion list that are not in the library yet. */
+/**
+ * Games from the last sync's completion list that are not in the library yet. Subsets of a game that
+ * is already in the library are left out: the sync attaches those to the main game's page instead.
+ */
 export async function importCandidates() {
   const [profile, games, platforms] = await Promise.all([store.getRaProfile(), store.listGames(), store.getPlatforms()]);
   const linked = new Set(games.map((g) => Number(g.raGameId)).filter(Boolean));
-  return (profile.completion ?? [])
-    .filter((c) => !linked.has(c.gameId))
+  const completion = profile.completion ?? [];
+  const linkedTitles = new Set(completion.filter((c) => linked.has(c.gameId)).map((c) => `${c.consoleId}:${c.title.toLowerCase()}`));
+  const belongsToLibraryGame = (c) => isSubsetTitle(c.title) && linkedTitles.has(`${c.consoleId}:${subsetParentTitle(c.title).toLowerCase()}`);
+  return completion
+    .filter((c) => !linked.has(c.gameId) && !belongsToLibraryGame(c))
     .map((c) => {
       const { title, tag } = splitRaTitle(c.title);
       const platform = platformForConsole(platforms, c.consoleId, c.consoleName);
@@ -613,4 +712,99 @@ export async function importConsoles() {
   }
   await store.savePlatforms(platforms);
   return { total: consoles.length, added, linked };
+}
+
+/* ---------------- subsets that were imported as separate library games ---------------- */
+
+/**
+ * Library games that are really RA subsets of another library game (e.g. "Terraria [Subset -
+ * Completionist]" next to "Terraria"). Matched through the snapshot's parentGameId when the sync has
+ * recorded it, otherwise through RA's title convention on the same console.
+ */
+export async function subsetEntries() {
+  const games = await store.listGames();
+  const linked = games.filter((g) => g.raGameId);
+  const byRaId = new Map(linked.map((g) => [Number(g.raGameId), g]));
+  const out = [];
+  for (const game of linked) {
+    if (!isSubsetTitle(game.title)) continue;
+    const snapshot = await store.getRaGame(game.raGameId);
+    let parent = snapshot?.parentGameId ? byRaId.get(Number(snapshot.parentGameId)) : undefined;
+    if (!parent) {
+      const wanted = subsetParentTitle(game.title).toLowerCase();
+      parent = linked.find((g) => g.slug !== game.slug && g.platform === game.platform && subsetParentTitle(g.title).toLowerCase() === wanted && !isSubsetTitle(g.title));
+    }
+    if (!parent) continue;
+    out.push({
+      slug: game.slug,
+      title: game.title,
+      raGameId: Number(game.raGameId),
+      hoursPlayed: game.hoursPlayed ?? null,
+      status: game.status,
+      parent: { slug: parent.slug, title: parent.title, raGameId: Number(parent.raGameId) },
+      snapshot: Boolean(snapshot),
+    });
+  }
+  return out;
+}
+
+/**
+ * Folds a subset's library entry into its parent:
+ *  - the snapshot is marked with the parent's RA id (so the game page shows it as a tab right away);
+ *  - the entry's own rating / hours / started / finished move into the parent's `subsets` journal;
+ *  - guides and trackers that pointed at the subset entry are re-pointed at the parent;
+ *  - the separate game entry is removed. The parent's own stats, status and notes are left alone.
+ */
+export async function mergeSubset(slug) {
+  const entry = (await subsetEntries()).find((s) => s.slug === slug);
+  if (!entry) throw new HttpError(404, `"${slug}" is not a subset of another library game`);
+  const [subset, parent, snapshot, refs] = await Promise.all([
+    store.getGame(slug),
+    store.getGame(entry.parent.slug),
+    store.getRaGame(entry.raGameId),
+    store.referencesToGame(slug),
+  ]);
+  const stamp = store.now();
+
+  if (snapshot) await store.saveRaGame(entry.raGameId, { ...snapshot, parentGameId: entry.parent.raGameId });
+
+  const journal = { raGameId: entry.raGameId };
+  for (const key of ['rating', 'hoursPlayed', 'startedAt', 'finishedAt']) if (subset[key] !== undefined && subset[key] !== null && subset[key] !== '') journal[key] = subset[key];
+  const subsets = (parent.subsets ?? []).filter((s) => Number(s.raGameId) !== entry.raGameId);
+  subsets.push(journal);
+  await store.saveGame(parent.slug, { ...parent, subsets, updatedAt: stamp });
+
+  for (const guideSlug of refs.guides) {
+    const guide = await store.getGuide(guideSlug);
+    await store.saveGuide(guideSlug, { ...guide, game: parent.slug, updatedAt: stamp }, guide.body);
+  }
+  for (const trackerSlug of refs.trackers) {
+    const tracker = await store.getTracker(trackerSlug);
+    await store.saveTracker(trackerSlug, { ...tracker, game: parent.slug, updatedAt: stamp });
+  }
+
+  await store.deleteGame(slug);
+  return { merged: entry, moved: refs, remaining: await subsetEntries() };
+}
+
+/** The RA subsets attached to a main game (snapshots whose parentGameId is that game), for the game editor. */
+export async function subsetsOf(raGameId) {
+  const id = Number(raGameId);
+  if (!Number.isInteger(id) || id <= 0) return [];
+  const out = [];
+  for (const snapshotId of await store.listRaGameIds()) {
+    const snapshot = await store.getRaGame(snapshotId);
+    if (!snapshot || Number(snapshot.parentGameId) !== id) continue;
+    const match = /\[subset\s*-\s*([^\]]+)\]/i.exec(snapshot.title ?? '');
+    out.push({
+      raGameId: snapshot.gameId,
+      title: snapshot.title,
+      label: match ? match[1].trim() : snapshot.title,
+      numAchievements: snapshot.numAchievements ?? 0,
+      numAwarded: snapshot.numAwarded ?? 0,
+      highestAwardKind: snapshot.highestAwardKind ?? null,
+      playtimeHours: playtimeHours(snapshot.playtimeSeconds),
+    });
+  }
+  return out.sort((a, b) => a.title.localeCompare(b.title));
 }

@@ -1,6 +1,7 @@
 {
   "gameId": 776,
   "title": "Mega Man Battle Network 4: Blue Moon",
+  "parentGameId": null,
   "consoleId": 5,
   "consoleName": "Game Boy Advance",
   "imageIcon": "https://media.retroachievements.org/Images/112987.png",
@@ -13,7 +14,7 @@
   "highestAwardKind": "mastered",
   "highestAwardDate": "2024-06-04T11:30:05+00:00",
   "playtimeSeconds": 291644,
-  "syncedAt": "2026-09-19T09:06:18.970Z",
+  "syncedAt": "2026-09-21T14:09:49.070Z",
   "achievements": [
     {
       "id": 158467,

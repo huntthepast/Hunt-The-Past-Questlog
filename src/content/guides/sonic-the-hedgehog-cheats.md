@@ -1,12 +1,19 @@
 ---
 title: "Sonic the Hedgehog - Cheat Codes"
 type: "Cheats & Codes"
-game: sonic-the-hedgehog
+game: "sonic-the-hedgehog"
 summary: "Level select, debug mode and the sound test, for the original Genesis release."
-tags: ["genesis", "codes"]
+order: 0
+checklistColumns: 1
+checklistCollapsed: false
+tags:
+  - "genesis"
+  - "codes"
 draft: false
+gallery: []
+downloads: []
 createdAt: "2026-08-02T09:00:00.000Z"
-updatedAt: "2026-08-02T09:00:00.000Z"
+updatedAt: "2026-09-21T07:54:16.282Z"
 ---
 
 All codes are entered on the **title screen** while "PRESS START" is flashing. Do them before the demo starts.
@@ -29,7 +36,7 @@ In game, press **B** to turn Sonic into a placeable object, **A** to cycle objec
 
 ## Sound Test Easter Egg
 
-From the level-select menu, play sounds **01, 09, 09, 02, 01, 01, 02, 04** in that order and then start any level. Enjoy.
+From the level-select menu, play sounds **01, 09, 09, 02, 01, 01, 02, 04** in that order and then start any level. Enjoy. [Chrono Trigger - Items](/guides/chrono-trigger-items)
 
 ## Notes
 

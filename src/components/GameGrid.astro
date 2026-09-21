@@ -5,7 +5,7 @@ import Pagination from './Pagination.astro';
 import ListCounter from './ListCounter.astro';
 import EmptyState from './EmptyState.astro';
 import { platformOf, type Game } from '../lib/data';
-import { STATUSES } from '../lib/constants.js';
+import { STATUSES, GAME_KINDS, gameKindOf } from '../lib/constants.js';
 
 interface Props {
   games: Game[];
@@ -19,11 +19,13 @@ const { games, showStatus = true, showFavorite = true, emptyTitle = 'Nothing her
 
 const platforms = [...new Set(games.map((g) => g.data.platform))].map(platformOf).sort((a, b) => a.name.localeCompare(b.name));
 const statuses = STATUSES.filter((s) => games.some((g) => g.data.status === s.id));
+// Official / Hack / Homebrew...: only offered when the list actually mixes kinds.
+const kinds = GAME_KINDS.filter((k) => games.some((g) => gameKindOf(g.data.tags) === k.id));
 
 const PAGE_SIZES = [12, 24, 36, 48];
 
 const filterConfig = {
-  facets: ['platform', 'status'],
+  facets: ['platform', 'status', 'kind'],
   flags: ['favorite'],
   defaultSort: 'title',
   pageSize: 24,
@@ -69,6 +71,15 @@ const filterConfig = {
               <option value="">Any status</option>
               {statuses.map((s) => (
                 <option value={s.id}>{s.label}</option>
+              ))}
+            </select>
+          )}
+
+          {kinds.length > 1 && (
+            <select x-model="facet.kind" class="input sm:w-36" aria-label="Kind of release" title="Official releases, ROM hacks, homebrew...">
+              <option value="">Any kind</option>
+              {kinds.map((k) => (
+                <option value={k.id}>{k.label}</option>
               ))}
             </select>
           )}

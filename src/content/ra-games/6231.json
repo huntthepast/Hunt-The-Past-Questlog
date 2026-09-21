@@ -1,6 +1,7 @@
 {
   "gameId": 6231,
   "title": "Dragon Quest III: Soshite Densetsu e...",
+  "parentGameId": null,
   "consoleId": 3,
   "consoleName": "SNES/Super Famicom",
   "imageIcon": "https://media.retroachievements.org/Images/067893.png",
@@ -13,7 +14,7 @@
   "highestAwardKind": "mastered",
   "highestAwardDate": "2026-05-02T09:10:24+00:00",
   "playtimeSeconds": 112808,
-  "syncedAt": "2026-09-19T09:06:18.970Z",
+  "syncedAt": "2026-09-21T14:09:49.070Z",
   "achievements": [
     {
       "id": 54860,
@@ -24,7 +25,7 @@
       "badge": "https://media.retroachievements.org/Badge/56932.png",
       "type": null,
       "displayOrder": 0,
-      "numAwarded": 872,
+      "numAwarded": 873,
       "numAwardedHardcore": 674,
       "earnedAt": "2025-05-24 15:34:41",
       "earnedHardcoreAt": "2025-05-24 15:34:41"
@@ -360,8 +361,8 @@
       "badge": "https://media.retroachievements.org/Badge/58600.png",
       "type": null,
       "displayOrder": 26,
-      "numAwarded": 588,
-      "numAwardedHardcore": 437,
+      "numAwarded": 589,
+      "numAwardedHardcore": 438,
       "earnedAt": "2026-04-18 17:46:39",
       "earnedHardcoreAt": "2026-04-18 17:46:39"
     },
@@ -412,7 +413,7 @@
       "title": "Pa-Cheesy - Round 5",
       "description": "Claim the treasure from the fifth and final Pachisi track.",
       "points": 25,
-      "trueRatio": 65,
+      "trueRatio": 66,
       "badge": "https://media.retroachievements.org/Badge/58604.png",
       "type": null,
       "displayOrder": 30,
@@ -514,7 +515,7 @@
       "badge": "https://media.retroachievements.org/Badge/57420.png",
       "type": null,
       "displayOrder": 101,
-      "numAwarded": 827,
+      "numAwarded": 828,
       "numAwardedHardcore": 619,
       "earnedAt": "2025-05-24 16:03:22",
       "earnedHardcoreAt": "2025-05-24 16:03:22"
@@ -584,8 +585,8 @@
       "badge": "https://media.retroachievements.org/Badge/57548.png",
       "type": null,
       "displayOrder": 106,
-      "numAwarded": 751,
-      "numAwardedHardcore": 555,
+      "numAwarded": 752,
+      "numAwardedHardcore": 556,
       "earnedAt": "2026-04-16 19:51:37",
       "earnedHardcoreAt": "2026-04-16 19:51:37"
     },
@@ -682,8 +683,8 @@
       "badge": "https://media.retroachievements.org/Badge/57554.png",
       "type": null,
       "displayOrder": 113,
-      "numAwarded": 649,
-      "numAwardedHardcore": 477,
+      "numAwarded": 650,
+      "numAwardedHardcore": 478,
       "earnedAt": "2026-04-04 15:53:51",
       "earnedHardcoreAt": "2026-04-04 15:53:51"
     },
@@ -696,8 +697,8 @@
       "badge": "https://media.retroachievements.org/Badge/57561.png",
       "type": null,
       "displayOrder": 114,
-      "numAwarded": 459,
-      "numAwardedHardcore": 371,
+      "numAwarded": 460,
+      "numAwardedHardcore": 372,
       "earnedAt": "2026-04-18 17:59:51",
       "earnedHardcoreAt": "2026-04-18 17:59:51"
     },
@@ -710,8 +711,8 @@
       "badge": "https://media.retroachievements.org/Badge/57562.png",
       "type": null,
       "displayOrder": 115,
-      "numAwarded": 611,
-      "numAwardedHardcore": 455,
+      "numAwarded": 612,
+      "numAwardedHardcore": 456,
       "earnedAt": "2026-04-15 19:16:33",
       "earnedHardcoreAt": "2026-04-15 19:16:33"
     },
@@ -1242,8 +1243,8 @@
       "badge": "https://media.retroachievements.org/Badge/57657.png",
       "type": null,
       "displayOrder": 154,
-      "numAwarded": 419,
-      "numAwardedHardcore": 318,
+      "numAwarded": 420,
+      "numAwardedHardcore": 319,
       "earnedAt": "2026-04-29 20:52:17",
       "earnedHardcoreAt": "2026-04-29 20:52:17"
     },

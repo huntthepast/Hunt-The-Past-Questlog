@@ -1,6 +1,7 @@
 {
   "gameId": 774,
   "title": "Mega Man Battle Network 3: Blue Version",
+  "parentGameId": null,
   "consoleId": 5,
   "consoleName": "Game Boy Advance",
   "imageIcon": "https://media.retroachievements.org/Images/102929.png",
@@ -13,7 +14,7 @@
   "highestAwardKind": "mastered",
   "highestAwardDate": "2024-05-05T17:40:43+00:00",
   "playtimeSeconds": 172774,
-  "syncedAt": "2026-09-19T09:06:18.970Z",
+  "syncedAt": "2026-09-21T14:09:49.070Z",
   "achievements": [
     {
       "id": 35297,

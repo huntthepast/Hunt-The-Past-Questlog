@@ -375,7 +375,7 @@ app.get('/api/ra/status', async (c) => {
 
 app.post('/api/ra/sync', async (c) => {
   const body = await c.req.json().catch(() => ({}));
-  return c.json(ra.startSync({ autoStatus: Boolean(body.autoStatus), autoHours: body.autoHours !== false }), 202);
+  return c.json(ra.startSync({ autoStatus: Boolean(body.autoStatus), autoHours: body.autoHours !== false, autoDates: body.autoDates !== false }), 202);
 });
 
 app.get('/api/ra/sync/status', (c) => c.json(ra.syncStatus()));
@@ -416,6 +416,18 @@ app.post('/api/ra/import', async (c) => {
 });
 
 app.post('/api/ra/consoles', async (c) => c.json(await ra.importConsoles()));
+
+// Subsets that were imported as separate library games -> fold them into their main game's page.
+app.get('/api/ra/subsets', async (c) => c.json(await ra.subsetEntries()));
+
+// The subsets attached to one main game (for the per-subset journal in the game editor).
+app.get('/api/ra/subsets-of/:id', async (c) => c.json(await ra.subsetsOf(c.req.param('id'))));
+
+app.post('/api/ra/subsets/merge', async (c) => {
+  const body = await c.req.json();
+  if (typeof body.slug !== 'string' || !body.slug) throw badRequest('Missing slug');
+  return c.json(await ra.mergeSubset(body.slug));
+});
 
 // Trophy shelf: RA order by default, manual order/hidden list stored in src/data/shelf.json.
 app.get('/api/shelf', async (c) => c.json(await shelf.shelfState()));

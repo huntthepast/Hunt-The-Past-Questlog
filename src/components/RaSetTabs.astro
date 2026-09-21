@@ -1,0 +1,37 @@
+---
+/**
+ * Tabs for a game's RetroAchievements sets (the main set plus RA subsets). Must sit inside the
+ * `raSets` Alpine scope of the game page: clicking a tab sets `set`, which the play stats and the
+ * achievement panels follow.
+ */
+import Icon from './Icon.astro';
+
+interface Props {
+  sets: { key: string; label: string; subset: boolean; earned: number; total: number; pct: number; title: string }[];
+  class?: string;
+}
+
+const { sets, class: className } = Astro.props;
+---
+
+<div class:list={['flex flex-wrap gap-1 rounded-lg border border-zinc-800 bg-zinc-950/60 p-1', className]} role="tablist" aria-label="Achievement sets">
+  {
+    sets.map((set) => (
+      <button
+        type="button"
+        role="tab"
+        class="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition"
+        :class={`set === ${JSON.stringify(set.key)} ? 'bg-zinc-800 text-amber-300' : 'text-zinc-400 hover:text-zinc-200'`}
+        :aria-selected={`set === ${JSON.stringify(set.key)}`}
+        @click={`pick(${JSON.stringify(set.key)})`}
+        title={set.title}
+      >
+        {set.subset && <Icon name="sparkles" class="size-3.5 text-zinc-500" />}
+        {set.label}
+        <span class:list={['text-xs tabular-nums', set.pct === 100 ? 'text-emerald-300' : 'text-zinc-500']}>
+          {set.earned}/{set.total}
+        </span>
+      </button>
+    ))
+  }
+</div>

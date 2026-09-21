@@ -1,6 +1,7 @@
 {
   "gameId": 10298,
   "title": "Tarzan",
+  "parentGameId": null,
   "consoleId": 2,
   "consoleName": "Nintendo 64",
   "imageIcon": "https://media.retroachievements.org/Images/059289.png",
@@ -13,7 +14,7 @@
   "highestAwardKind": "mastered",
   "highestAwardDate": "2025-10-03T09:00:15+00:00",
   "playtimeSeconds": 10830,
-  "syncedAt": "2026-09-19T09:06:18.970Z",
+  "syncedAt": "2026-09-21T14:09:49.070Z",
   "achievements": [
     {
       "id": 51578,
@@ -66,8 +67,8 @@
       "badge": "https://media.retroachievements.org/Badge/53051.png",
       "type": null,
       "displayOrder": 0,
-      "numAwarded": 1093,
-      "numAwardedHardcore": 690,
+      "numAwarded": 1095,
+      "numAwardedHardcore": 691,
       "earnedAt": "2025-10-03 05:32:18",
       "earnedHardcoreAt": "2025-10-03 05:32:18"
     },
@@ -258,7 +259,7 @@
       "title": "No, The Big Ape Only Got a Score of 65",
       "description": "In HARD MODE, get 100 percent in Level 02.",
       "points": 10,
-      "trueRatio": 34,
+      "trueRatio": 35,
       "badge": "https://media.retroachievements.org/Badge/53065.png",
       "type": null,
       "displayOrder": 0,
@@ -300,7 +301,7 @@
       "title": "Tarzan Big Man Now",
       "description": "In HARD MODE, get 100 percent in Level 05.",
       "points": 25,
-      "trueRatio": 98,
+      "trueRatio": 99,
       "badge": "https://media.retroachievements.org/Badge/53068.png",
       "type": null,
       "displayOrder": 0,
@@ -626,8 +627,8 @@
       "badge": "https://media.retroachievements.org/Badge/53091.png",
       "type": null,
       "displayOrder": 0,
-      "numAwarded": 1280,
-      "numAwardedHardcore": 769,
+      "numAwarded": 1282,
+      "numAwardedHardcore": 770,
       "earnedAt": "2025-10-03 05:31:03",
       "earnedHardcoreAt": "2025-10-03 05:31:03"
     },

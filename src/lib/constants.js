@@ -23,6 +23,27 @@ export const OWNERSHIP = [
 export const OWNERSHIP_IDS = OWNERSHIP.map((o) => o.id);
 
 /**
+ * What kind of release a game is. RetroAchievements marks non-official sets with a title prefix
+ * ("~Hack~ Title", "~Homebrew~ Title"); the import keeps that prefix as a tag, and the tag decides
+ * the kind here. A game without any of these tags is an official release.
+ */
+export const GAME_KINDS = [
+  { id: 'official',   label: 'Official' },
+  { id: 'hack',       label: 'Hack' },
+  { id: 'homebrew',   label: 'Homebrew' },
+  { id: 'prototype',  label: 'Prototype' },
+  { id: 'demo',       label: 'Demo' },
+  { id: 'unlicensed', label: 'Unlicensed' },
+  { id: 'test-kit',   label: 'Test kit' },
+];
+
+/** The kind a game's tags put it in ("official" when none of the kind tags is present). */
+export function gameKindOf(tags = []) {
+  const ids = tags.map((t) => String(t).toLowerCase());
+  return GAME_KINDS.find((k) => k.id !== 'official' && ids.includes(k.id))?.id ?? 'official';
+}
+
+/**
  * Guide types are free text (GameFAQs-style: Walkthrough, Maps, Items, Persona List, ...).
  * These are only suggestions for the admin's dropdown; anything else is allowed.
  */

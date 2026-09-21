@@ -1,6 +1,7 @@
 {
   "gameId": 18611,
   "title": "~Homebrew~ Mega Man 2",
+  "parentGameId": null,
   "consoleId": 8,
   "consoleName": "PC Engine/TurboGrafx-16",
   "imageIcon": "https://media.retroachievements.org/Images/053660.png",
@@ -13,7 +14,7 @@
   "highestAwardKind": "mastered",
   "highestAwardDate": "2025-11-08T12:12:33+00:00",
   "playtimeSeconds": 14003,
-  "syncedAt": "2026-09-19T09:06:18.970Z",
+  "syncedAt": "2026-09-21T14:09:49.070Z",
   "achievements": [
     {
       "id": 199919,

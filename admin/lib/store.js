@@ -46,7 +46,7 @@ function assertSlug(slug) {
 const GAME_KEY_ORDER = [
   'title', 'platform', 'cover', 'genres', 'developer', 'publisher', 'releaseYear',
   'ownership', 'favorite', 'status', 'rating', 'hoursPlayed', 'startedAt', 'finishedAt',
-  'raGameId', 'review', 'notes', 'tags', 'addedAt', 'updatedAt',
+  'raGameId', 'subsets', 'review', 'notes', 'tags', 'addedAt', 'updatedAt',
 ];
 
 /** Re-orders keys and drops undefined values so files look the same no matter who wrote them. */
@@ -192,6 +192,8 @@ export async function listRaGameIds() {
 }
 
 export const saveRaGame = (id, data) => writeJson(raGameFile(id), data);
+
+export const getRaGame = async (id) => (existsSync(raGameFile(id)) ? readJson(raGameFile(id)) : null);
 
 export async function deleteRaGame(id) {
   const file = raGameFile(id);

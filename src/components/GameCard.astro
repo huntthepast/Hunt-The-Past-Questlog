@@ -4,7 +4,7 @@ import StatusBadge from './StatusBadge.astro';
 import Rating from './Rating.astro';
 import Icon from './Icon.astro';
 import { platformOf, sortKey, type Game } from '../lib/data';
-import { STATUS_IDS } from '../lib/constants.js';
+import { STATUS_IDS, gameKindOf } from '../lib/constants.js';
 
 interface Props {
   game: Game;
@@ -22,6 +22,7 @@ const search = [d.title, platform.name, platform.short, d.developer, d.publisher
   data-sort={sortKey(d.title)}
   data-platform={d.platform}
   data-status={d.status}
+  data-kind={gameKindOf(d.tags)}
   data-statusorder={STATUS_IDS.indexOf(d.status)}
   data-genres={d.genres.join(',')}
   data-favorite={d.favorite ? '1' : '0'}

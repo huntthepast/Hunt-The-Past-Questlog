@@ -817,6 +817,32 @@ export default (Alpine: Alpine) => {
   }));
 
   /**
+   * Achievement set tabs on a game page: the main set plus RA subsets. `#set-<raGameId>` in the URL
+   * opens that subset (links from the Achievements page use it); picking a tab updates the hash
+   * without scrolling.
+   */
+  Alpine.data('raSets', () => ({
+    set: 'main',
+
+    init() {
+      const fromHash = () => {
+        const match = /^#(set-\d+)$/.exec(location.hash);
+        if (match && this.$root.querySelector(`#${match[1]}`)) {
+          this.set = match[1];
+          this.$nextTick(() => (this.$root.querySelector('#achievements') ?? this.$root).scrollIntoView({ block: 'start' }));
+        }
+      };
+      fromHash();
+      window.addEventListener('hashchange', fromHash);
+    },
+
+    pick(key: string) {
+      this.set = key;
+      history.replaceState(null, '', key === 'main' ? '#achievements' : `#${key}`);
+    },
+  }));
+
+  /**
    * "Show all / Show less" for long lists (achievements on a game page). The page renders every
    * item; the ones past the preview carry x-show="expanded", so the list starts short. Put it on
    * the wrapper that should scroll back into view when the list is folded up again.

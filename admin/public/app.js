@@ -173,6 +173,7 @@ document.addEventListener('alpine:init', () => {
     startedAt: '',
     finishedAt: '',
     raGameId: '',
+    subsets: [],
     review: '',
     notes: '',
     tags: '',
@@ -256,14 +257,44 @@ document.addEventListener('alpine:init', () => {
           startedAt: g.startedAt ?? '',
           finishedAt: g.finishedAt ?? '',
           raGameId: g.raGameId ?? '',
+          subsets: (g.subsets ?? []).map((sub) => ({ raGameId: Number(sub.raGameId), rating: sub.rating ?? '', hoursPlayed: sub.hoursPlayed ?? '', startedAt: sub.startedAt ?? '', finishedAt: sub.finishedAt ?? '', review: sub.review ?? '', notes: sub.notes ?? '' })),
           review: g.review ?? '',
           notes: g.notes ?? '',
           genres: (g.genres ?? []).join(', '),
           tags: (g.tags ?? []).join(', '),
         });
+        await this.loadSubsets();
       } catch (err) {
         Alpine.store('app').toast(err.message, 'error');
       }
+    },
+
+    /* ---- RA subsets of this game: one journal row (rating, hours, dates) each ---- */
+
+    raSubsets: [],
+
+    async loadSubsets() {
+      this.raSubsets = [];
+      const id = Number(this.form?.raGameId);
+      if (!id) return;
+      try {
+        this.raSubsets = await api('GET', '/api/ra/subsets-of/' + id);
+      } catch {
+        this.raSubsets = [];
+      }
+      // Make sure every attached subset has a row to edit; rows are only written when they hold a value.
+      const loading = this._loading;
+      this._loading = true;
+      for (const sub of this.raSubsets) {
+        if (!this.form.subsets.some((row) => Number(row.raGameId) === sub.raGameId)) this.form.subsets.push({ raGameId: sub.raGameId, rating: '', hoursPlayed: '', startedAt: '', finishedAt: '', review: '', notes: '' });
+      }
+      this.$nextTick(() => {
+        this._loading = loading;
+      });
+    },
+
+    subsetRow(raGameId) {
+      return this.form.subsets.find((row) => Number(row.raGameId) === Number(raGameId));
     },
 
     close() {
@@ -278,7 +309,8 @@ document.addEventListener('alpine:init', () => {
       if (!this.form) return;
       this.saving = true;
       try {
-        const payload = { ...this.form };
+        // Subset rows are only stored when they hold something; blank rows exist just to be editable.
+        const payload = { ...this.form, subsets: this.form.subsets.filter((row) => ['rating', 'hoursPlayed', 'startedAt', 'finishedAt', 'review', 'notes'].some((key) => row[key] !== '' && row[key] != null)) };
         const saved = this.isNew ? await api('POST', '/api/games', payload) : await api('PUT', `/api/games/${this.selected}`, payload);
         Alpine.store('app').toast(`Saved "${saved.title}"`);
         await this.load();
@@ -445,6 +477,11 @@ Step by step through the area.
         if (this._loading) return;
         this.dirty = true;
       });
+      // Dialogs (gallery, link, downloads) and the outline drawer lock page scrolling and close on Escape.
+      this.$watch('panel', (open) => document.body.classList.toggle('overflow-hidden', Boolean(open)));
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.panel) this.panel = null;
+      });
     },
 
     get filtered() {
@@ -594,6 +631,62 @@ Step by step through the area.
       });
     },
 
+    /* ---- table dialog ---- */
+
+    table: { cols: 3, rows: 3, header: true },
+    dragging: false,
+
+    /** Builds a Markdown table of the chosen size (header row + `rows` body rows) and drops it at the cursor. */
+    insertTable() {
+      const cols = Math.min(12, Math.max(1, Number(this.table.cols) || 1));
+      const rows = Math.min(50, Math.max(1, Number(this.table.rows) || 1));
+      const cell = (text) => ` ${text} `;
+      const line = (cells) => `|${cells.join('|')}|`;
+      const head = line(Array.from({ length: cols }, (_, i) => cell(this.table.header ? `Column ${i + 1}` : ' ')));
+      const rule = line(Array.from({ length: cols }, () => ' --- '));
+      const body = Array.from({ length: rows }, () => line(Array.from({ length: cols }, () => cell(' ')))).join('\n');
+      this.insertBlock(`${head}\n${rule}\n${body}`);
+      this.panel = null;
+    },
+
+    /** Wraps the selection (or a placeholder) in markers: **bold**, *italic*, <u>underline</u>, ~~strike~~. */
+    wrap(before, after = before, placeholder = 'text') {
+      const el = this.$refs.body;
+      if (!el) return;
+      const start = el.selectionStart ?? el.value.length;
+      const end = el.selectionEnd ?? start;
+      const inner = el.value.slice(start, end) || placeholder;
+      this.form.body = el.value.slice(0, start) + before + inner + after + el.value.slice(end);
+      this.$nextTick(() => {
+        el.focus();
+        el.selectionStart = start + before.length;
+        el.selectionEnd = start + before.length + inner.length;
+      });
+    },
+
+    /**
+     * Puts a line prefix (## , > , - [ ] ) in front of every selected line - or the cursor's line -
+     * and removes it again when every one of those lines already carries it.
+     */
+    prefixLines(prefix) {
+      const el = this.$refs.body;
+      if (!el) return;
+      const lines = el.value.split('\n');
+      const lineAt = (offset) => el.value.slice(0, offset).split('\n').length - 1;
+      const from = lineAt(el.selectionStart ?? 0);
+      const to = lineAt(el.selectionEnd ?? el.selectionStart ?? 0);
+      const remove = lines.slice(from, to + 1).every((l) => l.startsWith(prefix));
+      for (let i = from; i <= to; i++) lines[i] = remove ? lines[i].slice(prefix.length) : prefix + lines[i];
+      const start = lines.slice(0, from).join('\n').length + (from > 0 ? 1 : 0);
+      const end = lines.slice(0, to + 1).join('\n').length;
+      this.form.body = lines.join('\n');
+      this.$nextTick(() => {
+        el.focus();
+        el.selectionStart = from === to ? end : start;
+        el.selectionEnd = end;
+      });
+    },
+
     /**
      * Ticks or unticks the `- [ ]` lines in the selection - or, with no selection, the whole task
      * list around the cursor (contiguous `- [ ]` lines).
@@ -706,11 +799,21 @@ Step by step through the area.
       }
     },
 
+    /** Upload from the file picker (change event) or a drop (dragging files onto the Gallery dialog). */
     async uploadAttachments(event) {
-      const files = Array.from(event.target.files ?? []);
-      if (!files.length || !this.selected) return;
+      const files = Array.from(event.target?.files ?? event.dataTransfer?.files ?? []);
+      if (event.target && 'value' in event.target) event.target.value = '';
+      await this.uploadFiles(files);
+    },
+
+    async uploadFiles(files) {
+      const images = files.filter((file) => file.type.startsWith('image/'));
+      if (!images.length || !this.selected) {
+        if (files.length && !images.length) Alpine.store('app').toast('Only images can be uploaded here (PNG, JPEG, WebP, GIF, SVG)', 'error');
+        return;
+      }
       const body = new FormData();
-      for (const file of files) body.append('files', file);
+      for (const file of images) body.append('files', file);
       this.uploading = true;
       try {
         const result = await api('POST', `/api/guides/${this.selected}/attachments`, body);
@@ -720,7 +823,6 @@ Step by step through the area.
         Alpine.store('app').toast(err.message, 'error');
       } finally {
         this.uploading = false;
-        event.target.value = '';
       }
     },
 
@@ -739,6 +841,7 @@ Step by step through the area.
       const alt = file.name.replace(/\.[a-z0-9]+$/i, '').replace(/[-_]+/g, ' ');
       this.insertBlock(`![${alt}](${file.url})`);
       if (this.preview) this.preview = false;
+      this.panel = null;
     },
 
     inGallery(file) {
@@ -1008,6 +1111,7 @@ Step by step through the area.
     job: null,
     autoStatus: false,
     autoHours: true,
+    autoDates: true,
     polling: null,
     candidates: null,
     loadingCandidates: false,
@@ -1015,10 +1119,39 @@ Step by step through the area.
     importing: false,
     importResult: null,
     consolesBusy: false,
+    subsets: [],
+    merging: null,
 
     async init() {
       await this.refresh();
       if (this.job?.running) this.startPolling();
+      this.loadSubsets();
+    },
+
+    /* ---- subsets imported as separate games ---- */
+
+    async loadSubsets() {
+      try {
+        this.subsets = await api('GET', '/api/ra/subsets');
+      } catch {
+        this.subsets = [];
+      }
+    },
+
+    async mergeSubset(entry) {
+      const hours = entry.hoursPlayed ? `, ${entry.hoursPlayed} h` : '';
+      const msg = `Fold "${entry.title}" into "${entry.parent.title}"?\n\nIts achievements stay, shown as a tab on that game's page. The separate library entry (status ${entry.status}${hours}) is removed; the parent is not changed.`;
+      if (!confirm(msg)) return;
+      this.merging = entry.slug;
+      try {
+        const result = await api('POST', '/api/ra/subsets/merge', { slug: entry.slug });
+        this.subsets = result.remaining;
+        Alpine.store('app').toast('Merged "' + entry.title + '" into "' + entry.parent.title + '"');
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      } finally {
+        this.merging = null;
+      }
     },
 
     async refresh() {
@@ -1033,7 +1166,7 @@ Step by step through the area.
 
     async sync() {
       try {
-        this.job = await api('POST', '/api/ra/sync', { autoStatus: this.autoStatus, autoHours: this.autoHours });
+        this.job = await api('POST', '/api/ra/sync', { autoStatus: this.autoStatus, autoHours: this.autoHours, autoDates: this.autoDates });
         this.startPolling();
       } catch (err) {
         Alpine.store('app').toast(err.message, 'error');

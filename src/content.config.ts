@@ -25,6 +25,24 @@ const games = defineCollection({
     startedAt: isoDate.optional(),
     finishedAt: isoDate.optional(),
     raGameId: z.number().int().positive().optional(),
+    /**
+     * Your own journal for each RA subset of this game (rating, hours, dates). The subset's achievements come
+     * from ra-games/<raGameId>.json; the game page switches these stats along with the achievement tabs.
+     */
+    subsets: z
+      .array(
+        z.object({
+          raGameId: z.number().int().positive(),
+          rating: z.number().min(0).max(10).optional(),
+          hoursPlayed: z.number().min(0).optional(),
+          startedAt: isoDate.optional(),
+          finishedAt: isoDate.optional(),
+          /** Markdown, like the game's own review / notes; shown when that subset's tab is selected. */
+          review: z.string().optional(),
+          notes: z.string().optional(),
+        }),
+      )
+      .default([]),
     review: z.string().optional(),
     notes: z.string().optional(),
     tags: z.array(z.string()).default([]),
@@ -104,6 +122,8 @@ const raGames = defineCollection({
   schema: z.object({
     gameId: z.number().int(),
     title: z.string(),
+    /** For RA subsets ("Game [Subset - Name]"): the RA id of the main game. Shown on that game's page as an extra set. */
+    parentGameId: z.number().int().nullable().default(null),
     consoleId: z.number().int().optional(),
     consoleName: z.string().optional(),
     imageIcon: z.string().optional(),

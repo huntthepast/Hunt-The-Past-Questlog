@@ -212,6 +212,34 @@ export async function raGameById(raGameId: number | undefined): Promise<RaGame |
   return all.find((entry) => entry.data.gameId === raGameId);
 }
 
+/** RA subsets of a game ("Game [Subset - Bonus]"): the snapshots whose parentGameId is this game's RA id. */
+export async function raSubsetsOf(raGameId: number | undefined): Promise<RaGame[]> {
+  if (!raGameId) return [];
+  const all = await getCollection('raGames');
+  return all.filter((entry) => entry.data.parentGameId === raGameId).sort((a, b) => a.data.title.localeCompare(b.data.title));
+}
+
+/** "Mega Man: Powered Up [Subset - 468 Stages]" -> "468 Stages"; anything else comes back unchanged. */
+export function raSubsetLabel(title: string): string {
+  const match = /\[subset\s*-\s*([^\]]+)\]/i.exec(title);
+  return match ? match[1].trim() : title.replace(/^~[^~]+~\s*/, '').trim();
+}
+
+/**
+ * RA game id -> path on this site. Library games map to their page; subsets of a library game map to
+ * that page opened on the subset's tab. Ids the library doesn't know are absent (link to RA instead).
+ */
+export async function raGamePaths(games: Game[]): Promise<Map<number, string>> {
+  const paths = new Map<number, string>();
+  for (const g of games) if (g.data.raGameId) paths.set(g.data.raGameId, `/games/${g.id}`);
+  const all = await getCollection('raGames');
+  for (const ra of all) {
+    const parent = ra.data.parentGameId;
+    if (parent && paths.has(parent) && !paths.has(ra.data.gameId)) paths.set(ra.data.gameId, `${paths.get(parent)}#set-${ra.data.gameId}`);
+  }
+  return paths;
+}
+
 export const raSynced = () => Boolean(raProfile.syncedAt);
 
 /** RA profile order: DisplayOrder (set with "Reorder Site Awards" on RA), then the date earned. */

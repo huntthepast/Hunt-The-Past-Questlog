@@ -10,7 +10,7 @@ import ListCounter from '../components/ListCounter.astro';
 import EmptyState from '../components/EmptyState.astro';
 import Icon from '../components/Icon.astro';
 import { libraryGames, libraryStats, groupByStatus, platformOf, sortKey, formatDate, formatHours } from '../lib/data';
-import { STATUSES } from '../lib/constants.js';
+import { STATUSES, GAME_KINDS, gameKindOf } from '../lib/constants.js';
 import { bar, text } from '../lib/ui';
 
 const games = await libraryGames();
@@ -23,6 +23,7 @@ const counts = [...STATUSES]
   .sort((a, b) => BREAKDOWN_ORDER.indexOf(a.id) - BREAKDOWN_ORDER.indexOf(b.id))
   .map((s) => ({ status: s, count: games.filter((g) => g.data.status === s.id).length }));
 const platforms = [...new Set(games.map((g) => g.data.platform))].map(platformOf).sort((a, b) => a.name.localeCompare(b.name));
+const kinds = GAME_KINDS.filter((k) => games.some((g) => gameKindOf(g.data.tags) === k.id));
 
 // Status presets, RetroAchievements-profile style: one click to focus on a slice of the library.
 const PRESETS = [
@@ -36,7 +37,7 @@ const PRESETS = [
 const PAGE_SIZES = [25, 50, 100, 0];
 
 const filterConfig = {
-  facets: ['platform'],
+  facets: ['platform', 'kind'],
   multi: { status: STATUSES.map((s) => s.id) },
   defaultSort: 'title',
   pageSize: 50,
@@ -126,6 +127,14 @@ const filterConfig = {
                 <option value={p.id}>{p.name}</option>
               ))}
             </select>
+            {kinds.length > 1 && (
+              <select x-model="facet.kind" class="input sm:w-36" aria-label="Kind of release" title="Official releases, ROM hacks, homebrew...">
+                <option value="">Any kind</option>
+                {kinds.map((k) => (
+                  <option value={k.id}>{k.label}</option>
+                ))}
+              </select>
+            )}
             <select x-model="sort" class="input sm:w-44" aria-label="Sort by">
               <option value="title">A-Z</option>
               <option value="titleDesc">Z-A</option>
@@ -166,6 +175,7 @@ const filterConfig = {
                       data-sort={sortKey(d.title)}
                       data-status={d.status}
                       data-platform={d.platform}
+                      data-kind={gameKindOf(d.tags)}
                       data-finished={d.finishedAt ?? ''}
                       data-started={d.startedAt ?? ''}
                       data-updated={d.updatedAt}

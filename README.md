@@ -89,6 +89,9 @@ You can also edit these files by hand; the schemas in `src/content.config.ts` va
   "startedAt": "2026-06-02",
   "finishedAt": "2026-07-14",
   "raGameId": 1234,              // retroachievements.org/game/1234 - enables achievement sync
+  "subsets": [                  // your journal for RA subsets of this game (their achievements come from the sync)
+    { "raGameId": 5678, "rating": 8, "hoursPlayed": 12.5, "startedAt": "2026-07-01", "finishedAt": "2026-07-20", "review": "Markdown", "notes": "Markdown" }
+  ],
   "review": "Markdown allowed.",
   "notes": "Where I left off...",
   "tags": ["classic"],
@@ -98,6 +101,10 @@ You can also edit these files by hand; the schemas in `src/content.config.ts` va
 ```
 
 Statuses, guide types and tracker types are defined once in `src/lib/constants.js` and shared by the site and the admin.
+
+A tag of `hack`, `homebrew`, `prototype`, `demo`, `unlicensed` or `test-kit` marks the kind of release (RetroAchievements' "~Hack~" style
+title prefixes become these tags on import); the Library and Progress pages get a **kind** filter (Official / Hack / Homebrew...)
+whenever the library mixes kinds.
 
 ### Guide
 
@@ -145,7 +152,7 @@ the page's table of contents (`##` entries, with `###` entries shown only under 
 `- [ ]` task lists are tickable by readers (saved in their browser), collapsible, and can be laid out in
 1-3 columns - the guide's **Checklist layout** and **Collapse checklists by default** settings are the starting point, and
 readers can change both for themselves. Images uploaded through the
-admin's **Images & gallery** panel land in `public/guides/<slug>/`; the **Template** button inserts the
+admin's **Gallery** dialog land in `public/guides/<slug>/`; the **Template** button inserts the
 walkthrough skeleton (intro, controls, characters, one map + checklist + walkthrough block per area, credits),
 and **Link to guide** inserts links to another guide's sections; **Outline** lists every heading of the body and jumps the
 editor to it, and **Tick all / Untick all** flip the `- [ ]` lines in the selection (or the checklist under the cursor).
@@ -191,12 +198,23 @@ A sync:
 - with **Update hours played** enabled (default), sets `hoursPlayed` from RA's tracked playtime for each linked game. RA only
   counts sessions played while the emulator was connected, so the sync only ever raises the number and never lowers hours
   you logged yourself;
-- with **Auto-upgrade statuses** enabled, promotes games to Beaten / Completed / Mastered from your RA awards (never downgrades).
+- with **Auto-upgrade statuses** enabled, promotes games to Beaten / Completed / Mastered from your RA awards (never downgrades);
+- with **Fill in dates** enabled (default), fills an empty *Started* with the date of your first unlock in the game and an empty
+  *Finished* with the date of your beaten / completed / mastered award - RA has no "first played" date, so the first unlock is the
+  closest thing. Dates you typed are never changed. The same goes for subset journal rows;
+- picks up RA **subsets** ("Game [Subset - Bonus]", the challenge / rare-drop / speedrun sets) of your linked games and stores them
+  as `ra-games/<subsetId>.json` with `parentGameId`. The site shows them as tabs on the main game's page (like retroachievements.org)
+  instead of as separate library games; links from the Achievements page open the right tab.
 
 Other RA helpers in the admin:
 
 - **Fetch** next to the RA game id in the game editor pre-fills title, platform, box art, developer, publisher, genre and year.
-- **Find games to import** lists every game in your RA history that is not in the library yet and creates entries for the ones you pick.
+- **Find games to import** lists every game in your RA history that is not in the library yet and creates entries for the ones you pick
+  (subsets of games you already have are skipped - the sync attaches those to the main game).
+- **Subsets in the library** appears when a subset was imported as its own game: **Merge** moves its rating / hours / dates into the
+  main game's `subsets` journal, re-points its guides and trackers at the main game, and removes the duplicate entry (the main
+  game's own stats, status and notes are not touched). The game editor then shows a **Subsets** box to edit those per-subset stats;
+  on the site the rating / hours / started / finished tiles and the review / notes switch together with the achievement tabs.
 - **Import RA console list** adds RA systems to `platforms.json` so imports map to the right platform automatically.
 - **Trophy shelf** (bottom of the RetroAchievements tab) arranges the badge wall shown on the Achievements page. By default it
   mirrors your RA profile order (what you set with "Reorder Site Awards" on RA); drag rows, use the arrows or hide badges to

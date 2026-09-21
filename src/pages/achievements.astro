@@ -8,14 +8,15 @@ import ListCounter from '../components/ListCounter.astro';
 import ProgressBar from '../components/ProgressBar.astro';
 import Badge from '../components/Badge.astro';
 import Icon from '../components/Icon.astro';
-import { raProfile, raSynced, allGames, raTrackedSeconds, shelfAwards, awardKind, shelf as shelfOverrides, formatDate, formatDateTime, formatNumber } from '../lib/data';
+import { raProfile, raSynced, allGames, raGamePaths, raTrackedSeconds, shelfAwards, awardKind, shelf as shelfOverrides, formatDate, formatDateTime, formatNumber } from '../lib/data';
 import { RA_SITE, raImage } from '../lib/constants.js';
 import { bar, text } from '../lib/ui';
 
 const synced = raSynced();
 const games = await allGames();
 const trackedSeconds = await raTrackedSeconds();
-const gameByRaId = new Map(games.filter((g) => g.data.raGameId).map((g) => [g.data.raGameId as number, g]));
+// RA game id -> page on this site (subsets open their parent game on the subset tab).
+const raPath = await raGamePaths(games);
 
 const completion = [...raProfile.completion].sort((a, b) => (b.mostRecentAwardedDate ?? '').localeCompare(a.mostRecentAwardedDate ?? ''));
 const consoles = [...new Set(completion.map((c) => c.consoleName))].sort();
@@ -148,13 +149,13 @@ const filterConfig = {
             {raProfile.recentlyPlayed.length ? (
               <ul class="card divide-y divide-zinc-800">
                 {raProfile.recentlyPlayed.map((g) => {
-                  const local = gameByRaId.get(g.gameId);
+                  const local = raPath.get(g.gameId);
                   const pct = g.numPossible ? Math.round((g.numAchieved / g.numPossible) * 100) : 0;
                   return (
                     <li class="flex items-center gap-3 p-3">
                       <img src={raImage(g.imageIcon)} alt="" width="48" height="48" loading="lazy" class="size-12 shrink-0 rounded bg-zinc-800" />
                       <div class="min-w-0 flex-1">
-                        <a href={local ? `/games/${local.id}` : `${RA_SITE}/game/${g.gameId}`} target={local ? undefined : '_blank'} rel={local ? undefined : 'noopener'} class="block truncate font-medium text-zinc-100 hover:text-amber-300">
+                        <a href={local ?? `${RA_SITE}/game/${g.gameId}`} target={local ? undefined : '_blank'} rel={local ? undefined : 'noopener'} class="block truncate font-medium text-zinc-100 hover:text-amber-300">
                           {g.title}
                         </a>
                         <p class="text-xs text-zinc-500">
@@ -298,7 +299,7 @@ const filterConfig = {
 
           <ul class="card divide-y divide-zinc-800">
             {completion.map((c) => {
-              const local = gameByRaId.get(c.gameId);
+              const local = raPath.get(c.gameId);
               const pct = c.maxPossible ? Math.round((c.numAwarded / c.maxPossible) * 100) : 0;
               const kind = AWARD_KINDS.find((k) => k.id === awardOf(c));
               return (
@@ -317,7 +318,7 @@ const filterConfig = {
                   <img src={raImage(c.imageIcon)} alt="" width="40" height="40" loading="lazy" class="size-10 shrink-0 rounded bg-zinc-800" />
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-2">
-                      <a href={local ? `/games/${local.id}` : `${RA_SITE}/game/${c.gameId}`} target={local ? undefined : '_blank'} rel={local ? undefined : 'noopener'} class="truncate font-medium text-zinc-100 hover:text-amber-300">
+                      <a href={local ?? `${RA_SITE}/game/${c.gameId}`} target={local ? undefined : '_blank'} rel={local ? undefined : 'noopener'} class="truncate font-medium text-zinc-100 hover:text-amber-300">
                         {c.title}
                       </a>
                       {kind && kind.id !== 'none' && <Badge color={kind.color} label={kind.label} class="hidden sm:inline-flex" />}
@@ -379,13 +380,13 @@ const filterConfig = {
 
             <ul class="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
               {shelf.map((a) => {
-                const local = a.gameId ? gameByRaId.get(a.gameId) : undefined;
+                const local = a.gameId ? raPath.get(a.gameId) : undefined;
                 const kind = awardKind(a);
                 const info = AWARD_KINDS.find((k) => k.id === kind);
                 return (
                   <li data-item data-kind={kind}>
                     <a
-                      href={local ? `/games/${local.id}` : `${RA_SITE}/game/${a.gameId}`}
+                      href={local ?? `${RA_SITE}/game/${a.gameId}`}
                       target={local ? undefined : '_blank'}
                       rel={local ? undefined : 'noopener'}
                       class:list={['block overflow-hidden rounded-lg border-2 transition hover:scale-105', SHELF_FRAME[kind]]}

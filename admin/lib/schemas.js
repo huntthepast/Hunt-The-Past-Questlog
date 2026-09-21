@@ -41,6 +41,19 @@ export const GameSchema = z.object({
   startedAt: optionalDate,
   finishedAt: optionalDate,
   raGameId: optionalInt.pipe(z.number().int().positive().optional()),
+  subsets: z
+    .array(
+      z.object({
+        raGameId: z.preprocess((v) => Number(v), z.number().int().positive()),
+        rating: optionalNumber.pipe(z.number().min(0).max(10).optional()),
+        hoursPlayed: optionalNumber.pipe(z.number().min(0).optional()),
+        startedAt: optionalDate,
+        finishedAt: optionalDate,
+        review: optionalText,
+        notes: optionalText,
+      }),
+    )
+    .default([]),
   review: optionalText,
   notes: optionalText,
   tags: stringList.default([]),

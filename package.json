@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "description": "Hunt the Past's QuestLog — a static game journal (library, progress, achievements, guides) with a local-only admin.",
+  "author": "Hunt the Past",
+  "license": "MIT",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",

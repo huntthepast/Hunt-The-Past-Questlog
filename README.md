@@ -298,6 +298,17 @@ src/
   layouts/, components/, pages/, styles/global.css
 ```
 
+## License
+
+- **Code** (everything that builds the site: `src/`, `admin/`, config): [MIT](LICENSE) - use it however you like,
+  keep the copyright notice.
+- **Content** (guides, trackers, reviews, notes, the site's text): [CC BY 4.0](LICENSE-CONTENT.md) - free to copy,
+  adapt and even use commercially **as long as you credit Hunt the Past and link back**.
+- Game names, box art, RetroAchievements and Steam data, and third-party reference data used in individual guides
+  are **not** covered - see [LICENSE-CONTENT.md](LICENSE-CONTENT.md) for the details and the credits.
+
+The site footer states this too, so readers see it without opening the repository.
+
 ## Customizing
 
 - Colors and fonts: `src/styles/global.css` (`@theme` block) and the color maps in `src/lib/ui.ts`.

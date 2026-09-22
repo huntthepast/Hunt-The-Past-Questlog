@@ -25,6 +25,8 @@ const games = defineCollection({
     startedAt: isoDate.optional(),
     finishedAt: isoDate.optional(),
     raGameId: z.number().int().positive().optional(),
+    /** Steam app id (store.steampowered.com/app/<id>) - enables the Steam achievement sync. */
+    steamAppId: z.number().int().positive().optional(),
     /**
      * Your own journal for each RA subset of this game (rating, hours, dates). The subset's achievements come
      * from ra-games/<raGameId>.json; the game page switches these stats along with the achievement tabs.
@@ -158,4 +160,55 @@ const raGames = defineCollection({
   }),
 });
 
-export const collections = { games, guides, trackers, raGames };
+/**
+ * Achievement sets from other sources, shown as extra tabs on the game page next to RetroAchievements:
+ * src/content/achievement-sets/<slug>.json. "steam" sets are written by the admin's Steam sync; "manual" ones
+ * are typed in (GOG, consoles, anything).
+ */
+const achievementSets = defineCollection({
+  loader: glob({ pattern: '**/*.json', base: './src/content/achievement-sets' }),
+  schema: z.object({
+    /** Tab label: "Steam", "GOG", ... */
+    title: z.string().min(1),
+    source: z.enum(['steam', 'manual']).default('manual'),
+    game: reference('games'),
+    /** Steam app id (for steam sets, or a manual set whose list was imported from Steam). */
+    appId: z.number().int().positive().optional(),
+    /** Where "View on ..." points; defaults to the Steam store page when appId is set. */
+    url: z.string().optional(),
+    /** Steam's tracked playtime for the game. */
+    playtimeMinutes: z.number().min(0).optional(),
+    lastPlayedAt: z.string().optional(),
+    syncedAt: z.string().optional(),
+    /** Your own stats for this set; used when the set is not the game's primary one (see the game page). */
+    journal: z
+      .object({
+        rating: z.number().min(0).max(10).optional(),
+        hoursPlayed: z.number().min(0).optional(),
+        startedAt: isoDate.optional(),
+        finishedAt: isoDate.optional(),
+        review: z.string().optional(),
+        notes: z.string().optional(),
+      })
+      .default({}),
+    achievements: z
+      .array(
+        z.object({
+          id: z.string().min(1),
+          title: z.string().min(1),
+          description: z.string().default(''),
+          icon: z.string().optional(),
+          iconLocked: z.string().optional(),
+          hidden: z.boolean().default(false),
+          unlockedAt: z.string().nullable().default(null),
+          /** Percentage of players who have it (Steam global stats). */
+          rarity: z.number().nullable().default(null),
+        }),
+      )
+      .default([]),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+  }),
+});
+
+export const collections = { games, guides, trackers, raGames, achievementSets };

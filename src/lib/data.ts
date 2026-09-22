@@ -212,6 +212,21 @@ export async function raGameById(raGameId: number | undefined): Promise<RaGame |
   return all.find((entry) => entry.data.gameId === raGameId);
 }
 
+/* ---------- achievement sets from other sources (Steam sync, manual) ---------- */
+
+export type AchievementSet = CollectionEntry<'achievementSets'>;
+
+// Astro warns on every call to getCollection() for a collection without entries; skip it while the folder is empty.
+const HAS_ACHIEVEMENT_SETS = Object.keys(import.meta.glob('/src/content/achievement-sets/*.json')).length > 0;
+
+/** The Steam / manual achievement sets attached to a game, Steam first, then by title. */
+export async function achievementSetsFor(gameId: string): Promise<AchievementSet[]> {
+  if (!HAS_ACHIEVEMENT_SETS) return [];
+  const all = await getCollection('achievementSets');
+  const rank = (s: AchievementSet) => (s.data.source === 'steam' ? 0 : 1);
+  return all.filter((s) => s.data.game.id === gameId).sort((a, b) => rank(a) - rank(b) || a.data.title.localeCompare(b.data.title));
+}
+
 /** RA subsets of a game ("Game [Subset - Bonus]"): the snapshots whose parentGameId is this game's RA id. */
 export async function raSubsetsOf(raGameId: number | undefined): Promise<RaGame[]> {
   if (!raGameId) return [];

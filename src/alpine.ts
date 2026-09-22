@@ -472,6 +472,149 @@ export default (Alpine: Alpine) => {
   }));
 
   /**
+   * Makes every Markdown table in a guide sortable and filterable: click a header to sort (numbers
+   * such as "100 G" sort numerically), columns with a handful of repeated values (Type, Location...)
+   * get filter chips, and tables with many rows get a search box. Without JS the plain table shows.
+   */
+  type TableColumn = { index: number; label: string; numeric: boolean; categories: string[] };
+  const cellText = (cell: Element | undefined) => (cell?.textContent ?? '').replace(/\s+/g, ' ').trim();
+  const asNumber = (text: string) => {
+    const match = /-?\d[\d,]*(?:\.\d+)?/.exec(text);
+    return match ? Number(match[0].replace(/,/g, '')) : Number.NaN;
+  };
+
+  Alpine.data('guideTables', () => ({
+    init() {
+      this.$root.querySelectorAll<HTMLTableElement>('table').forEach((table) => this.enhance(table));
+    },
+
+    enhance(table: HTMLTableElement) {
+      const head = table.tHead?.rows[0];
+      const body = table.tBodies[0];
+      if (!head || !body || body.rows.length < 2) return;
+      const rows = Array.from(body.rows);
+      const columns: TableColumn[] = Array.from(head.cells).map((th, index) => {
+        const values = rows.map((row) => cellText(row.cells[index]));
+        const numericCount = values.filter((v) => v && !Number.isNaN(asNumber(v)) && /^[-+]?[\d.,]+\s*[a-zA-Z%$€£¥]*$/.test(v)).length;
+        const numeric = numericCount >= Math.max(2, values.filter(Boolean).length * 0.6);
+        const distinct = [...new Set(values.filter(Boolean))];
+        const categorical = !numeric && distinct.length >= 2 && distinct.length <= Math.min(8, rows.length / 2) && distinct.every((v) => v.length <= 24);
+        // Column widths: short values (numbers, prices, names) never wrap, so a long Notes / Description
+        // column takes the slack instead of squeezing "1,500 G" onto two lines.
+        const longest = Math.max(cellText(th).length, ...values.map((v) => v.length));
+        const cells = [th, ...rows.map((row) => row.cells[index])].filter((cell): cell is HTMLTableCellElement => Boolean(cell));
+        if (numeric || longest <= 22) for (const cell of cells) cell.classList.add('data-table-tight');
+        else if (longest >= 60) for (const cell of cells) cell.classList.add('data-table-wide');
+        return { index, label: cellText(th), numeric, categories: categorical ? distinct.sort((a, b) => a.localeCompare(b)) : [] };
+      });
+
+      const wrap = document.createElement('div');
+      wrap.className = 'data-table';
+      const bar = document.createElement('div');
+      bar.className = 'data-table-bar';
+      const scroller = document.createElement('div');
+      scroller.className = 'data-table-scroll';
+      table.replaceWith(wrap);
+      wrap.append(bar, scroller);
+      scroller.append(table);
+
+      const state = { q: '', filters: {} as Record<number, string>, sort: { index: -1, dir: 1 } };
+      const count = document.createElement('span');
+      count.className = 'data-table-count';
+
+      // Search box for longer tables.
+      if (rows.length >= 6) {
+        const search = document.createElement('input');
+        search.type = 'search';
+        search.placeholder = 'Filter rows...';
+        search.className = 'input data-table-search';
+        search.setAttribute('aria-label', 'Filter rows');
+        search.addEventListener('input', () => {
+          state.q = search.value.trim().toLowerCase();
+          apply();
+        });
+        bar.append(search);
+      }
+
+      // Chips for category-like columns.
+      for (const column of columns.filter((c) => c.categories.length)) {
+        const group = document.createElement('div');
+        group.className = 'data-table-filter';
+        group.setAttribute('role', 'group');
+        group.setAttribute('aria-label', `Filter by ${column.label}`);
+        const label = document.createElement('span');
+        label.className = 'data-table-filter-label';
+        label.textContent = column.label;
+        group.append(label);
+        const chips: HTMLButtonElement[] = [];
+        for (const value of ['', ...column.categories]) {
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'chip chip-btn data-table-chip';
+          chip.textContent = value || 'All';
+          chip.setAttribute('aria-pressed', String(value === ''));
+          chip.addEventListener('click', () => {
+            state.filters[column.index] = value;
+            for (const c of chips) c.setAttribute('aria-pressed', String(c === chip));
+            apply();
+          });
+          chips.push(chip);
+          group.append(chip);
+        }
+        bar.append(group);
+      }
+      bar.append(count);
+
+      // Sortable headers.
+      for (const column of columns) {
+        const th = head.cells[column.index];
+        th.classList.add('data-table-sortable');
+        th.tabIndex = 0;
+        th.setAttribute('role', 'button');
+        th.title = `Sort by ${column.label}`;
+        const sortBy = () => {
+          state.sort = state.sort.index === column.index ? { index: column.index, dir: -state.sort.dir } : { index: column.index, dir: 1 };
+          for (const other of Array.from(head.cells)) other.removeAttribute('aria-sort');
+          th.setAttribute('aria-sort', state.sort.dir === 1 ? 'ascending' : 'descending');
+          const sorted = [...rows].sort((a, b) => {
+            const ta = cellText(a.cells[column.index]);
+            const tb = cellText(b.cells[column.index]);
+            if (column.numeric) {
+              // Cells without a number ("Not sold", "-") stay at the bottom whichever way the column is sorted.
+              const na = asNumber(ta);
+              const nb = asNumber(tb);
+              if (Number.isNaN(na) || Number.isNaN(nb)) return Number.isNaN(na) === Number.isNaN(nb) ? 0 : Number.isNaN(na) ? 1 : -1;
+              return (na - nb) * state.sort.dir;
+            }
+            return ta.localeCompare(tb, undefined, { numeric: true, sensitivity: 'base' }) * state.sort.dir;
+          });
+          body.append(...sorted);
+        };
+        th.addEventListener('click', sortBy);
+        th.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            sortBy();
+          }
+        });
+      }
+
+      const apply = () => {
+        let shown = 0;
+        for (const row of rows) {
+          const text = cellText(row).toLowerCase();
+          const matchesQuery = !state.q || text.includes(state.q);
+          const matchesFilters = Object.entries(state.filters).every(([index, value]) => !value || cellText(row.cells[Number(index)]) === value);
+          row.hidden = !(matchesQuery && matchesFilters);
+          if (!row.hidden) shown++;
+        }
+        count.textContent = shown === rows.length ? `${rows.length} rows` : `${shown} of ${rows.length} rows`;
+      };
+      apply();
+    },
+  }));
+
+  /**
    * Makes the task lists rendered from Markdown (`- [ ] item`) tickable for the reader, wraps each
    * one in a collapsible block with a done-counter, and lets the reader lay items out in 1-3 columns.
    * Ticks and layout choices are saved per guide in localStorage only; the author's own [x] marks are

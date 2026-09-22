@@ -226,6 +226,77 @@
   }
 }
 
+/* Markdown tables get wrapped by the guideTables component: a bar with search / filter chips / row count,
+   a horizontal scroller for narrow screens, and clickable headers. */
+.guide-prose .data-table {
+  @apply my-6;
+}
+
+.guide-prose .data-table-bar {
+  @apply mb-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-zinc-400;
+}
+
+.guide-prose .data-table-search {
+  @apply w-full py-1.5 sm:w-56;
+}
+
+.guide-prose .data-table-filter {
+  @apply flex flex-wrap items-center gap-1;
+}
+
+.guide-prose .data-table-filter-label {
+  @apply mr-1 font-semibold uppercase tracking-wider text-zinc-500;
+}
+
+.guide-prose .data-table-chip {
+  @apply bg-zinc-900 text-zinc-300 ring-zinc-700;
+}
+
+.guide-prose .data-table-chip[aria-pressed="true"] {
+  @apply bg-amber-400 text-zinc-950 ring-amber-400;
+}
+
+.guide-prose .data-table-count {
+  @apply ml-auto tabular-nums text-zinc-500;
+}
+
+.guide-prose .data-table-scroll {
+  @apply overflow-x-auto;
+}
+
+.guide-prose .data-table-scroll > table {
+  @apply my-0;
+}
+
+.guide-prose th.data-table-sortable {
+  @apply cursor-pointer select-none whitespace-nowrap hover:text-amber-300;
+}
+
+/* Short-value columns keep their width; long-text columns get a floor and absorb the rest. */
+.guide-prose .data-table-tight {
+  @apply whitespace-nowrap;
+  width: 1%;
+}
+
+.guide-prose .data-table-wide {
+  min-width: 16rem;
+}
+
+.guide-prose th.data-table-sortable::after {
+  content: '\2195';
+  @apply ml-1 text-zinc-600;
+}
+
+.guide-prose th.data-table-sortable[aria-sort="ascending"]::after {
+  content: '\25B2';
+  @apply text-amber-400;
+}
+
+.guide-prose th.data-table-sortable[aria-sort="descending"]::after {
+  content: '\25BC';
+  @apply text-amber-400;
+}
+
 /* Task lists get wrapped by the guideChecklist component: a header with a collapse toggle, a done
    counter and a 1/2/3-column switch. Without JS the plain list is shown. */
 .guide-prose .checklist {

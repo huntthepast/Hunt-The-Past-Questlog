@@ -129,7 +129,7 @@ const jsonLd = [
           <span>Checklist: <span class="font-semibold text-zinc-200" x-text="done"></span> / <span x-text="total"></span> ticked &middot; saved in this browser only</span>
           <button type="button" class="ml-auto text-amber-400 hover:underline" @click="reset()">Reset ticks</button>
         </div>
-        <article class="guide-prose">
+        <article class="guide-prose" x-data="guideTables">
           <Content />
         </article>
       </div>

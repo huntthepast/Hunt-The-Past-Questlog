@@ -1,17 +1,26 @@
 ---
 /**
- * Tabs for a game's RetroAchievements sets (the main set plus RA subsets). Must sit inside the
- * `raSets` Alpine scope of the game page: clicking a tab sets `set`, which the play stats and the
- * achievement panels follow.
+ * Tabs for a game's achievement sets: RetroAchievements (main set + subsets), Steam and manual sets.
+ * Must sit inside the `raSets` Alpine scope of the game page: clicking a tab sets `set`, which the
+ * play stats, review / notes and the achievement panels follow.
  */
 import Icon from './Icon.astro';
+import type { IconName } from './Icon.astro';
+
+type Source = 'ra' | 'ra-subset' | 'steam' | 'manual';
 
 interface Props {
-  sets: { key: string; label: string; subset: boolean; earned: number; total: number; pct: number; title: string }[];
+  sets: { key: string; label: string; source: Source; earned: number; total: number; pct: number; title: string }[];
   class?: string;
 }
 
 const { sets, class: className } = Astro.props;
+const ICON: Record<Source, { name: IconName; solid: boolean }> = {
+  ra: { name: 'trophy', solid: false },
+  'ra-subset': { name: 'sparkles', solid: false },
+  steam: { name: 'steam', solid: true },
+  manual: { name: 'check-badge', solid: false },
+};
 ---
 
 <div class:list={['flex flex-wrap gap-1 rounded-lg border border-zinc-800 bg-zinc-950/60 p-1', className]} role="tablist" aria-label="Achievement sets">
@@ -26,7 +35,7 @@ const { sets, class: className } = Astro.props;
         @click={`pick(${JSON.stringify(set.key)})`}
         title={set.title}
       >
-        {set.subset && <Icon name="sparkles" class="size-3.5 text-zinc-500" />}
+        <Icon name={ICON[set.source].name} solid={ICON[set.source].solid} class="size-3.5 text-zinc-500" />
         {set.label}
         <span class:list={['text-xs tabular-nums', set.pct === 100 ? 'text-emerald-300' : 'text-zinc-500']}>
           {set.earned}/{set.total}

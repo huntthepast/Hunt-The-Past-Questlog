@@ -20,9 +20,10 @@ import { slugify, isSlug } from './lib/slug.js';
 import * as store from './lib/store.js';
 import * as git from './lib/git.js';
 import * as ra from './lib/ra.js';
+import * as steam from './lib/steam.js';
 import * as shelf from './lib/shelf.js';
 import * as attachments from './lib/attachments.js';
-import { GameSchema, GuideSchema, TrackerSchema, SiteSchema, PlatformSchema, validate, ensureTrackerItemIds } from './lib/schemas.js';
+import { GameSchema, GuideSchema, TrackerSchema, SiteSchema, PlatformSchema, AchievementSetSchema, validate, ensureTrackerItemIds, ensureAchievementIds } from './lib/schemas.js';
 import { STATUSES, OWNERSHIP, GUIDE_TYPE_SUGGESTIONS, TRACKER_TYPES, raImage } from '../src/lib/constants.js';
 import { z } from 'zod';
 
@@ -76,6 +77,7 @@ app.get('/api/meta', async (c) => {
     platforms,
     site,
     ra: { configured: config.configured, username: config.username },
+    steam: { configured: steam.steamConfig().configured },
     port: PORT,
   });
 });
@@ -137,8 +139,8 @@ app.delete('/api/games/:slug', async (c) => {
   const slug = c.req.param('slug');
   const game = await store.getGame(slug);
   const refs = await store.referencesToGame(slug);
-  if (refs.guides.length || refs.trackers.length) {
-    throw conflict(`"${game.title}" is still referenced by ${[...refs.guides, ...refs.trackers].join(', ')}. Unlink or delete those first.`);
+  if (refs.guides.length || refs.trackers.length || refs.sets.length) {
+    throw conflict(`"${game.title}" is still referenced by ${[...refs.guides, ...refs.trackers, ...refs.sets].join(', ')}. Unlink or delete those first.`);
   }
   await store.deleteGame(slug);
   await removeLocalCover(slug);
@@ -428,6 +430,60 @@ app.post('/api/ra/subsets/merge', async (c) => {
   if (typeof body.slug !== 'string' || !body.slug) throw badRequest('Missing slug');
   return c.json(await ra.mergeSubset(body.slug));
 });
+
+/* ---------------- achievement sets (Steam sync + manual) ---------------- */
+
+app.get('/api/sets', async (c) => c.json(await store.listSets()));
+app.get('/api/sets/:slug', async (c) => c.json(await store.getSet(c.req.param('slug'))));
+
+app.post('/api/sets', async (c) => {
+  const body = await c.req.json();
+  const data = validate(AchievementSetSchema, body);
+  data.achievements = ensureAchievementIds(data.achievements);
+  if (!(await store.gameExists(data.game))) throw badRequest(`Unknown game "${data.game}"`);
+  const requested = typeof body.slug === 'string' && body.slug.trim() ? body.slug.trim() : `${data.game}-${slugify(data.title)}`;
+  if (!isSlug(requested)) throw badRequest('Slug may only contain lowercase letters, numbers and dashes');
+  if (await store.setExists(requested)) throw conflict(`An achievement set with slug "${requested}" already exists`);
+  const timestamp = store.now();
+  return c.json(await store.saveSet(requested, { ...data, createdAt: timestamp, updatedAt: timestamp }), 201);
+});
+
+app.put('/api/sets/:slug', async (c) => {
+  const slug = c.req.param('slug');
+  const existing = await store.getSet(slug);
+  const data = validate(AchievementSetSchema, await c.req.json());
+  data.achievements = ensureAchievementIds(data.achievements);
+  if (!(await store.gameExists(data.game))) throw badRequest(`Unknown game "${data.game}"`);
+  return c.json(await store.saveSet(slug, { ...existing, ...data, createdAt: existing.createdAt ?? store.now(), updatedAt: store.now() }));
+});
+
+app.delete('/api/sets/:slug', async (c) => {
+  await store.deleteSet(c.req.param('slug'));
+  return c.json({ ok: true });
+});
+
+/* ---------------- Steam ---------------- */
+
+app.get('/api/steam/status', (c) => c.json({ configured: steam.steamConfig().configured, job: steam.syncStatus() }));
+
+app.post('/api/steam/sync', async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  return c.json(steam.startSync({ autoStatus: Boolean(body.autoStatus), autoHours: body.autoHours !== false, autoDates: body.autoDates !== false }), 202);
+});
+
+app.get('/api/steam/sync/status', (c) => c.json(steam.syncStatus()));
+app.get('/api/steam/import-candidates', async (c) => c.json(await steam.importCandidates()));
+
+app.post('/api/steam/import', async (c) => {
+  const body = await c.req.json();
+  const games = Array.isArray(body.games) ? body.games : [];
+  if (!games.length) throw badRequest('Select at least one game');
+  return c.json(await steam.importGames(games));
+});
+
+// Store metadata for the game editor's "Fetch" button and the achievement list for manual sets.
+app.get('/api/steam/app/:id', async (c) => c.json(await steam.appDetails(c.req.param('id'))));
+app.get('/api/steam/schema/:id', async (c) => c.json(await steam.schemaFor(c.req.param('id'))));
 
 // Trophy shelf: RA order by default, manual order/hidden list stored in src/data/shelf.json.
 app.get('/api/shelf', async (c) => c.json(await shelf.shelfState()));

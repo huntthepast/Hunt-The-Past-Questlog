@@ -46,7 +46,7 @@ function assertSlug(slug) {
 const GAME_KEY_ORDER = [
   'title', 'platform', 'cover', 'genres', 'developer', 'publisher', 'releaseYear',
   'ownership', 'favorite', 'status', 'rating', 'hoursPlayed', 'startedAt', 'finishedAt',
-  'raGameId', 'subsets', 'review', 'notes', 'tags', 'addedAt', 'updatedAt',
+  'raGameId', 'steamAppId', 'subsets', 'review', 'notes', 'tags', 'addedAt', 'updatedAt',
 ];
 
 /** Re-orders keys and drops undefined values so files look the same no matter who wrote them. */
@@ -164,6 +164,35 @@ export async function deleteTracker(slug) {
   await unlink(trackerFile(slug));
 }
 
+/* ---------------- achievement sets (Steam sync + manual) ---------------- */
+
+const SET_KEY_ORDER = ['title', 'source', 'game', 'appId', 'url', 'playtimeMinutes', 'lastPlayedAt', 'syncedAt', 'journal', 'achievements', 'createdAt', 'updatedAt'];
+const setFile = (slug) => path.join(PATHS.achievementSets, `${assertSlug(slug)}.json`);
+
+export const setExists = async (slug) => isSlug(slug) && existsSync(setFile(slug));
+
+export async function listSets() {
+  const slugs = await listFiles(PATHS.achievementSets, '.json');
+  const sets = await Promise.all(slugs.map(async (slug) => ({ slug, ...(await readJson(setFile(slug))) })));
+  return sets.sort((a, b) => String(b.updatedAt ?? '').localeCompare(String(a.updatedAt ?? '')));
+}
+
+export async function getSet(slug) {
+  if (!(await setExists(slug))) throw notFound(`Achievement set "${slug}" not found`);
+  return { slug, ...(await readJson(setFile(slug))) };
+}
+
+export async function saveSet(slug, data) {
+  const { slug: _ignored, ...rest } = data;
+  await writeJson(setFile(slug), tidy(rest, SET_KEY_ORDER));
+  return { slug, ...rest };
+}
+
+export async function deleteSet(slug) {
+  if (!(await setExists(slug))) throw notFound(`Achievement set "${slug}" not found`);
+  await unlink(setFile(slug));
+}
+
 /* ---------------- singletons ---------------- */
 
 export const getSite = () => readJson(PATHS.site);
@@ -202,11 +231,12 @@ export async function deleteRaGame(id) {
 
 /* ---------------- references ---------------- */
 
-/** Which guides and trackers point at a game (used before deleting it). */
+/** Which guides, trackers and achievement sets point at a game (used before deleting it). */
 export async function referencesToGame(slug) {
-  const [guides, trackers] = await Promise.all([listGuides(), listTrackers()]);
+  const [guides, trackers, sets] = await Promise.all([listGuides(), listTrackers(), listSets()]);
   return {
     guides: guides.filter((g) => g.game === slug).map((g) => g.slug),
     trackers: trackers.filter((t) => t.game === slug).map((t) => t.slug),
+    sets: sets.filter((set) => set.game === slug).map((set) => set.slug),
   };
 }

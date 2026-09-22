@@ -13,6 +13,7 @@ export const PATHS = {
   guides: path.join(ROOT, 'src', 'content', 'guides'),
   trackers: path.join(ROOT, 'src', 'content', 'trackers'),
   raGames: path.join(ROOT, 'src', 'content', 'ra-games'),
+  achievementSets: path.join(ROOT, 'src', 'content', 'achievement-sets'),
   site: path.join(ROOT, 'src', 'data', 'site.json'),
   platforms: path.join(ROOT, 'src', 'data', 'platforms.json'),
   raProfile: path.join(ROOT, 'src', 'data', 'ra-profile.json'),

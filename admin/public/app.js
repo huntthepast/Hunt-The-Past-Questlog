@@ -1,6 +1,6 @@
 /* QuestLog admin UI. Plain Alpine.js components talking to the local JSON API in admin/server.js. */
 
-const VIEWS = ['dashboard', 'games', 'guides', 'trackers', 'ra', 'settings', 'publish'];
+const VIEWS = ['dashboard', 'games', 'guides', 'trackers', 'sets', 'ra', 'settings', 'publish'];
 const SITE_DEV_URL = 'http://localhost:4321';
 
 async function api(method, url, body, { raw = false } = {}) {
@@ -173,6 +173,7 @@ document.addEventListener('alpine:init', () => {
     startedAt: '',
     finishedAt: '',
     raGameId: '',
+    steamAppId: '',
     subsets: [],
     review: '',
     notes: '',
@@ -257,6 +258,7 @@ document.addEventListener('alpine:init', () => {
           startedAt: g.startedAt ?? '',
           finishedAt: g.finishedAt ?? '',
           raGameId: g.raGameId ?? '',
+          steamAppId: g.steamAppId ?? '',
           subsets: (g.subsets ?? []).map((sub) => ({ raGameId: Number(sub.raGameId), rating: sub.rating ?? '', hoursPlayed: sub.hoursPlayed ?? '', startedAt: sub.startedAt ?? '', finishedAt: sub.finishedAt ?? '', review: sub.review ?? '', notes: sub.notes ?? '' })),
           review: g.review ?? '',
           notes: g.notes ?? '',
@@ -339,6 +341,31 @@ document.addEventListener('alpine:init', () => {
     },
 
     /** Pull title/platform/cover/etc. from RetroAchievements for the entered game id. */
+    /** Pre-fills title / art / developer / publisher / genres / year from the Steam store (no key needed). */
+    async lookupSteam() {
+      const appId = Number(this.form.steamAppId);
+      if (!appId) return;
+      this.busy = true;
+      try {
+        const info = await api('GET', `/api/steam/app/${appId}`);
+        if (!this.form.title) this.form.title = info.title;
+        if (!this.form.cover) this.form.cover = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_600x900.jpg`;
+        if (!this.form.developer && info.developers.length) this.form.developer = info.developers.join(', ');
+        if (!this.form.publisher && info.publishers.length) this.form.publisher = info.publishers.join(', ');
+        if (!this.form.genres && info.genres.length) this.form.genres = info.genres.join(', ');
+        if (!this.form.releaseYear && info.releaseYear) this.form.releaseYear = info.releaseYear;
+        if (!this.form.platform) {
+          const pc = (Alpine.store('app').meta.platforms ?? []).find((p) => p.id === 'pc' || String(p.short).toUpperCase() === 'PC');
+          if (pc) this.form.platform = pc.id;
+        }
+        Alpine.store('app').toast(`Steam: ${info.title}${info.achievementsTotal ? ` (${info.achievementsTotal} achievements)` : ''}`);
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      } finally {
+        this.busy = false;
+      }
+    },
+
     async lookupRa() {
       const id = Number(this.form.raGameId);
       if (!id) return Alpine.store('app').toast('Enter a RetroAchievements game id first', 'error');
@@ -633,7 +660,7 @@ Step by step through the area.
 
     /* ---- table dialog ---- */
 
-    table: { cols: 3, rows: 3, header: true },
+    table: { cols: 3, rows: 3, header: true, paste: '' },
     dragging: false,
 
     /** Builds a Markdown table of the chosen size (header row + `rows` body rows) and drops it at the cursor. */
@@ -647,6 +674,30 @@ Step by step through the area.
       const body = Array.from({ length: rows }, () => line(Array.from({ length: cols }, () => cell(' ')))).join('\n');
       this.insertBlock(`${head}\n${rule}\n${body}`);
       this.panel = null;
+    },
+
+    /**
+     * Turns rows pasted from a spreadsheet (tab-, semicolon- or comma-separated, first line = header)
+     * into a Markdown table at the cursor. On the site every table is sortable and filterable.
+     */
+    insertPastedTable() {
+      const lines = String(this.table.paste ?? '')
+        .split(/\r?\n/)
+        .map((l) => l.replace(/\s+$/, ''))
+        .filter((l) => l.trim());
+      if (lines.length < 2) {
+        Alpine.store('app').toast('Paste at least a header line and one row', 'error');
+        return;
+      }
+      const delimiter = lines[0].includes('\t') ? '\t' : lines[0].includes(';') ? ';' : ',';
+      const split = (line) => line.split(delimiter).map((c) => c.trim().replace(/^"(.*)"$/, '$1').replace(/\|/g, '\\|'));
+      const header = split(lines[0]);
+      const rows = lines.slice(1).map(split).map((r) => header.map((_, i) => r[i] ?? ''));
+      const line = (cells) => `| ${cells.join(' | ')} |`;
+      this.insertBlock([line(header), line(header.map(() => '---')), ...rows.map(line)].join('\n'));
+      this.table.paste = '';
+      this.panel = null;
+      Alpine.store('app').toast(`Table with ${rows.length} rows inserted`);
     },
 
     /** Wraps the selection (or a placeholder) in markers: **bold**, *italic*, <u>underline</u>, ~~strike~~. */
@@ -1101,6 +1152,329 @@ Step by step through the area.
       } catch (err) {
         Alpine.store('app').toast(err.message, 'error');
       }
+    },
+  }));
+
+
+  /* ---------------- achievement sets: Steam sync + manual sets ---------------- */
+
+  const blankJournal = () => ({ rating: '', hoursPlayed: '', startedAt: '', finishedAt: '', review: '', notes: '' });
+  const blankSet = () => ({ slug: '', title: '', source: 'manual', game: '', appId: '', url: '', playtimeMinutes: '', journal: blankJournal(), achievements: [], bulk: '' });
+  const blankAchievement = () => ({ id: '', title: '', description: '', icon: '', iconLocked: '', hidden: false, unlockedAt: '', rarity: '' });
+  const today = () => new Date().toISOString().slice(0, 10);
+
+  Alpine.data('setsView', () => ({
+    sets: [],
+    games: [],
+    q: '',
+    selected: null,
+    isNew: false,
+    form: null,
+    dirty: false,
+    saving: false,
+    importingSchema: false,
+    steam: {
+      status: null,
+      job: null,
+      polling: null,
+      autoStatus: false,
+      autoHours: true,
+      autoDates: true,
+      candidates: null,
+      loadingCandidates: false,
+      selection: {},
+      q: '',
+      importing: false,
+      importResult: null,
+    },
+
+    async init() {
+      await this.load();
+      this.games = await api('GET', '/api/games');
+      await this.refreshSteam();
+      if (this.steam.job?.running) this.startPolling();
+      const param = Alpine.store('app').param;
+      if (param === 'new') this.create();
+      else if (param) await this.open(param);
+      this.$watch('form', () => {
+        if (this._loading) return;
+        this.dirty = true;
+      });
+    },
+
+    get filtered() {
+      const q = this.q.trim().toLowerCase();
+      return this.sets.filter((s) => !q || `${s.title} ${this.gameTitle(s.game)} ${s.source}`.toLowerCase().includes(q));
+    },
+
+    gameTitle(slug) {
+      return this.games.find((g) => g.slug === slug)?.title ?? slug;
+    },
+
+    progress(set) {
+      const list = set?.achievements ?? [];
+      const done = list.filter((a) => a.unlockedAt).length;
+      return { done, total: list.length, pct: list.length ? Math.round((done / list.length) * 100) : 0 };
+    },
+
+    async load() {
+      this.sets = await api('GET', '/api/sets');
+    },
+
+    setForm(value) {
+      this._loading = true;
+      this.form = value;
+      this.dirty = false;
+      this.$nextTick(() => {
+        this._loading = false;
+      });
+    },
+
+    create() {
+      if (!confirmDiscard(this.dirty)) return;
+      this.selected = null;
+      this.isNew = true;
+      this.setForm({ ...blankSet(), title: 'GOG' });
+    },
+
+    async open(slug) {
+      if (!confirmDiscard(this.dirty)) return;
+      try {
+        const set = await api('GET', `/api/sets/${slug}`);
+        this.selected = slug;
+        this.isNew = false;
+        this.setForm({
+          ...blankSet(),
+          ...set,
+          appId: set.appId ?? '',
+          url: set.url ?? '',
+          playtimeMinutes: set.playtimeMinutes ?? '',
+          journal: { ...blankJournal(), ...(set.journal ?? {}) },
+          achievements: (set.achievements ?? []).map((a) => ({ ...blankAchievement(), ...a, icon: a.icon ?? '', iconLocked: a.iconLocked ?? '', unlockedAt: a.unlockedAt ?? '', rarity: a.rarity ?? '' })),
+        });
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      }
+    },
+
+    close() {
+      if (!confirmDiscard(this.dirty)) return;
+      this.form = null;
+      this.selected = null;
+      this.isNew = false;
+      this.dirty = false;
+    },
+
+    async save() {
+      if (!this.form) return;
+      if (!this.form.game) {
+        Alpine.store('app').toast('Pick the game this set belongs to', 'error');
+        return;
+      }
+      this.saving = true;
+      try {
+        const { bulk: _bulk, ...rest } = this.form;
+        const payload = {
+          ...rest,
+          achievements: rest.achievements.map((a, i) => ({ ...a, id: a.id || slugify(a.title) || `achievement-${i + 1}`, unlockedAt: a.unlockedAt || null, rarity: a.rarity === '' ? null : a.rarity })),
+        };
+        const saved = this.isNew ? await api('POST', '/api/sets', payload) : await api('PUT', `/api/sets/${this.selected}`, payload);
+        Alpine.store('app').toast(`Saved "${saved.title}" for ${this.gameTitle(saved.game)}`);
+        await this.load();
+        this.dirty = false;
+        await this.open(saved.slug);
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    async remove() {
+      if (!this.selected) return;
+      if (!confirm(`Delete the "${this.form.title}" set of ${this.gameTitle(this.form.game)}? This removes src/content/achievement-sets/${this.selected}.json.`)) return;
+      try {
+        await api('DELETE', `/api/sets/${this.selected}`);
+        Alpine.store('app').toast('Set deleted');
+        this.form = null;
+        this.selected = null;
+        this.dirty = false;
+        await this.load();
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      }
+    },
+
+    /* ---- achievements of a manual set ---- */
+
+    addAchievement() {
+      this.form.achievements.push(blankAchievement());
+      this.$nextTick(() => {
+        const inputs = this.$root.querySelectorAll('[data-achievement-title]');
+        inputs[inputs.length - 1]?.focus();
+      });
+    },
+
+    removeAchievement(i) {
+      this.form.achievements.splice(i, 1);
+    },
+
+    move(list, from, to) {
+      if (to < 0 || to >= list.length) return;
+      const [item] = list.splice(from, 1);
+      list.splice(to, 0, item);
+    },
+
+    /** "Title | Description" per line. */
+    addBulk() {
+      const lines = String(this.form.bulk ?? '')
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+      for (const line of lines) {
+        const [title, ...rest] = line.split(' | ');
+        this.form.achievements.push({ ...blankAchievement(), title: title.trim(), description: rest.join(' | ').trim() });
+      }
+      this.form.bulk = '';
+    },
+
+    toggleUnlocked(a) {
+      a.unlockedAt = a.unlockedAt ? '' : today();
+    },
+
+    setAllUnlocked(on) {
+      const list = this.form.achievements;
+      if (!on && list.some((a) => a.unlockedAt) && !confirm('Untick every achievement in this set?')) return;
+      for (const a of list) a.unlockedAt = on ? a.unlockedAt || today() : '';
+    },
+
+    /** Pulls the achievement list of a Steam app into this set; existing rows keep their unlock dates. */
+    async importSchema() {
+      const appId = Number(this.form.appId);
+      if (!appId) {
+        Alpine.store('app').toast('Enter the Steam app id first (the number in store.steampowered.com/app/<id>)', 'error');
+        return;
+      }
+      this.importingSchema = true;
+      try {
+        const list = await api('GET', `/api/steam/schema/${appId}`);
+        if (!list.length) {
+          Alpine.store('app').toast('Steam lists no achievements for that app', 'error');
+          return;
+        }
+        const byId = new Map(this.form.achievements.map((a) => [a.id, a]));
+        let added = 0;
+        for (const a of list) {
+          const row = byId.get(a.id);
+          if (row) {
+            Object.assign(row, { title: a.title, description: a.description, icon: a.icon ?? '', iconLocked: a.iconLocked ?? '', hidden: a.hidden, rarity: a.rarity ?? '' });
+          } else {
+            this.form.achievements.push({ ...blankAchievement(), ...a, icon: a.icon ?? '', iconLocked: a.iconLocked ?? '', unlockedAt: '', rarity: a.rarity ?? '' });
+            added++;
+          }
+        }
+        if (!this.form.url) this.form.url = `https://store.steampowered.com/app/${appId}`;
+        Alpine.store('app').toast(`${list.length} achievements from Steam (${added} new). Tick the ones you have unlocked.`);
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      } finally {
+        this.importingSchema = false;
+      }
+    },
+
+    /* ---- Steam sync + import ---- */
+
+    async refreshSteam() {
+      try {
+        this.steam.status = await api('GET', '/api/steam/status');
+        this.steam.job = this.steam.status.job;
+      } catch {
+        this.steam.status = { configured: false, job: null };
+      }
+    },
+
+    get steamProgressPct() {
+      const p = this.steam.job?.progress;
+      return p?.total ? Math.round((p.done / p.total) * 100) : 0;
+    },
+
+    async sync() {
+      try {
+        this.steam.job = await api('POST', '/api/steam/sync', { autoStatus: this.steam.autoStatus, autoHours: this.steam.autoHours, autoDates: this.steam.autoDates });
+        this.startPolling();
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      }
+    },
+
+    startPolling() {
+      clearInterval(this.steam.polling);
+      this.steam.polling = setInterval(async () => {
+        try {
+          this.steam.job = await api('GET', '/api/steam/sync/status');
+          this.$nextTick(() => {
+            const el = this.$refs.steamLog;
+            if (el) el.scrollTop = el.scrollHeight;
+          });
+          if (!this.steam.job.running) {
+            clearInterval(this.steam.polling);
+            this.steam.polling = null;
+            await this.load();
+            this.games = await api('GET', '/api/games');
+            Alpine.store('app').toast(this.steam.job.error ? `Steam sync failed: ${this.steam.job.error}` : 'Steam sync finished', this.steam.job.error ? 'error' : 'ok');
+          }
+        } catch (err) {
+          clearInterval(this.steam.polling);
+          this.steam.polling = null;
+          Alpine.store('app').toast(err.message, 'error');
+        }
+      }, 1000);
+    },
+
+    async loadCandidates() {
+      this.steam.loadingCandidates = true;
+      try {
+        this.steam.candidates = await api('GET', '/api/steam/import-candidates');
+        this.steam.selection = {};
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      } finally {
+        this.steam.loadingCandidates = false;
+      }
+    },
+
+    get filteredCandidates() {
+      const q = this.steam.q.trim().toLowerCase();
+      return (this.steam.candidates ?? []).filter((c) => !q || c.title.toLowerCase().includes(q));
+    },
+
+    get selectedCount() {
+      return Object.values(this.steam.selection).filter(Boolean).length;
+    },
+
+    selectAll(on) {
+      for (const c of this.filteredCandidates) this.steam.selection[c.appId] = on;
+    },
+
+    async importSelected() {
+      const picks = (this.steam.candidates ?? []).filter((c) => this.steam.selection[c.appId]).map((c) => ({ appId: c.appId }));
+      if (!picks.length) return;
+      this.steam.importing = true;
+      this.steam.importResult = null;
+      try {
+        this.steam.importResult = await api('POST', '/api/steam/import', { games: picks });
+        Alpine.store('app').toast(`Imported ${this.steam.importResult.created.length} games from Steam`);
+        this.games = await api('GET', '/api/games');
+        await this.loadCandidates();
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      } finally {
+        this.steam.importing = false;
+      }
+    },
+
+    hours(minutes) {
+      return Math.round((Number(minutes || 0) / 60) * 10) / 10;
     },
   }));
 

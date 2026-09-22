@@ -41,6 +41,7 @@ export const GameSchema = z.object({
   startedAt: optionalDate,
   finishedAt: optionalDate,
   raGameId: optionalInt.pipe(z.number().int().positive().optional()),
+  steamAppId: optionalInt.pipe(z.number().int().positive().optional()),
   subsets: z
     .array(
       z.object({
@@ -110,6 +111,40 @@ export const TrackerSchema = z.object({
   sections: z.array(TrackerSectionSchema).default([]),
 });
 
+const JournalSchema = z.object({
+  rating: optionalNumber.pipe(z.number().min(0).max(10).optional()),
+  hoursPlayed: optionalNumber.pipe(z.number().min(0).optional()),
+  startedAt: optionalDate,
+  finishedAt: optionalDate,
+  review: optionalText,
+  notes: optionalText,
+});
+
+const SetAchievementSchema = z.object({
+  id: optionalText,
+  title: text.min(1, 'Achievement needs a title'),
+  description: z.preprocess((v) => (v === null || v === undefined ? '' : v), text.default('')),
+  icon: optionalText,
+  iconLocked: optionalText,
+  hidden: bool.default(false),
+  unlockedAt: z.preprocess((v) => (v === '' || v === undefined ? null : v), z.string().nullable().default(null)),
+  rarity: z.preprocess((v) => (v === '' || v === undefined ? null : v === null ? null : Number(v)), z.number().nullable().default(null)),
+});
+
+/** Steam / manual achievement sets (src/content/achievement-sets). */
+export const AchievementSetSchema = z.object({
+  title: text.min(1, 'Title is required'),
+  source: z.enum(['steam', 'manual']).default('manual'),
+  game: slug,
+  appId: optionalInt.pipe(z.number().int().positive().optional()),
+  url: optionalText,
+  playtimeMinutes: optionalNumber.pipe(z.number().min(0).optional()),
+  lastPlayedAt: optionalText,
+  syncedAt: optionalText,
+  journal: JournalSchema.default({}),
+  achievements: z.array(SetAchievementSchema).default([]),
+});
+
 export const PlatformSchema = z.object({
   id: slug,
   name: text.min(1),
@@ -153,4 +188,17 @@ export function ensureTrackerItemIds(sections) {
       return { ...item, id };
     }),
   }));
+}
+
+/** Gives every achievement of a set a stable id (Steam's api name, or one derived from the title). */
+export function ensureAchievementIds(achievements) {
+  const seen = new Set();
+  return achievements.map((a, i) => {
+    const base = a.id || slugify(a.title) || `achievement-${i + 1}`;
+    let id = base;
+    let n = 2;
+    while (seen.has(id)) id = `${base}-${n++}`;
+    seen.add(id);
+    return { ...a, id };
+  });
 }

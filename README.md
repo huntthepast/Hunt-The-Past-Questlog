@@ -59,6 +59,7 @@ src/content/guides/<slug>.md       markdown guides with YAML frontmatter
 public/guides/<slug>/              images (maps etc.) uploaded through the admin for that guide
 src/content/trackers/<slug>.json   checklists (missables, collectibles, bosses, ...)
 src/content/ra-games/<id>.json     RetroAchievements per-game snapshots (written by the admin sync)
+src/content/achievement-sets/*.json Steam sets (written by the Steam sync) and manual sets (GOG, consoles...)
 src/data/site.json                 site title, tagline, owner, about text, footer links
 src/data/platforms.json            platform list (+ RetroAchievements console ids for auto-matching)
 src/data/ra-profile.json           RetroAchievements profile snapshot (written by the admin sync)
@@ -89,6 +90,7 @@ You can also edit these files by hand; the schemas in `src/content.config.ts` va
   "startedAt": "2026-06-02",
   "finishedAt": "2026-07-14",
   "raGameId": 1234,              // retroachievements.org/game/1234 - enables achievement sync
+  "steamAppId": 105600,          // store.steampowered.com/app/105600 - enables the Steam achievement sync
   "subsets": [                  // your journal for RA subsets of this game (their achievements come from the sync)
     { "raGameId": 5678, "rating": 8, "hoursPlayed": 12.5, "startedAt": "2026-07-01", "finishedAt": "2026-07-20", "review": "Markdown", "notes": "Markdown" }
   ],
@@ -156,7 +158,9 @@ admin's **Gallery** dialog land in `public/guides/<slug>/`; the **Template** but
 walkthrough skeleton (intro, controls, characters, one map + checklist + walkthrough block per area, credits),
 and **Link to guide** inserts links to another guide's sections; **Outline** lists every heading of the body and jumps the
 editor to it, and **Tick all / Untick all** flip the `- [ ]` lines in the selection (or the checklist under the cursor).
-Clicking any image opens a lightbox.
+Clicking any image opens a lightbox. Markdown tables are interactive on the site: click a header to sort (prices like
+"1,200 G" sort as numbers), columns with a few repeated values (Type, Location...) get filter chips, and tables with six or
+more rows get a search box - the **Table** dialog in the admin can also turn rows pasted from a spreadsheet into a table.
 
 ### Tracker
 
@@ -222,6 +226,24 @@ Other RA helpers in the admin:
 
 The public site only ever reads the JSON snapshots, so the API key never leaves your machine and the site keeps
 working even if RetroAchievements is down.
+
+## Steam and other achievement sets
+
+Games can carry achievement sets from more than one source; each one is a tab on the game page next to the
+RetroAchievements set (with the same progress card, unlocked-first order and per-set stats journal).
+
+- **Steam** - put a free Web API key (<https://steamcommunity.com/dev/apikey>) and your SteamID64 in `.env` as
+  `STEAM_API_KEY` / `STEAM_ID`, set the profile's *Game details* to public, restart the admin and use
+  **Achievements -> Steam -> Sync now**. Every library game with a `steamAppId` gets
+  `src/content/achievement-sets/<slug>-steam.json`: the full list with your unlock dates, icons, global rarity and Steam's
+  playtime. Hours / dates / status follow the same rules as the RA sync (never lowered, never overwriting what you typed);
+  they go to the game itself unless the game is also on RA, in which case they go to the Steam set's own journal.
+  **Import games from your Steam library** creates entries (PC platform, box art, developer, genres, year, hours) for
+  games you don't have yet, and **Fetch** next to the Steam app id in the game editor pre-fills metadata.
+- **Manual sets** (GOG, consoles, anything without an API) - **Achievements -> New set**: pick the game, give the tab
+  a label, then type the achievements in, paste them in bulk (`Title | Description` per line) or **Import list from
+  Steam** by app id (GOG copies usually share the list) and tick what you have unlocked. Hidden achievements are masked
+  on the site until unlocked.
 
 ## Search engines
 

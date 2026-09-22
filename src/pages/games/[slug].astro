@@ -18,14 +18,16 @@ import {
   raGameById,
   raSubsetsOf,
   raSubsetLabel,
+  achievementSetsFor,
   type RaGame,
+  type AchievementSet,
   formatDate,
   formatDateTime,
   formatHours,
   formatPlaytime,
   renderMarkdown,
 } from '../../lib/data';
-import { statusById, RA_SITE } from '../../lib/constants.js';
+import { statusById, RA_SITE, steamStoreUrl } from '../../lib/constants.js';
 import { gameSeo, gameJsonLd, breadcrumbJsonLd } from '../../lib/seo';
 
 export async function getStaticPaths() {
@@ -42,53 +44,56 @@ const trackers = trackersForGame(await allTrackers(), game.id);
 const ra = await raGameById(d.raGameId);
 // RA subsets (bonus / challenge sets of the same game) are shown as extra tabs, like on retroachievements.org.
 const raSubsets = ra ? await raSubsetsOf(ra.data.gameId) : [];
+// Steam (synced) and manual sets attached to this game: more tabs, same look.
+const extraSets = await achievementSetsFor(game.id);
 
-// Unlocked achievements first, newest unlock at the top; the locked ones follow in RA's own order.
-const unlockedAt = (a: { earnedAt: string | null; earnedHardcoreAt: string | null }) => a.earnedHardcoreAt ?? a.earnedAt ?? '';
-const sortAchievements = (list: RaGame['data']['achievements']) =>
+/** One achievement, whichever source it came from. */
+type SetAchievement = {
+  id: string | number;
+  title: string;
+  description: string;
+  icon?: string;
+  unlockedAt: string | null;
+  hardcore: boolean;
+  points: number | null;
+  type: string | null;
+  rarity: number | null;
+  hidden: boolean;
+  order: number;
+};
+type Journal = { rating?: number; hoursPlayed?: number; startedAt?: string; finishedAt?: string; review?: string; notes?: string } | undefined;
+type GameSet = {
+  key: string;
+  label: string;
+  source: 'ra' | 'ra-subset' | 'steam' | 'manual';
+  title: string;
+  url: string;
+  achievements: SetAchievement[];
+  earned: number;
+  total: number;
+  pct: number;
+  points: number;
+  pointsEarned: number;
+  hardcoreCount: number;
+  award: { label: string; color: 'amber' | 'violet' | 'emerald'; date: string | null } | null;
+  playtimeSeconds: number;
+  syncedAt: string | undefined;
+  journal: Journal;
+  fold: boolean;
+};
+
+// Unlocked achievements first, newest unlock at the top; the locked ones follow in the source's own order.
+const sortAchievements = (list: SetAchievement[]) =>
   [...list].sort((a, b) => {
-    const ua = unlockedAt(a);
-    const ub = unlockedAt(b);
-    if (ua && ub) return ub.localeCompare(ua) || a.displayOrder - b.displayOrder;
+    const ua = a.unlockedAt ?? '';
+    const ub = b.unlockedAt ?? '';
+    if (ua && ub) return ub.localeCompare(ua) || a.order - b.order;
     if (ua || ub) return ua ? -1 : 1;
-    return a.displayOrder - b.displayOrder;
+    return a.order - b.order;
   });
 // Long achievement lists start folded: only the first ACHIEVEMENT_PREVIEW are shown until "Show all" is pressed
 // (not worth a button when it would only reveal a handful).
 const ACHIEVEMENT_PREVIEW = 8;
-const raSets = (ra ? [ra, ...raSubsets] : []).map((entry, index) => {
-  const achievements = sortAchievements(entry.data.achievements);
-  const earned = achievements.filter((a) => a.earnedAt || a.earnedHardcoreAt);
-  return {
-    key: index === 0 ? 'main' : `set-${entry.data.gameId}`,
-    label: index === 0 ? 'Main set' : raSubsetLabel(entry.data.title),
-    subset: index > 0,
-    ra: entry,
-    achievements,
-    earned: earned.length,
-    pct: entry.data.numAchievements ? Math.round((earned.length / entry.data.numAchievements) * 100) : 0,
-    points: achievements.reduce((sum, a) => sum + a.points, 0),
-    pointsEarned: earned.reduce((sum, a) => sum + a.points, 0),
-    fold: achievements.length > ACHIEVEMENT_PREVIEW + 4,
-  };
-});
-
-const tabSets = raSets.map((set) => ({ key: set.key, label: set.label, subset: set.subset, earned: set.earned, total: set.ra.data.numAchievements, pct: set.pct, title: set.subset ? set.ra.data.title : d.title }));
-// Play stats per set: the game's own fields for the main set, the per-subset journal for subsets (RA's tracked
-// time fills in when no hours were logged for a subset).
-const statsSets = (raSets.length ? raSets : [null]).map((set) => {
-  if (!set || !set.subset) return { key: 'main', subset: false, rating: d.rating, hoursPlayed: d.hoursPlayed, startedAt: d.startedAt, finishedAt: d.finishedAt };
-  const journal = d.subsets.find((s) => s.raGameId === set.ra.data.gameId);
-  const tracked = set.ra.data.playtimeSeconds > 0 ? Math.round((set.ra.data.playtimeSeconds / 3600) * 10) / 10 : undefined;
-  return { key: set.key, subset: true, rating: journal?.rating, hoursPlayed: journal?.hoursPlayed ?? tracked, startedAt: journal?.startedAt, finishedAt: journal?.finishedAt };
-});
-
-// Review / notes per set, same rule as the stats.
-const textSets = (raSets.length ? raSets : [null]).map((set) => {
-  if (!set || !set.subset) return { key: 'main', subset: false, label: 'Main set', review: d.review, notes: d.notes };
-  const journal = d.subsets.find((s) => s.raGameId === set.ra.data.gameId);
-  return { key: set.key, subset: true, label: set.label, review: journal?.review, notes: journal?.notes };
-});
 
 const AWARD_LABEL: Record<string, string> = {
   mastered: 'Mastered',
@@ -96,6 +101,111 @@ const AWARD_LABEL: Record<string, string> = {
   'beaten-hardcore': 'Beaten (Hardcore)',
   'beaten-softcore': 'Beaten (Softcore)',
 };
+
+const raSet = (entry: RaGame, key: string, label: string, source: 'ra' | 'ra-subset', journal: Journal): GameSet => {
+  const achievements = sortAchievements(
+    entry.data.achievements.map((a, order) => ({
+      id: a.id,
+      title: a.title,
+      description: a.description,
+      icon: a.badge,
+      unlockedAt: a.earnedHardcoreAt ?? a.earnedAt,
+      hardcore: Boolean(a.earnedHardcoreAt),
+      points: a.points,
+      type: a.type,
+      rarity: null,
+      hidden: false,
+      order,
+    })),
+  );
+  const earned = achievements.filter((a) => a.unlockedAt);
+  const kind = entry.data.highestAwardKind;
+  return {
+    key,
+    label,
+    source,
+    title: entry.data.title,
+    url: `${RA_SITE}/game/${entry.data.gameId}`,
+    achievements,
+    earned: earned.length,
+    total: entry.data.numAchievements,
+    pct: entry.data.numAchievements ? Math.round((earned.length / entry.data.numAchievements) * 100) : 0,
+    points: achievements.reduce((sum, a) => sum + (a.points ?? 0), 0),
+    pointsEarned: earned.reduce((sum, a) => sum + (a.points ?? 0), 0),
+    hardcoreCount: entry.data.numAwardedHardcore,
+    award: kind ? { label: AWARD_LABEL[kind] ?? kind, color: kind === 'mastered' ? 'amber' : kind === 'completed' ? 'violet' : 'emerald', date: entry.data.highestAwardDate } : null,
+    playtimeSeconds: entry.data.playtimeSeconds,
+    syncedAt: entry.data.syncedAt,
+    journal,
+    fold: achievements.length > ACHIEVEMENT_PREVIEW + 4,
+  };
+};
+
+const otherSet = (entry: AchievementSet): GameSet => {
+  const achievements = sortAchievements(
+    entry.data.achievements.map((a, order) => ({
+      id: a.id,
+      title: a.title,
+      description: a.description,
+      icon: a.unlockedAt ? a.icon : (a.iconLocked ?? a.icon),
+      unlockedAt: a.unlockedAt,
+      hardcore: false,
+      points: null,
+      type: null,
+      rarity: a.rarity,
+      hidden: a.hidden,
+      order,
+    })),
+  );
+  const earned = achievements.filter((a) => a.unlockedAt);
+  const complete = achievements.length > 0 && earned.length === achievements.length;
+  return {
+    key: `set-${entry.id}`,
+    label: entry.data.title,
+    source: entry.data.source,
+    title: `${entry.data.title} achievements`,
+    url: entry.data.url ?? (entry.data.appId ? steamStoreUrl(entry.data.appId) : ''),
+    achievements,
+    earned: earned.length,
+    total: achievements.length,
+    pct: achievements.length ? Math.round((earned.length / achievements.length) * 100) : 0,
+    points: 0,
+    pointsEarned: 0,
+    hardcoreCount: 0,
+    award: complete ? { label: 'All unlocked', color: 'amber', date: earned.map((a) => a.unlockedAt as string).sort().at(-1) ?? null } : null,
+    playtimeSeconds: (entry.data.playtimeMinutes ?? 0) * 60,
+    syncedAt: entry.data.syncedAt,
+    journal: entry.data.journal,
+    fold: achievements.length > ACHIEVEMENT_PREVIEW + 4,
+  };
+};
+
+const hasOthers = extraSets.length > 0;
+const sets: GameSet[] = [
+  ...(ra ? [raSet(ra, 'main', hasOthers ? 'RetroAchievements' : 'Main set', 'ra', undefined)] : []),
+  ...raSubsets.map((s) => raSet(s, `set-${s.data.gameId}`, raSubsetLabel(s.data.title), 'ra-subset', d.subsets.find((j) => j.raGameId === s.data.gameId))),
+  ...extraSets.map(otherSet),
+];
+// The first set is the game's primary one: it shows the game's own stats / review / notes (the RA main set when the
+// game is on RA, otherwise the first Steam / manual set). Every other set shows its own journal.
+if (sets.length && sets[0].key !== 'main') sets[0] = { ...sets[0], key: 'main', journal: undefined };
+
+const tabSets = sets.map((set) => ({ key: set.key, label: set.label, source: set.source, earned: set.earned, total: set.total, pct: set.pct, title: set.key === 'main' ? d.title : set.title }));
+// Play stats per set: the game's own fields for the primary set, each other set's journal (the source's tracked
+// time fills in when no hours were logged for it).
+const statsSets = (sets.length ? sets : [null]).map((set) => {
+  if (!set || set.key === 'main') return { key: 'main', subset: false, rating: d.rating, hoursPlayed: d.hoursPlayed, startedAt: d.startedAt, finishedAt: d.finishedAt };
+  const tracked = set.playtimeSeconds > 0 ? Math.round((set.playtimeSeconds / 3600) * 10) / 10 : undefined;
+  return { key: set.key, subset: true, rating: set.journal?.rating, hoursPlayed: set.journal?.hoursPlayed ?? tracked, startedAt: set.journal?.startedAt, finishedAt: set.journal?.finishedAt };
+});
+
+// Review / notes per set, same rule as the stats.
+const textSets = (sets.length ? sets : [null]).map((set) => {
+  if (!set || set.key === 'main') return { key: 'main', subset: false, label: 'Main set', review: d.review, notes: d.notes };
+  return { key: set.key, subset: true, label: set.label, review: set.journal?.review, notes: set.journal?.notes };
+});
+
+const SOURCE_LINK: Record<GameSet['source'], string> = { ra: 'View on RetroAchievements', 'ra-subset': 'View on RetroAchievements', steam: 'View on Steam', manual: 'View source' };
 
 const facts = [
   { label: 'Platform', value: platform.name },
@@ -172,7 +282,7 @@ const jsonLd = [
       </p>
 
       <!-- Set switcher (main set + RA subsets): drives the play stats below and the achievement list further down -->
-      {raSets.length > 1 && <RaSetTabs sets={tabSets} class="mt-5" />}
+      {sets.length > 1 && <RaSetTabs sets={tabSets} class="mt-5" />}
 
       <!-- Play stats: one row per set, the visible one follows the selected tab -->
       {
@@ -230,87 +340,96 @@ const jsonLd = [
         ))
       }
 
-      <!-- RetroAchievements: the main set plus any subsets as tabs (like the game page on retroachievements.org) -->
+      <!-- Achievements: RetroAchievements (main set + subsets), Steam and manual sets as tabs -->
       {
-        ra && (
+        sets.length > 0 && (
           <section class="mt-10 scroll-mt-24" id="achievements">
             <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
               <h2 class="h-display text-2xl">Achievements</h2>
-              {raSets.map((set) => (
+              {sets.map((set) => set.url && (
                 <a
-                  href={`${RA_SITE}/game/${set.ra.data.gameId}`}
+                  href={set.url}
                   target="_blank"
                   rel="noopener"
                   class="inline-flex items-center gap-1 text-sm text-amber-400 hover:underline"
                   x-show={`set === ${JSON.stringify(set.key)}`}
-                  {...(set.subset ? { 'x-cloak': true } : {})}
+                  {...(set.key !== 'main' ? { 'x-cloak': true } : {})}
                 >
-                  View on RetroAchievements <Icon name="external" class="size-3.5" />
+                  {SOURCE_LINK[set.source]} <Icon name="external" class="size-3.5" />
                 </a>
               ))}
             </div>
 
-            {raSets.length > 1 && <RaSetTabs sets={tabSets} class="mb-4" />}
+            {sets.length > 1 && <RaSetTabs sets={tabSets} class="mb-4" />}
 
-            {raSets.map((set) => (
-              <div x-show={`set === ${JSON.stringify(set.key)}`} {...(set.subset ? { 'x-cloak': true } : {})} x-data="showMore" id={set.subset ? set.key : undefined} class="scroll-mt-24">
+            {sets.map((set) => (
+              <div x-show={`set === ${JSON.stringify(set.key)}`} {...(set.key !== 'main' ? { 'x-cloak': true } : {})} x-data="showMore" id={set.key !== 'main' ? set.key : undefined} class="scroll-mt-24">
                 <div class="card p-4">
                   <div class="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
                     <span class="text-zinc-300">
-                      <span class="font-semibold text-zinc-100">{set.earned}</span> of {set.ra.data.numAchievements} unlocked
-                      <span class="text-zinc-500">
-                        ({set.ra.data.numAwardedHardcore} hardcore) &middot; {set.pointsEarned}/{set.points} points
-                      </span>
+                      <span class="font-semibold text-zinc-100">{set.earned}</span> of {set.total} unlocked
+                      {set.source === 'ra' || set.source === 'ra-subset' ? (
+                        <span class="text-zinc-500">
+                          ({set.hardcoreCount} hardcore) &middot; {set.pointsEarned}/{set.points} points
+                        </span>
+                      ) : (
+                        <span class="text-zinc-500">&middot; {set.pct}%</span>
+                      )}
                     </span>
-                    {set.ra.data.highestAwardKind && (
-                      <Badge
-                        color={set.ra.data.highestAwardKind === 'mastered' ? 'amber' : set.ra.data.highestAwardKind === 'completed' ? 'violet' : 'emerald'}
-                        label={AWARD_LABEL[set.ra.data.highestAwardKind] ?? set.ra.data.highestAwardKind}
-                        dot
-                        title={set.ra.data.highestAwardDate ? `Awarded ${formatDateTime(set.ra.data.highestAwardDate)}` : undefined}
-                      />
-                    )}
+                    {set.award && <Badge color={set.award.color} label={set.award.label} dot title={set.award.date ? `Awarded ${formatDateTime(set.award.date)}` : undefined} />}
                   </div>
                   <ProgressBar value={set.pct} color={set.pct === 100 ? 'amber' : 'emerald'} label={`${set.label} progress`} />
                   <p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
-                    {set.subset && <span class="text-zinc-400">Subset: {set.ra.data.title}</span>}
-                    {set.ra.data.playtimeSeconds > 0 && (
-                      <span class="inline-flex items-center gap-1" title="Time spent in this set while the emulator was connected to RetroAchievements">
-                        <Icon name="clock" class="size-3.5" /> {formatPlaytime(set.ra.data.playtimeSeconds)} tracked by RA
+                    {set.source === 'ra-subset' && <span class="text-zinc-400">Subset: {set.title}</span>}
+                    {set.source === 'manual' && <span class="text-zinc-400">Tracked by hand</span>}
+                    {set.playtimeSeconds > 0 && (
+                      <span class="inline-flex items-center gap-1" title={set.source === 'steam' ? 'Playtime tracked by Steam' : 'Time spent in this set while the emulator was connected to RetroAchievements'}>
+                        <Icon name="clock" class="size-3.5" /> {formatPlaytime(set.playtimeSeconds)} tracked by {set.source === 'steam' ? 'Steam' : 'RA'}
                       </span>
                     )}
-                    <span>Synced {formatDateTime(set.ra.data.syncedAt)}</span>
+                    {set.syncedAt && <span>Synced {formatDateTime(set.syncedAt)}</span>}
                   </p>
                 </div>
 
                 <div class="relative">
                   <ul class="mt-4 grid gap-2 sm:grid-cols-2" id={`achievement-list-${set.key}`}>
                     {set.achievements.map((a, index) => {
-                      const earned = Boolean(a.earnedAt || a.earnedHardcoreAt);
-                      const hardcore = Boolean(a.earnedHardcoreAt);
+                      const earned = Boolean(a.unlockedAt);
                       const folded = set.fold && index >= ACHIEVEMENT_PREVIEW;
+                      const secret = a.hidden && !earned;
                       return (
                         <li class:list={['card flex items-start gap-3 p-3', !earned && 'opacity-60 grayscale']} {...(folded ? { 'x-show': 'expanded', 'x-cloak': true } : {})}>
-                          <img src={a.badge} alt="" width="48" height="48" loading="lazy" class="size-12 shrink-0 rounded bg-zinc-800" />
+                          {a.icon ? (
+                            <img src={a.icon} alt="" width="48" height="48" loading="lazy" class="size-12 shrink-0 rounded bg-zinc-800" />
+                          ) : (
+                            <span class="grid size-12 shrink-0 place-items-center rounded bg-zinc-800 text-zinc-500">
+                              <Icon name={secret ? 'lock' : 'check-badge'} class="size-6" />
+                            </span>
+                          )}
                           <div class="min-w-0 flex-1">
                             <div class="flex items-start justify-between gap-2">
-                              <a href={`${RA_SITE}/achievement/${a.id}`} target="_blank" rel="noopener" class="font-medium leading-snug text-zinc-100 hover:text-amber-300">
-                                {a.title}
-                              </a>
-                              <span class="shrink-0 text-xs font-semibold text-amber-300 tabular-nums">{a.points}</span>
+                              {set.source === 'ra' || set.source === 'ra-subset' ? (
+                                <a href={`${RA_SITE}/achievement/${a.id}`} target="_blank" rel="noopener" class="font-medium leading-snug text-zinc-100 hover:text-amber-300">
+                                  {a.title}
+                                </a>
+                              ) : (
+                                <span class="font-medium leading-snug text-zinc-100">{secret ? 'Hidden achievement' : a.title}</span>
+                              )}
+                              {a.points !== null && <span class="shrink-0 text-xs font-semibold text-amber-300 tabular-nums">{a.points}</span>}
+                              {a.rarity !== null && <span class="shrink-0 text-xs text-zinc-500 tabular-nums" title="Players who have unlocked this">{a.rarity.toFixed(1)}%</span>}
                             </div>
-                            <p class="mt-0.5 text-xs text-zinc-400">{a.description}</p>
+                            <p class="mt-0.5 text-xs text-zinc-400">{secret ? 'Details are revealed once unlocked.' : a.description}</p>
                             <p class="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
                               {earned ? (
                                 <span class="inline-flex items-center gap-1 text-emerald-300">
-                                  <Icon name="check" class="size-3" /> {formatDateTime(a.earnedHardcoreAt ?? a.earnedAt)}
+                                  <Icon name="check" class="size-3" /> {(a.unlockedAt as string).length === 10 ? formatDate(a.unlockedAt as string) : formatDateTime(a.unlockedAt as string)}
                                 </span>
                               ) : (
                                 <span class="inline-flex items-center gap-1">
                                   <Icon name="lock" class="size-3" /> Locked
                                 </span>
                               )}
-                              {hardcore && (
+                              {a.hardcore && (
                                 <span class="inline-flex items-center gap-0.5 text-amber-400">
                                   <Icon name="bolt" solid class="size-3" /> Hardcore
                                 </span>

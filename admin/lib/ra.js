@@ -782,6 +782,10 @@ export async function mergeSubset(slug) {
     const tracker = await store.getTracker(trackerSlug);
     await store.saveTracker(trackerSlug, { ...tracker, game: parent.slug, updatedAt: stamp });
   }
+  for (const setSlug of refs.sets ?? []) {
+    const set = await store.getSet(setSlug);
+    await store.saveSet(setSlug, { ...set, game: parent.slug, updatedAt: stamp });
+  }
 
   await store.deleteGame(slug);
   return { merged: entry, moved: refs, remaining: await subsetEntries() };

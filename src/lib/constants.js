@@ -22,6 +22,12 @@ export const OWNERSHIP = [
 
 export const OWNERSHIP_IDS = OWNERSHIP.map((o) => o.id);
 
+export const STEAM_STORE = 'https://store.steampowered.com';
+export const steamStoreUrl = (appId) => `${STEAM_STORE}/app/${appId}`;
+/** Steam's portrait library art (falls back to the wide header image on the site when missing). */
+export const steamCoverUrl = (appId) => `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_600x900.jpg`;
+export const steamHeaderUrl = (appId) => `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
+
 /**
  * What kind of release a game is. RetroAchievements marks non-official sets with a title prefix
  * ("~Hack~ Title", "~Homebrew~ Title"); the import keeps that prefix as a tag, and the tag decides

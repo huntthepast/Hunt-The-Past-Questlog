@@ -37,6 +37,7 @@ export const GameSchema = z.object({
   title: text.min(1, 'Title is required'),
   platform: slug,
   cover: optionalText,
+  icon: optionalText,
   genres: stringList.default([]),
   developer: optionalText,
   publisher: optionalText,

@@ -32,6 +32,12 @@ const games = defineCollection({
     title: z.string().min(1),
     platform: z.string().min(1),
     cover: z.string().optional(),
+    /**
+     * Square art for lists and sidebars, where a 3:4 cover has to be cropped or shrunk to fit.
+     * Games linked to RetroAchievements fall back to its icon automatically; this is for the rest,
+     * or to override it.
+     */
+    icon: z.string().optional(),
     genres: z.array(z.string()).default([]),
     developer: z.string().optional(),
     publisher: z.string().optional(),

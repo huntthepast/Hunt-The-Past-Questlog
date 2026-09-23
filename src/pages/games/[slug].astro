@@ -233,7 +233,7 @@ const jsonLd = [
     </a>
   </nav>
 
-  <div class="grid gap-8 lg:grid-cols-[280px_1fr]">
+  <div class="grid grid-cols-1 gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
     <!-- Cover column -->
     <aside class="lg:sticky lg:top-24 lg:self-start">
       <div class="card mx-auto aspect-[3/4] w-full max-w-[280px] overflow-hidden">
@@ -392,7 +392,7 @@ const jsonLd = [
                 </div>
 
                 <div class="relative">
-                  <ul class="mt-4 grid gap-2 sm:grid-cols-2" id={`achievement-list-${set.key}`}>
+                  <ul class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2" id={`achievement-list-${set.key}`}>
                     {set.achievements.map((a, index) => {
                       const earned = Boolean(a.unlockedAt);
                       const folded = set.fold && index >= ACHIEVEMENT_PREVIEW;

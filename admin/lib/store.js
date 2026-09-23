@@ -44,7 +44,7 @@ function assertSlug(slug) {
 /* ---------------- games ---------------- */
 
 const GAME_KEY_ORDER = [
-  'title', 'platform', 'cover', 'genres', 'developer', 'publisher', 'releaseYear',
+  'title', 'platform', 'cover', 'icon', 'genres', 'developer', 'publisher', 'releaseYear',
   'ownership', 'favorite', 'status', 'rating', 'hoursPlayed', 'startedAt', 'finishedAt',
   'raGameId', 'steamAppId', 'subsets', 'review', 'notes', 'tags', 'addedAt', 'updatedAt',
 ];

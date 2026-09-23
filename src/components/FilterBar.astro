@@ -1,0 +1,100 @@
+---
+import Icon from './Icon.astro';
+
+/**
+ * The search + filter row shared by the library, progress, guides and achievements lists.
+ *
+ * On a phone the filters fold behind a button, since the search box is the only part worth permanent
+ * space. Scroll the bar off the top and a slim fixed copy - search box and one icon - takes over.
+ *
+ * The two are separate elements on purpose. Shrinking one sticky bar changes its height in the flow,
+ * which shifts everything below it and can flip the stuck threshold back and forth as you scroll:
+ * the jitter. A fixed second bar costs nothing in layout, so nothing moves.
+ *
+ * From sm upwards it is the single inline row it always was, and the compact bar never appears.
+ *
+ * Must sit inside a `listFilter` component: the controls in the slot bind to its q / facet / sort.
+ */
+interface Props {
+  /** Placeholder for the search box. */
+  placeholder?: string;
+  /** Accessible name for the search box. */
+  label?: string;
+  class?: string;
+}
+
+const { placeholder = 'Search...', label = 'Search', class: className = '' } = Astro.props;
+---
+
+{/* `contents` so this wrapper generates no box of its own between the bar and the page. */}
+<div x-data="filterPanel" class="contents">
+  {/* Marks where the bar sits; scrolling past it is what "stuck" means. The margin lands the bar
+      below the header when the compact bar sends you back here. */}
+  <div x-ref="sentinel" aria-hidden="true" class="h-px scroll-mt-20"></div>
+
+  <div class:list={['card mb-6 p-3', className]}>
+    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      <label class="relative flex-1 sm:min-w-56">
+        <span class="sr-only">{label}</span>
+        <Icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+        <input type="search" x-model.debounce.150ms="q" placeholder={placeholder} class="input pl-9" />
+      </label>
+
+      {/* Phone only: the filters are worth a tap, not a permanent third of the screen.
+          Two separate signals - a lit background and a turned arrow mean the panel is open, the
+          amber outline and dot mean a filter is set. They can be true at once. */}
+      <button
+        type="button"
+        class="btn justify-between sm:hidden"
+        :class="{ 'bg-zinc-800': open, 'border-zinc-600 text-white': open && !active, 'border-amber-400/60 text-amber-300': active }"
+        :aria-expanded="open"
+        @click="open = !open"
+      >
+        <span class="inline-flex items-center gap-2">
+          <Icon name="filter" class="size-4" />
+          Filters
+          <span x-show="active" x-cloak class="size-1.5 rounded-full bg-amber-400" aria-hidden="true"></span>
+        </span>
+        {/* The binding lives on a span: `:class` on an <Icon> is a component prop, not an Alpine
+            directive, so it never reaches the svg. inline-flex because transforms skip inline boxes. */}
+        <span class="inline-flex transition-transform duration-200" :class="open && 'rotate-90'">
+          <Icon name="chevron-right" class="size-4" />
+        </span>
+      </button>
+
+      <div
+        x-show="open || wide"
+        x-cloak
+        class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3"
+        :class="!wide && 'w-full basis-full border-t border-zinc-800 pt-3'"
+      >
+        <slot />
+      </div>
+    </div>
+
+    <slot name="footer" />
+  </div>
+
+  {/* The travelling copy. Teleported to <body> so no ancestor's overflow or transform can trap a
+      fixed element, and opaque rather than translucent so it stays readable over a dense list. */}
+  <template x-teleport="body">
+    <div
+      x-show="stuck && !wide"
+      x-cloak
+      x-transition.opacity.duration.150ms
+      class="fixed inset-x-0 top-16 z-30 border-b border-zinc-800 bg-zinc-950/95 px-4 py-2 shadow-lg shadow-black/50 backdrop-blur sm:hidden"
+    >
+      <div class="mx-auto flex max-w-7xl items-center gap-2">
+        <label class="relative min-w-0 flex-1">
+          <span class="sr-only">{label}</span>
+          <Icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+          <input type="search" x-model.debounce.150ms="q" placeholder={placeholder} class="input pl-9" />
+        </label>
+        <button type="button" class="btn shrink-0 px-2.5" :class="active && 'border-amber-400/60 text-amber-300'" aria-label="Filters" @click="jumpToFilters()">
+          <Icon name="filter" class="size-4" />
+          <span x-show="active" x-cloak class="size-1.5 rounded-full bg-amber-400" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+  </template>
+</div>

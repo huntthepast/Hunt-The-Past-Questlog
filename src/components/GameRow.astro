@@ -1,0 +1,60 @@
+---
+import GameIcon from './GameIcon.astro';
+import StatusBadge from './StatusBadge.astro';
+import ProgressBar from './ProgressBar.astro';
+import type { GameProgress } from '../lib/data';
+
+/**
+ * One game in a list: icon, title, platform, date, status and achievement progress.
+ * Used by "Recently Finished" on the home page and "Recently Played" on the achievements page, so
+ * the two read the same way and line up when they sit side by side.
+ *
+ * The whole row is the link, and the row height lives on the <li> - the element divide-y borders -
+ * so border-box absorbs the separator instead of stacking it on top.
+ */
+interface Props {
+  href: string;
+  title: string;
+  icon?: string;
+  platform?: string;
+  date?: string;
+  status?: string;
+  progress?: GameProgress;
+  /** Opens in a new tab: the game is not in the library, so the link leaves the site. */
+  external?: boolean;
+  /** Row height floor, matched to whatever list sits beside it. */
+  minHeight?: string;
+}
+
+const { href, title, icon, platform, date, status, progress, external = false, minHeight = 'min-h-24' } = Astro.props;
+const meta = [platform, date].filter(Boolean).join(' · ');
+---
+
+<li class:list={['flex', minHeight]}>
+  <a
+    href={href}
+    {...(external ? { target: '_blank', rel: 'noopener' } : {})}
+    class="flex min-w-0 flex-1 items-center gap-3 p-3 transition hover:bg-zinc-800/50"
+  >
+    <span class="block size-12 shrink-0 overflow-hidden rounded bg-zinc-800">
+      <GameIcon src={icon} title={title} />
+    </span>
+
+    <div class="min-w-0 flex-1">
+      <p class="truncate font-medium text-zinc-100">{title}</p>
+      {meta && <p class="mt-0.5 truncate text-xs text-zinc-500">{meta}</p>}
+      {
+        progress && (
+          <div class="mt-1.5 flex items-center gap-2">
+            <ProgressBar value={progress.pct} color={progress.pct === 100 ? 'amber' : 'emerald'} size="sm" label="Achievements" class="max-w-40" />
+            <span class="shrink-0 text-[11px] tabular-nums text-zinc-400">
+              {progress.done}/{progress.total}
+            </span>
+          </div>
+        )
+      }
+    </div>
+
+    {status && <StatusBadge status={status} short />}
+  </a>
+</li>

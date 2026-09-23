@@ -35,6 +35,9 @@ type FacetValue = string | string[];
 
 const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every((v) => b.includes(v));
 
+/** The sticky header's height (h-16), which anything sticking below it has to clear. */
+const HEADER_HEIGHT = 64;
+
 /**
  * Links written in markdown that point off-site open in a new tab. Reviews and notes get this from
  * the marked renderer at build time; guide bodies go through Astro's own markdown, which takes no
@@ -77,6 +80,8 @@ export default (Alpine: Alpine) => {
       this.total = this.items().length;
       this.visible = this.total;
       this.restore();
+      // After restore(), so a link that asks for a filter beats whatever was remembered here before.
+      this.fromUrl();
       // Any change to the filters, the sort or the page size starts over at page 1.
       for (const key of ['q', 'facet', 'flag', 'sort', 'pageSize']) {
         this.$watch(key, () => {
@@ -92,6 +97,23 @@ export default (Alpine: Alpine) => {
 
     items(): HTMLElement[] {
       return Array.from(this.$root.querySelectorAll<HTMLElement>('[data-item]'));
+    },
+
+    /**
+     * Preset the search box and single-select facets from the query string, so another page can link
+     * straight to a filtered view: /games?status=mastered. Unknown keys and values the list has no
+     * items for are ignored, which keeps a stale link from emptying the page.
+     */
+    fromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('q');
+      if (q) this.q = q;
+      for (const name of config.facets ?? []) {
+        const value = params.get(name);
+        if (!value || Array.isArray(this.facet[name])) continue;
+        const known = this.items().some((el) => (el.dataset[name] ?? '').split(',').map((v) => v.trim()).includes(value));
+        if (known) this.facet[name] = value;
+      }
     },
 
     /* ---- remembered preferences (multi-select facets + page size) ---- */
@@ -370,6 +392,63 @@ export default (Alpine: Alpine) => {
    * Page sidebar that turns into a slide-in drawer below the lg breakpoint. The sidebar markup is
    * rendered once; on phones a sticky toolbar opens it (optionally scrolled to a given panel).
    */
+  /**
+   * The phone half of FilterBar: the controls fold away behind a button, and `active` marks the
+   * button when a filter is set so a hidden filter can never quietly explain an empty list.
+   * Reads its parent listFilter's state - nested Alpine scopes chain to the one outside them.
+   */
+  Alpine.data('filterPanel', () => ({
+    open: false,
+    /** True from sm upwards, where everything is shown inline and the toggle does not exist. */
+    wide: true,
+    /** True once the bar has left its place in the flow and is riding under the header. */
+    stuck: false,
+
+    init() {
+      const query = window.matchMedia('(min-width: 640px)');
+      this.wide = query.matches;
+      query.addEventListener('change', (event) => {
+        this.wide = event.matches;
+        // Leaving the phone layout with the panel open would strand `open` as true on the way back.
+        if (event.matches) this.open = false;
+      });
+
+      /*
+       * Stuck means the bar's place in the flow has passed under the header - not merely that it is
+       * off screen, which is equally true of a bar further down a long page that has not been
+       * reached yet.
+       *
+       * An IntersectionObserver is the usual tool but is wrong here: a one-pixel marker intersects
+       * for one pixel of scroll, so a flick of the wheel jumps clean over that window, the observed
+       * state never changes, and the callback never fires. Reading the position on scroll always
+       * gives the right answer. The bar never changes the layout, so this cannot feed back on itself.
+       */
+      const sentinel = this.$refs.sentinel as HTMLElement | undefined;
+      if (!sentinel) return;
+
+      let queued = false;
+      const update = () => { this.stuck = sentinel.getBoundingClientRect().top <= HEADER_HEIGHT; };
+      const onScroll = () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(() => { queued = false; update(); });
+      };
+
+      update();
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll, { passive: true });
+    },
+
+    /** From the travelling bar: go back to the real one with the filters already open. */
+    jumpToFilters() {
+      this.open = true;
+      (this.$refs.sentinel as HTMLElement | undefined)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    },
+
+    // `active` is deliberately not defined here: the template reads the parent listFilter's getter
+    // through Alpine's scope chain, and a property of the same name here would shadow it.
+  }));
+
   /**
    * The site header's phone menu: a slide-in panel like the guide/tracker sidebars. Closes on
    * Escape, on the backdrop, after picking a link, and when the viewport grows past md.

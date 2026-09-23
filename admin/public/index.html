@@ -231,7 +231,7 @@
                 </div>
 
                 <div class="grid gap-6 lg:grid-cols-[220px_1fr]">
-                  <!-- cover column -->
+                  <!-- art column: the 3:4 cover, and the square icon used in lists -->
                   <div class="space-y-3">
                     <div class="card aspect-[3/4] overflow-hidden bg-zinc-900">
                       <img x-show="form.cover" :src="form.cover" alt="" class="h-full w-full object-cover" />
@@ -243,10 +243,35 @@
                     </label>
                     <div class="flex flex-wrap gap-2">
                       <label class="btn btn-sm cursor-pointer" :class="isNew && 'opacity-50'" :title="isNew ? 'Save the game first' : 'Upload an image into public/covers'">
-                        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" :disabled="isNew || covers.uploading" @change="uploadCover($event)" />
-                        <span x-text="covers.uploading ? 'Working...' : 'Upload file'"></span>
+                        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" :disabled="isNew || art.cover" @change="uploadArt('cover', $event)" />
+                        <span x-text="art.cover ? 'Working...' : 'Upload file'"></span>
                       </label>
-                      <button type="button" class="btn btn-sm" :disabled="isNew || !form.cover || form.cover.startsWith('/covers/') || covers.uploading" @click="localizeCover()" title="Download the remote image into public/covers so the site never depends on another host">Save URL locally</button>
+                      <button type="button" class="btn btn-sm" :disabled="isNew || !form.cover || form.cover.startsWith('/covers/') || art.cover" @click="localizeArt('cover')" title="Download the remote image into public/covers so the site never depends on another host">Save URL locally</button>
+                    </div>
+
+                    <div class="border-t border-zinc-800 pt-3">
+                      <div class="flex items-start gap-3">
+                        <div class="size-16 shrink-0 overflow-hidden rounded bg-zinc-900 ring-1 ring-zinc-800">
+                          <img x-show="form.icon" :src="form.icon" alt="" class="h-full w-full object-cover" />
+                          <div x-show="!form.icon" class="flex h-full items-center justify-center text-center text-[10px] leading-tight text-zinc-600">No icon</div>
+                        </div>
+                        <p class="text-[11px] leading-relaxed text-zinc-500">
+                          Square art for lists and sidebars, where the cover has to be cropped.
+                          <span x-show="form.raGameId">Linked to RetroAchievements, so its icon is used automatically - set this only to override it.</span>
+                          <span x-show="!form.raGameId">Not on RetroAchievements, so there is no icon unless you add one.</span>
+                        </p>
+                      </div>
+                      <label class="field mt-3">
+                        <span class="label">Icon URL or /icons/ path</span>
+                        <input class="input" x-model.trim="form.icon" placeholder="https://... or /icons/slug.png" />
+                      </label>
+                      <div class="mt-2 flex flex-wrap gap-2">
+                        <label class="btn btn-sm cursor-pointer" :class="isNew && 'opacity-50'" :title="isNew ? 'Save the game first' : 'Upload an image into public/icons'">
+                          <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" :disabled="isNew || art.icon" @change="uploadArt('icon', $event)" />
+                          <span x-text="art.icon ? 'Working...' : 'Upload file'"></span>
+                        </label>
+                        <button type="button" class="btn btn-sm" :disabled="isNew || !form.icon || form.icon.startsWith('/icons/') || art.icon" @click="localizeArt('icon')" title="Download the remote image into public/icons so the site never depends on another host">Save URL locally</button>
+                      </div>
                     </div>
                   </div>
 

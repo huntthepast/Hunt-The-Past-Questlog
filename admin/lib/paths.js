@@ -20,5 +20,6 @@ export const PATHS = {
   shelf: path.join(ROOT, 'src', 'data', 'shelf.json'),
   public: path.join(ROOT, 'public'),
   covers: path.join(ROOT, 'public', 'covers'),
+  icons: path.join(ROOT, 'public', 'icons'),
   env: path.join(ROOT, '.env'),
 };

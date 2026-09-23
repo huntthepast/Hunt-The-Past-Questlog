@@ -1,20 +1,23 @@
 ---
 import Base from '../layouts/Base.astro';
+import FilterBar from '../components/FilterBar.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import Badge from '../components/Badge.astro';
-import Cover from '../components/Cover.astro';
+import GameIcon from '../components/GameIcon.astro';
 import Rating from '../components/Rating.astro';
 import ProgressBar from '../components/ProgressBar.astro';
 import Pagination from '../components/Pagination.astro';
 import ListCounter from '../components/ListCounter.astro';
 import EmptyState from '../components/EmptyState.astro';
 import Icon from '../components/Icon.astro';
-import { libraryGames, libraryStats, groupByStatus, platformOf, sortKey, formatDate, formatHours } from '../lib/data';
+import { libraryGames, libraryStats, groupByStatus, gameIcons, gameProgress, platformOf, sortKey, formatDate, formatHours } from '../lib/data';
 import { STATUSES, GAME_KINDS, gameKindOf } from '../lib/constants.js';
 import { bar, text } from '../lib/ui';
 
 const games = await libraryGames();
 const stats = libraryStats(games);
+const icons = await gameIcons(games);
+const progress = await gameProgress(games);
 const groups = groupByStatus(games);
 // Breakdown bar + legend run from the most finished status down, like the award bar on the
 // Achievements page: Mastered on the left, Not Started and Dropped on the right.
@@ -114,13 +117,8 @@ const filterConfig = {
         </section>
 
         <!-- Search / platform / sort / page size -->
-        <div class="card mb-6 p-3">
-          <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <label class="relative flex-1 sm:min-w-56">
-              <span class="sr-only">Search games</span>
-              <Icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
-              <input type="search" x-model.debounce.150ms="q" placeholder="Search title or platform..." class="input pl-9" />
-            </label>
+        <FilterBar label="Search games" placeholder="Search title or platform...">
+            
             <select x-model="facet.platform" class="input sm:w-44" aria-label="Platform">
               <option value="">All platforms</option>
               {platforms.map((p) => (
@@ -149,12 +147,11 @@ const filterConfig = {
                 <option value={size}>{size === 0 ? 'Show all' : `${size} / page`}</option>
               ))}
             </select>
-          </div>
-          <ListCounter total={games.length} pageSize={50} noun="games" />
-        </div>
+          <ListCounter slot="footer" total={games.length} pageSize={50} noun="games" />
+        </FilterBar>
 
         <!-- One section per status; a section hides itself when none of its rows are on the current page. -->
-        <div class="grid gap-8">
+        <div class="grid grid-cols-1 gap-8">
           {groups.map(({ status, games: list }) => (
             <section id={status.id} data-group class="scroll-mt-24">
               <div class="mb-3 flex items-center gap-3">
@@ -183,8 +180,8 @@ const filterConfig = {
                       data-rating={d.rating ?? ''}
                     >
                       <a href={`/games/${game.id}`} class="flex items-center gap-3 p-3 transition hover:bg-zinc-800/50 sm:gap-4">
-                        <span class="block h-16 w-12 shrink-0 overflow-hidden rounded bg-zinc-800">
-                          <Cover src={d.cover} title={d.title} platformShort={platform.short} />
+                        <span class="block size-12 shrink-0 overflow-hidden rounded bg-zinc-800">
+                          <GameIcon src={icons.get(game.id)} title={d.title} />
                         </span>
                         <span class="min-w-0 flex-1">
                           <span class="flex items-center gap-2">
@@ -206,6 +203,22 @@ const filterConfig = {
                             )}
                           </span>
                           {d.notes && <span class="mt-1 line-clamp-1 text-xs text-zinc-400">{d.notes}</span>}
+                          {
+                            progress.get(game.id) && (
+                              <span class="mt-1.5 flex items-center gap-2">
+                                <ProgressBar
+                                  value={progress.get(game.id)!.pct}
+                                  color={progress.get(game.id)!.pct === 100 ? 'amber' : 'emerald'}
+                                  size="sm"
+                                  label="Achievements"
+                                  class="max-w-40"
+                                />
+                                <span class="shrink-0 text-[11px] tabular-nums text-zinc-400">
+                                  {progress.get(game.id)!.done}/{progress.get(game.id)!.total}
+                                </span>
+                              </span>
+                            )
+                          }
                         </span>
                         <Rating value={d.rating} class="shrink-0 text-sm" />
                         <Icon name="chevron-right" class="size-4 shrink-0 text-zinc-600" />

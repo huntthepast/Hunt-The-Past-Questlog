@@ -25,7 +25,7 @@ const isActive = (href: string) => path === href || (href !== '/' && path.starts
       <span class="font-display text-2xl leading-none tracking-wide text-zinc-50">{site.title}</span>
     </a>
 
-    <nav class="hidden items-center gap-1 md:flex" aria-label="Primary">
+    <nav class="hidden items-center gap-1 lg:flex" aria-label="Primary">
       {
         NAV.map((item) => (
           <a
@@ -43,7 +43,7 @@ const isActive = (href: string) => path === href || (href !== '/' && path.starts
       }
     </nav>
 
-    <button type="button" class="btn md:hidden" @click="toggle()" :aria-expanded="open" aria-controls="mobile-nav" aria-label="Open navigation">
+    <button type="button" class="btn lg:hidden" @click="toggle()" :aria-expanded="open" aria-controls="mobile-nav" aria-label="Open navigation">
       <Icon name="menu" class="size-5" />
     </button>
   </div>
@@ -51,7 +51,7 @@ const isActive = (href: string) => path === href || (href !== '/' && path.starts
   <!-- Phone menu: the same slide-in panel the guide/tracker sidebars use. Teleported to <body> because the
        header's backdrop-blur would otherwise become the containing block of these fixed elements. -->
   <template x-teleport="body">
-    <div x-show="open" x-cloak x-transition.opacity.duration.150ms class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" @click="close()" aria-hidden="true"></div>
+    <div x-show="open" x-cloak x-transition.opacity.duration.150ms class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" @click="close()" aria-hidden="true"></div>
   </template>
   <template x-teleport="body">
     <nav
@@ -64,7 +64,7 @@ const isActive = (href: string) => path === href || (href !== '/' && path.starts
       x-transition:leave="transition duration-150 ease-in"
       x-transition:leave-start="translate-x-0"
       x-transition:leave-end="translate-x-full"
-      class="fixed inset-y-0 right-0 z-50 flex w-[88vw] max-w-sm flex-col border-l border-zinc-800 bg-zinc-950 shadow-2xl md:hidden"
+      class="fixed inset-y-0 right-0 z-50 flex w-[88vw] max-w-sm flex-col border-l border-zinc-800 bg-zinc-950 shadow-2xl lg:hidden"
       aria-label="Primary mobile"
       @click="if ($event.target.closest('a')) close()"
     >

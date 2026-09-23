@@ -1,5 +1,6 @@
 ---
 import GameCard from './GameCard.astro';
+import FilterBar from './FilterBar.astro';
 import Icon from './Icon.astro';
 import Pagination from './Pagination.astro';
 import ListCounter from './ListCounter.astro';
@@ -51,13 +52,8 @@ const filterConfig = {
     </EmptyState>
   ) : (
     <div x-data={`listFilter(${JSON.stringify(filterConfig)})`} class="scroll-mt-24">
-      <div class="card mb-6 p-3">
-        <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <label class="relative flex-1 sm:min-w-56">
-            <span class="sr-only">Search games</span>
-            <Icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
-            <input type="search" x-model.debounce.150ms="q" placeholder="Search title, platform, genre..." class="input pl-9" />
-          </label>
+      <FilterBar label="Search games" placeholder="Search title, platform, genre...">
+          
 
           <select x-model="facet.platform" class="input sm:w-44" aria-label="Platform">
             <option value="">All platforms</option>
@@ -115,10 +111,9 @@ const filterConfig = {
               Favorites
             </button>
           )}
-        </div>
 
-        <ListCounter total={games.length} pageSize={24} noun="games" />
-      </div>
+        <ListCounter slot="footer" total={games.length} pageSize={24} noun="games" />
+      </FilterBar>
 
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {games.map((game) => (

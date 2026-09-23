@@ -347,6 +347,61 @@ export async function raGamePaths(games: Game[]): Promise<Map<number, string>> {
   return paths;
 }
 
+/**
+ * Square art per game slug, for lists and sidebars where a 3:4 cover has to be cropped to fit.
+ * Your own `icon` wins; otherwise the RetroAchievements icon of the linked game, which covers most
+ * of the library for free. Games with neither are absent, and the caller falls back to initials.
+ */
+export async function gameIcons(games: Game[]): Promise<Map<string, string>> {
+  const linked = games.filter((g) => !g.data.icon && g.data.raGameId);
+  const raIcons = new Map<number, string>();
+  if (linked.length) {
+    for (const entry of await getCollection('raGames')) {
+      if (entry.data.imageIcon) raIcons.set(entry.data.gameId, entry.data.imageIcon);
+    }
+  }
+  const icons = new Map<string, string>();
+  for (const game of games) {
+    const own = game.data.icon;
+    const fromRa = game.data.raGameId ? raIcons.get(game.data.raGameId) : undefined;
+    const src = own || fromRa;
+    if (src) icons.set(game.id, src);
+  }
+  return icons;
+}
+
+export type GameProgress = { done: number; total: number; pct: number };
+
+/**
+ * Achievement progress per game slug, from the RetroAchievements snapshot of the linked game.
+ * Games with no RA link, or a set with no achievements, are absent rather than shown as 0%.
+ */
+export async function gameProgress(games: Game[]): Promise<Map<string, GameProgress>> {
+  const linked = games.filter((g) => g.data.raGameId);
+  if (!linked.length) return new Map();
+  const snapshots = new Map<number, { numAwarded: number; numAchievements: number }>();
+  for (const entry of await getCollection('raGames')) {
+    snapshots.set(entry.data.gameId, { numAwarded: entry.data.numAwarded, numAchievements: entry.data.numAchievements });
+  }
+  const progress = new Map<string, GameProgress>();
+  for (const game of linked) {
+    const snap = snapshots.get(game.data.raGameId!);
+    if (!snap?.numAchievements) continue;
+    progress.set(game.id, {
+      done: snap.numAwarded,
+      total: snap.numAchievements,
+      pct: Math.round((snap.numAwarded / snap.numAchievements) * 100),
+    });
+  }
+  return progress;
+}
+
+/** The square icon for a single game - the sidebar case, where there is only ever one. */
+export async function gameIconFor(game?: Game): Promise<string | undefined> {
+  if (!game) return undefined;
+  return (await gameIcons([game])).get(game.id);
+}
+
 export const raSynced = () => Boolean(raProfile.syncedAt);
 
 /** RA profile order: DisplayOrder (set with "Reorder Site Awards" on RA), then the date earned. */

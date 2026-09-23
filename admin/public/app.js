@@ -171,6 +171,7 @@ document.addEventListener('alpine:init', () => {
     title: '',
     platform: '',
     cover: '',
+    icon: '',
     genres: '',
     developer: '',
     publisher: '',
@@ -202,7 +203,7 @@ document.addEventListener('alpine:init', () => {
     dirty: false,
     saving: false,
     busy: false,
-    covers: { uploading: false },
+    art: { cover: false, icon: false },
 
     async init() {
       await this.load();
@@ -260,6 +261,7 @@ document.addEventListener('alpine:init', () => {
           ...blankGame(),
           ...g,
           cover: g.cover ?? '',
+          icon: g.icon ?? '',
           developer: g.developer ?? '',
           publisher: g.publisher ?? '',
           releaseYear: g.releaseYear ?? '',
@@ -400,38 +402,40 @@ document.addEventListener('alpine:init', () => {
       }
     },
 
-    async uploadCover(event) {
+    /** kind is "cover" (3:4 box art) or "icon" (the square used in lists and sidebars). */
+    async uploadArt(kind, event) {
       const file = event.target.files?.[0];
       if (!file || !this.selected) return;
       const body = new FormData();
       body.append('file', file);
-      this.covers.uploading = true;
+      this.art[kind] = true;
       try {
-        const game = await api('POST', `/api/games/${this.selected}/cover`, body);
-        this.form.cover = game.cover;
+        const game = await api('POST', `/api/games/${this.selected}/${kind}`, body);
+        this.form[kind] = game[kind];
         this.dirty = false;
         await this.load();
-        Alpine.store('app').toast('Cover uploaded to public/covers');
+        Alpine.store('app').toast(`Saved to public/${kind}s`);
       } catch (err) {
         Alpine.store('app').toast(err.message, 'error');
       } finally {
-        this.covers.uploading = false;
+        this.art[kind] = false;
         event.target.value = '';
       }
     },
 
-    async localizeCover() {
-      if (!this.selected || !this.form.cover) return;
-      this.covers.uploading = true;
+    /** Pulls a remote image into the repo so the site never depends on someone else's host. */
+    async localizeArt(kind) {
+      if (!this.selected || !this.form[kind]) return;
+      this.art[kind] = true;
       try {
-        const game = await api('POST', `/api/games/${this.selected}/cover-from-url`, { url: this.form.cover });
-        this.form.cover = game.cover;
+        const game = await api('POST', `/api/games/${this.selected}/${kind}-from-url`, { url: this.form[kind] });
+        this.form[kind] = game[kind];
         await this.load();
-        Alpine.store('app').toast('Cover downloaded into public/covers');
+        Alpine.store('app').toast(`Downloaded into public/${kind}s`);
       } catch (err) {
         Alpine.store('app').toast(err.message, 'error');
       } finally {
-        this.covers.uploading = false;
+        this.art[kind] = false;
       }
     },
 

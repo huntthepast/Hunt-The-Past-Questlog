@@ -143,48 +143,40 @@ app.delete('/api/games/:slug', async (c) => {
     throw conflict(`"${game.title}" is still referenced by ${[...refs.guides, ...refs.trackers, ...refs.sets].join(', ')}. Unlink or delete those first.`);
   }
   await store.deleteGame(slug);
-  await removeLocalCover(slug);
+  for (const kind of Object.values(IMAGE_KINDS)) await removeLocalImage(kind, slug);
   if (game.raGameId) await store.deleteRaGame(game.raGameId);
   return c.json({ ok: true });
 });
 
 const IMAGE_TYPES = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
-const MAX_COVER_BYTES = 8 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
-async function removeLocalCover(slug) {
+/** The two pieces of art a game can have: the 3:4 cover, and the square icon used in lists. */
+const IMAGE_KINDS = {
+  cover: { label: 'Cover', dir: PATHS.covers, urlBase: '/covers', field: 'cover' },
+  icon: { label: 'Icon', dir: PATHS.icons, urlBase: '/icons', field: 'icon' },
+};
+
+async function removeLocalImage(kind, slug) {
   for (const ext of Object.values(IMAGE_TYPES)) {
-    const file = path.join(PATHS.covers, `${slug}.${ext}`);
+    const file = path.join(kind.dir, `${slug}.${ext}`);
     if (existsSync(file)) await unlink(file);
   }
 }
 
-async function storeCover(slug, bytes, mime) {
+async function storeImage(kind, slug, bytes, mime) {
   const ext = IMAGE_TYPES[mime];
   if (!ext) throw badRequest(`Unsupported image type "${mime}". Use PNG, JPEG, WebP or GIF.`);
-  if (bytes.length > MAX_COVER_BYTES) throw badRequest('Cover is larger than 8 MB');
-  await mkdir(PATHS.covers, { recursive: true });
-  await removeLocalCover(slug);
-  await writeFile(path.join(PATHS.covers, `${slug}.${ext}`), bytes);
+  if (bytes.length > MAX_IMAGE_BYTES) throw badRequest(`${kind.label} is larger than 8 MB`);
+  await mkdir(kind.dir, { recursive: true });
+  await removeLocalImage(kind, slug);
+  await writeFile(path.join(kind.dir, `${slug}.${ext}`), bytes);
   const game = await store.getGame(slug);
-  return store.saveGame(slug, { ...game, cover: `/covers/${slug}.${ext}`, updatedAt: store.now() });
+  return store.saveGame(slug, { ...game, [kind.field]: `${kind.urlBase}/${slug}.${ext}`, updatedAt: store.now() });
 }
 
-// Upload a cover file (multipart/form-data, field "file").
-app.post('/api/games/:slug/cover', async (c) => {
-  const slug = c.req.param('slug');
-  await store.getGame(slug);
-  const body = await c.req.parseBody();
-  const file = body.file;
-  if (!(file instanceof File)) throw badRequest('Send the image as a multipart field named "file"');
-  const bytes = Buffer.from(await file.arrayBuffer());
-  return c.json(await storeCover(slug, bytes, file.type));
-});
-
-// Download a remote cover (e.g. RetroAchievements box art) into public/covers so the site never depends on a third-party image host.
-app.post('/api/games/:slug/cover-from-url', async (c) => {
-  const slug = c.req.param('slug');
-  await store.getGame(slug);
-  const { url } = await c.req.json();
+/** Fetches a remote image so the site never depends on a third-party host staying up. */
+async function downloadImage(url) {
   let parsed;
   try {
     parsed = new URL(url);
@@ -194,10 +186,27 @@ app.post('/api/games/:slug/cover-from-url', async (c) => {
   if (!['http:', 'https:'].includes(parsed.protocol)) throw badRequest('Only http(s) URLs are allowed');
   const res = await fetch(parsed, { headers: { 'User-Agent': 'huntthepast-questlog-admin/1.0' } });
   if (!res.ok) throw badRequest(`Could not download image (HTTP ${res.status})`);
-  const mime = (res.headers.get('content-type') ?? '').split(';')[0].trim();
-  const bytes = Buffer.from(await res.arrayBuffer());
-  return c.json(await storeCover(slug, bytes, mime));
-});
+  return { mime: (res.headers.get('content-type') ?? '').split(';')[0].trim(), bytes: Buffer.from(await res.arrayBuffer()) };
+}
+
+// Upload (multipart/form-data, field "file") or pull a remote image into public/, for both kinds of art.
+for (const [name, kind] of Object.entries(IMAGE_KINDS)) {
+  app.post(`/api/games/:slug/${name}`, async (c) => {
+    const slug = c.req.param('slug');
+    await store.getGame(slug);
+    const file = (await c.req.parseBody()).file;
+    if (!(file instanceof File)) throw badRequest('Send the image as a multipart field named "file"');
+    return c.json(await storeImage(kind, slug, Buffer.from(await file.arrayBuffer()), file.type));
+  });
+
+  app.post(`/api/games/:slug/${name}-from-url`, async (c) => {
+    const slug = c.req.param('slug');
+    await store.getGame(slug);
+    const { url } = await c.req.json();
+    const { mime, bytes } = await downloadImage(url);
+    return c.json(await storeImage(kind, slug, bytes, mime));
+  });
+}
 
 async function assertPlatformExists(id) {
   const platforms = await store.getPlatforms();
@@ -596,6 +605,12 @@ app.get('/vendor/:name', (c) => {
 app.get('/vendor/fonts/:name', (c) => {
   const name = path.basename(c.req.param('name'));
   return sendFile(c, path.join(PATHS.nodeModules, '@fontsource-variable', 'pixelify-sans', 'files', name));
+});
+
+// Icon previews (the site serves these from /icons on Vercel).
+app.get('/icons/:name', (c) => {
+  const name = path.basename(c.req.param('name'));
+  return sendFile(c, path.join(PATHS.icons, name));
 });
 
 // Cover previews (the site serves these from /covers on Vercel).

@@ -1,22 +1,38 @@
 ---
 import Base from '../layouts/Base.astro';
+import FilterBar from '../components/FilterBar.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import StatTile from '../components/StatTile.astro';
 import EmptyState from '../components/EmptyState.astro';
 import Pagination from '../components/Pagination.astro';
 import ListCounter from '../components/ListCounter.astro';
 import ProgressBar from '../components/ProgressBar.astro';
+import GameRow from '../components/GameRow.astro';
 import Badge from '../components/Badge.astro';
 import Icon from '../components/Icon.astro';
-import { raProfile, raSynced, allGames, raGamePaths, raTrackedSeconds, shelfAwards, awardKind, shelf as shelfOverrides, formatDate, formatDateTime, formatNumber } from '../lib/data';
+import { raProfile, raSynced, allGames, raGamePaths, gameIcons, platformOf, raTrackedSeconds, shelfAwards, awardKind, shelf as shelfOverrides, formatDate, formatDateTime, formatNumber } from '../lib/data';
 import { RA_SITE, raImage } from '../lib/constants.js';
 import { bar, text } from '../lib/ui';
+
+/** Rows in the two "recent" lists. The same number in both keeps the columns level. */
+const RECENT_LIMIT = 10;
 
 const synced = raSynced();
 const games = await allGames();
 const trackedSeconds = await raTrackedSeconds();
 // RA game id -> page on this site (subsets open their parent game on the subset tab).
 const raPath = await raGamePaths(games);
+const icons = await gameIcons(games);
+// RA game id -> the library entry, for the platform and status of games I actually own.
+const gameByRaId = new Map(games.filter((g) => g.data.raGameId).map((g) => [g.data.raGameId!, g]));
+
+/*
+ * These tiles count RetroAchievements awards, while the library filters on my own status, so the two
+ * are related but never identical - RA can call something completed that I filed as mastered. A tile
+ * only links when the library actually holds games with that status, so the link cannot land on an
+ * empty shelf or, worse, silently show everything.
+ */
+const shelfLink = (status: string) => (games.some((g) => g.data.ownership === 'owned' && g.data.status === status) ? `/games?status=${status}` : undefined);
 
 const completion = [...raProfile.completion].sort((a, b) => (b.mostRecentAwardedDate ?? '').localeCompare(a.mostRecentAwardedDate ?? ''));
 const consoles = [...new Set(completion.map((c) => c.consoleName))].sort();
@@ -99,10 +115,15 @@ const filterConfig = {
       </EmptyState>
     ) : (
       <>
-        <section class="card mb-8 flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
-          <img src={raProfile.avatar} alt={`${raProfile.user}'s avatar`} width="96" height="96" class="size-24 shrink-0 rounded-xl bg-zinc-800 object-cover" />
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-center gap-2">
+        {/* Avatar and name stay together from sm up; the three big numbers drop below them until
+            there is room for all three groups on one line at lg. */}
+        <section class="card mb-8 flex flex-col gap-5 p-5 lg:flex-row lg:items-center">
+          <div class="flex min-w-0 flex-1 flex-col gap-5 sm:flex-row sm:items-center">
+          <img src={raProfile.avatar} alt={`${raProfile.user}'s avatar`} width="96" height="96" class="size-24 shrink-0 self-center rounded-xl bg-zinc-800 object-cover sm:self-auto" />
+          <div class="min-w-0 flex-1 text-center sm:text-left">
+            {/* Stacked on a phone so the rank always gets its own line under the name, rather than
+                sitting beside it on a wide handset and wrapping on a narrow one. */}
+            <div class="flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-start">
               <a href={raProfile.profileUrl} target="_blank" rel="noopener" class="font-display text-3xl text-zinc-50 hover:text-amber-300">
                 {raProfile.user}
               </a>
@@ -113,12 +134,13 @@ const filterConfig = {
             {raProfile.motto && <p class="mt-1 text-sm italic text-zinc-400">"{raProfile.motto}"</p>}
             <p class="mt-1 text-xs text-zinc-500">Member since {formatDate(raProfile.memberSince)}</p>
             {raProfile.richPresence && (
-              <p class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-zinc-800/80 px-2.5 py-1 text-xs text-zinc-300">
+              <p class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-zinc-800/80 px-2.5 py-1 text-left text-xs text-zinc-300">
                 <Icon name="gamepad" class="size-3.5 text-amber-400" /> {raProfile.richPresence}
               </p>
             )}
           </div>
-          <dl class="grid shrink-0 grid-cols-3 gap-4 text-center sm:text-right">
+          </div>
+          <dl class="grid shrink-0 grid-cols-3 gap-4 text-center lg:text-right">
             <div>
               <dt class="text-[11px] uppercase tracking-wider text-zinc-500">Points</dt>
               <dd class="text-2xl font-bold tracking-tight text-amber-300 tabular-nums">{formatNumber(raProfile.points)}</dd>
@@ -135,40 +157,37 @@ const filterConfig = {
         </section>
 
         <section class="mb-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <StatTile label="Games played" value={formatNumber(raProfile.stats.gamesPlayed)} icon="gamepad" color="sky" />
+          <StatTile label="Games played" value={formatNumber(raProfile.stats.gamesPlayed)} icon="gamepad" color="sky" href="/games" />
           <StatTile label="Achievements" value={formatNumber(raProfile.stats.achievementsEarned)} icon="check-circle" color="emerald" />
-          <StatTile label="Mastered" value={formatNumber(raProfile.stats.masteries)} icon="trophy" color="amber" />
-          <StatTile label="Completed" value={formatNumber(raProfile.stats.completions)} icon="sparkles" color="violet" />
-          <StatTile label="Beaten" value={formatNumber(raProfile.stats.beatenHardcore + raProfile.stats.beatenSoftcore)} hint={`${raProfile.stats.beatenHardcore} hardcore`} icon="flag" color="teal" />
+          <StatTile label="Mastered" value={formatNumber(raProfile.stats.masteries)} icon="trophy" color="amber" href={shelfLink('mastered')} />
+          <StatTile label="Completed" value={formatNumber(raProfile.stats.completions)} icon="sparkles" color="violet" href={shelfLink('completed')} />
+          <StatTile label="Beaten" value={formatNumber(raProfile.stats.beatenHardcore + raProfile.stats.beatenSoftcore)} hint={`${raProfile.stats.beatenHardcore} hardcore`} icon="flag" color="teal" href={shelfLink('beaten')} />
           <StatTile label="Tracked playtime" value={trackedSeconds > 0 ? `${formatNumber(Math.round(trackedSeconds / 3600))}h` : '--'} hint="across linked games" icon="clock" color="rose" />
         </section>
 
-        <div class="mb-10 grid gap-10 lg:grid-cols-2">
+        <div class="mb-10 grid grid-cols-1 gap-10 lg:grid-cols-2">
           <section>
             <SectionHeading eyebrow="Last sessions" title="Recently Played" />
             {raProfile.recentlyPlayed.length ? (
               <ul class="card divide-y divide-zinc-800">
-                {raProfile.recentlyPlayed.map((g) => {
-                  const local = raPath.get(g.gameId);
-                  const pct = g.numPossible ? Math.round((g.numAchieved / g.numPossible) * 100) : 0;
+                {raProfile.recentlyPlayed.slice(0, RECENT_LIMIT).map((g) => {
+                  // A game in the library shows its own platform and status; anything else keeps RA's console name.
+                  const owned = gameByRaId.get(g.gameId);
                   return (
-                    <li class="flex items-center gap-3 p-3">
-                      <img src={raImage(g.imageIcon)} alt="" width="48" height="48" loading="lazy" class="size-12 shrink-0 rounded bg-zinc-800" />
-                      <div class="min-w-0 flex-1">
-                        <a href={local ?? `${RA_SITE}/game/${g.gameId}`} target={local ? undefined : '_blank'} rel={local ? undefined : 'noopener'} class="block truncate font-medium text-zinc-100 hover:text-amber-300">
-                          {g.title}
-                        </a>
-                        <p class="text-xs text-zinc-500">
-                          {g.consoleName} &middot; {formatDateTime(g.lastPlayed)}
-                        </p>
-                        <div class="mt-1.5 flex items-center gap-2">
-                          <ProgressBar value={pct} color={pct === 100 ? 'amber' : 'emerald'} size="sm" label="Achievements" class="max-w-40" />
-                          <span class="text-[11px] tabular-nums text-zinc-400">
-                            {g.numAchieved}/{g.numPossible}
-                          </span>
-                        </div>
-                      </div>
-                    </li>
+                    <GameRow
+                      href={raPath.get(g.gameId) ?? `${RA_SITE}/game/${g.gameId}`}
+                      external={!raPath.has(g.gameId)}
+                      title={g.title}
+                      icon={owned ? icons.get(owned.id) : raImage(g.imageIcon)}
+                      platform={owned ? platformOf(owned.data.platform).short : g.consoleName}
+                      date={formatDateTime(g.lastPlayed)}
+                      status={owned?.data.status}
+                      progress={{
+                        done: g.numAchieved,
+                        total: g.numPossible,
+                        pct: g.numPossible ? Math.round((g.numAchieved / g.numPossible) * 100) : 0,
+                      }}
+                    />
                   );
                 })}
               </ul>
@@ -181,9 +200,12 @@ const filterConfig = {
             <SectionHeading eyebrow="Fresh" title="Recent Unlocks" />
             {raProfile.recentAchievements.length ? (
               <ul class="card divide-y divide-zinc-800">
-                {raProfile.recentAchievements.slice(0, 12).map((a) => (
-                  <li>
-                    <a href={`${RA_SITE}/achievement/${a.id}`} target="_blank" rel="noopener" class="flex items-center gap-3 p-3 transition hover:bg-zinc-800/50">
+                {raProfile.recentAchievements.slice(0, RECENT_LIMIT).map((a) => (
+                  /* The row height lives on the <li>, the same element divide-y borders, so border-box
+                     absorbs the separator. On the anchor instead, the border would stack on top of it
+                     and this column would sit a fraction of a pixel below the other one, every row. */
+                  <li class="flex min-h-24">
+                    <a href={`${RA_SITE}/achievement/${a.id}`} target="_blank" rel="noopener" class="flex min-w-0 flex-1 items-center gap-3 p-3 transition hover:bg-zinc-800/50">
                       <img src={raImage(a.badge)} alt="" width="48" height="48" loading="lazy" class="size-12 shrink-0 rounded bg-zinc-800" />
                       <span class="min-w-0 flex-1">
                         <span class="flex items-center gap-1.5 truncate font-medium text-zinc-100">
@@ -255,13 +277,8 @@ const filterConfig = {
             </div>
           </div>
 
-          <div class="card mb-4 p-3">
-            <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <label class="relative flex-1 sm:min-w-56">
-                <span class="sr-only">Search</span>
-                <Icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
-                <input type="search" x-model.debounce.150ms="q" placeholder="Search games or consoles..." class="input pl-9" />
-              </label>
+          <FilterBar label="Search" placeholder="Search games or consoles...">
+              
               <select x-model="facet.console" class="input sm:w-52" aria-label="Console">
                 <option value="">All consoles</option>
                 {consoles.map((c) => (
@@ -293,9 +310,8 @@ const filterConfig = {
                 <Icon name="gamepad" class="size-4" />
                 In library
               </button>
-            </div>
-            <ListCounter total={completion.length} pageSize={50} noun="games" />
-          </div>
+            <ListCounter slot="footer" total={completion.length} pageSize={50} noun="games" />
+          </FilterBar>
 
           <ul class="card divide-y divide-zinc-800">
             {completion.map((c) => {
@@ -313,28 +329,33 @@ const filterConfig = {
                   data-recent={c.mostRecentAwardedDate ?? ''}
                   data-pct={pct}
                   data-unlocked={c.numAwarded}
-                  class="flex items-center gap-3 p-3"
                 >
-                  <img src={raImage(c.imageIcon)} alt="" width="40" height="40" loading="lazy" class="size-10 shrink-0 rounded bg-zinc-800" />
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-2">
-                      <a href={local ?? `${RA_SITE}/game/${c.gameId}`} target={local ? undefined : '_blank'} rel={local ? undefined : 'noopener'} class="truncate font-medium text-zinc-100 hover:text-amber-300">
-                        {c.title}
-                      </a>
-                      {kind && kind.id !== 'none' && <Badge color={kind.color} label={kind.label} class="hidden sm:inline-flex" />}
-                      {local && <Icon name="gamepad" class="size-3.5 shrink-0 text-zinc-500" title="In the library" />}
+                  {/* The whole row is the link, like the lists above it: the title alone was a small target. */}
+                  <a
+                    href={local ?? `${RA_SITE}/game/${c.gameId}`}
+                    target={local ? undefined : '_blank'}
+                    rel={local ? undefined : 'noopener'}
+                    class="flex items-center gap-3 p-3 transition hover:bg-zinc-800/50"
+                  >
+                    <img src={raImage(c.imageIcon)} alt="" width="40" height="40" loading="lazy" class="size-10 shrink-0 rounded bg-zinc-800" />
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <span class="truncate font-medium text-zinc-100">{c.title}</span>
+                        {kind && kind.id !== 'none' && <Badge color={kind.color} label={kind.label} class="hidden sm:inline-flex" />}
+                        {local && <Icon name="gamepad" class="size-3.5 shrink-0 text-zinc-500" title="In the library" />}
+                      </div>
+                      <p class="text-xs text-zinc-500">
+                        {c.consoleName}
+                        {c.mostRecentAwardedDate && <span> &middot; last unlock {formatDate(c.mostRecentAwardedDate)}</span>}
+                      </p>
                     </div>
-                    <p class="text-xs text-zinc-500">
-                      {c.consoleName}
-                      {c.mostRecentAwardedDate && <span> &middot; last unlock {formatDate(c.mostRecentAwardedDate)}</span>}
-                    </p>
-                  </div>
-                  <div class="w-28 shrink-0 sm:w-40">
-                    <ProgressBar value={pct} color={c.highestAwardKind === 'mastered' ? 'amber' : pct === 100 ? 'violet' : 'emerald'} size="sm" label="Achievements" />
-                    <p class="mt-1 text-right text-[11px] tabular-nums text-zinc-400">
-                      {c.numAwarded}/{c.maxPossible} &middot; {pct}%
-                    </p>
-                  </div>
+                    <div class="w-28 shrink-0 sm:w-40">
+                      <ProgressBar value={pct} color={c.highestAwardKind === 'mastered' ? 'amber' : pct === 100 ? 'violet' : 'emerald'} size="sm" label="Achievements" />
+                      <p class="mt-1 text-right text-[11px] tabular-nums text-zinc-400">
+                        {c.numAwarded}/{c.maxPossible} &middot; {pct}%
+                      </p>
+                    </div>
+                  </a>
                 </li>
               );
             })}

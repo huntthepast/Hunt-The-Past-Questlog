@@ -3,14 +3,14 @@ import { getEntry } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Badge from '../../components/Badge.astro';
 import Icon from '../../components/Icon.astro';
-import Cover from '../../components/Cover.astro';
+import GameIcon from '../../components/GameIcon.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
 import ProgressBar from '../../components/ProgressBar.astro';
 import GuideHub from '../../components/GuideHub.astro';
 import SidebarToolbar from '../../components/SidebarToolbar.astro';
 import DrawerHeader from '../../components/DrawerHeader.astro';
 import Sources from '../../components/Sources.astro';
-import { allTrackers, allGuides, guidesForGame, trackersForGame, trackerProgress, platformOf, formatDate, site } from '../../lib/data';
+import { allTrackers, allGuides, guidesForGame, trackersForGame, trackerProgress, gameIconFor, platformOf, formatDate, site } from '../../lib/data';
 import { trackerTypeById } from '../../lib/constants.js';
 import { trackerSeo, breadcrumbJsonLd } from '../../lib/seo';
 
@@ -26,6 +26,7 @@ const game = d.game ? await getEntry(d.game) : undefined;
 const platform = game ? platformOf(game.data.platform) : undefined;
 const relatedGuides = game ? guidesForGame(await allGuides(), game.id) : [];
 const relatedTrackers = game ? trackersForGame(await allTrackers(), game.id) : [];
+const icon = await gameIconFor(game);
 const progress = trackerProgress(tracker);
 const trackerOptions = {
   columns: d.checklistColumns,
@@ -135,7 +136,7 @@ const jsonLd = breadcrumbJsonLd(Astro.site, [
 
     <div x-data="sidebarDrawer" @keydown.escape.window="closeDrawer()">
     <SidebarToolbar toc={d.sections.length > 1} hub={Boolean(game && relatedGuides.length + relatedTrackers.length > 0)} tocLabel="Sections" />
-    <div class="grid gap-10 lg:grid-cols-[1fr_280px]">
+    <div class="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_280px]">
       <div class="min-w-0">
         <!-- Sections -->
         <div class="grid gap-6">
@@ -226,8 +227,8 @@ const jsonLd = breadcrumbJsonLd(Astro.site, [
         {
           game && platform && (
             <a href={`/games/${game.id}`} class="card card-hover flex items-center gap-3 p-3">
-              <span class="block h-16 w-12 shrink-0 overflow-hidden rounded bg-zinc-800">
-                <Cover src={game.data.cover} title={game.data.title} platformShort={platform.short} />
+              <span class="block size-12 shrink-0 overflow-hidden rounded bg-zinc-800">
+                <GameIcon src={icon} title={game.data.title} />
               </span>
               <span class="min-w-0">
                 <span class="eyebrow block text-[10px]">Game</span>

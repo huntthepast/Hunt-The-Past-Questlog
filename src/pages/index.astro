@@ -5,8 +5,7 @@ import StatTile from '../components/StatTile.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import GuideCard from '../components/GuideCard.astro';
 import TrackerCard from '../components/TrackerCard.astro';
-import Cover from '../components/Cover.astro';
-import StatusBadge from '../components/StatusBadge.astro';
+import GameRow from '../components/GameRow.astro';
 import ProgressBar from '../components/ProgressBar.astro';
 import EmptyState from '../components/EmptyState.astro';
 import {
@@ -14,6 +13,8 @@ import {
   raProfile,
   raSynced,
   raGamePaths,
+  gameIcons,
+  gameProgress,
   allGames,
   allGuides,
   allTrackers,
@@ -44,6 +45,8 @@ const alsoPlayed = recentlyPlayed.filter((g) => g !== lastPlayed).slice(0, 5);
 // RA's rich presence describes the session it came from, so it only belongs on that game.
 const presence = lastPlayed && lastPlayed.gameId === raProfile.lastGameId ? raProfile.richPresence : '';
 const raPaths = await raGamePaths(games);
+const icons = await gameIcons(games);
+const progress = await gameProgress(games);
 // Where a played game lives here, if it is in the library at all.
 const pathFor = (gameId: number) => raPaths.get(gameId) ?? `${RA_SITE}/game/${gameId}`;
 const isLocal = (gameId: number) => raPaths.has(gameId);
@@ -153,32 +156,23 @@ const latestTrackers = trackers.slice(0, 3);
   </section>
 
   <!-- Recently finished + recent achievements -->
-  <div class="mb-12 grid gap-10 lg:grid-cols-2">
+  <div class="mb-12 grid grid-cols-1 gap-10 lg:grid-cols-2">
     <section>
       <SectionHeading eyebrow="Credits rolled" title="Recently Finished" href="/progress" />
       {
         recentlyFinished.length ? (
           <ul class="card divide-y divide-zinc-800">
-            {recentlyFinished.map((game) => {
-              const platform = platformOf(game.data.platform);
-              return (
-                <li>
-                  <a href={`/games/${game.id}`} class="flex items-center gap-3 p-3 transition hover:bg-zinc-800/50">
-                    <span class="block h-14 w-11 shrink-0 overflow-hidden rounded bg-zinc-800">
-                      <Cover src={game.data.cover} title={game.data.title} platformShort={platform.short} />
-                    </span>
-                    <span class="min-w-0 flex-1">
-                      <span class="block truncate font-medium text-zinc-100">{game.data.title}</span>
-                      <span class="block text-xs text-zinc-500">
-                        {platform.short}
-                        {game.data.finishedAt && <span> &middot; {formatDate(game.data.finishedAt)}</span>}
-                      </span>
-                    </span>
-                    <StatusBadge status={game.data.status} short />
-                  </a>
-                </li>
-              );
-            })}
+            {recentlyFinished.map((game) => (
+              <GameRow
+                href={`/games/${game.id}`}
+                title={game.data.title}
+                icon={icons.get(game.id)}
+                platform={platformOf(game.data.platform).short}
+                date={game.data.finishedAt ? formatDate(game.data.finishedAt) : undefined}
+                status={game.data.status}
+                progress={progress.get(game.id)}
+              />
+            ))}
           </ul>
         ) : (
           <EmptyState title="No finished games yet" icon="check-circle">
@@ -194,10 +188,10 @@ const latestTrackers = trackers.slice(0, 3);
         raSynced() && recentAchievements.length ? (
           <ul class="card divide-y divide-zinc-800">
             {recentAchievements.map((a) => (
-              <li>
-                <a href={`${RA_SITE}/achievement/${a.id}`} target="_blank" rel="noopener" class="flex items-center gap-3 p-3 transition hover:bg-zinc-800/50">
-                  {/* 56px to match the cover height in Recently Finished, so both columns tick down in step. */}
-                  <img src={raImage(a.badge)} alt="" width="56" height="56" loading="lazy" class="size-14 shrink-0 rounded bg-zinc-800" />
+              /* Same height floor as the GameRow beside it, on the <li> so divide-y's border is absorbed. */
+              <li class="flex min-h-24">
+                <a href={`${RA_SITE}/achievement/${a.id}`} target="_blank" rel="noopener" class="flex min-w-0 flex-1 items-center gap-3 p-3 transition hover:bg-zinc-800/50">
+                  <img src={raImage(a.badge)} alt="" width="48" height="48" loading="lazy" class="size-12 shrink-0 rounded bg-zinc-800" />
                   <span class="min-w-0 flex-1">
                     <span class="flex items-center gap-1.5 truncate font-medium text-zinc-100">
                       {a.title}
@@ -228,7 +222,7 @@ const latestTrackers = trackers.slice(0, 3);
     (latestGuides.length > 0 || latestTrackers.length > 0) && (
       <section class="mb-6">
         <SectionHeading eyebrow="Written down" title="Latest Guides & Trackers" href="/guides" />
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {latestGuides.map((guide) => (
             <GuideCard guide={guide} game={guide.data.game ? gameById.get(guide.data.game.id) : undefined} />
           ))}

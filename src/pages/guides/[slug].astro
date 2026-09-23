@@ -3,14 +3,14 @@ import { render, getEntry } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Badge from '../../components/Badge.astro';
 import Icon from '../../components/Icon.astro';
-import Cover from '../../components/Cover.astro';
+import GameIcon from '../../components/GameIcon.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
 import GuideHub from '../../components/GuideHub.astro';
 import Lightbox from '../../components/Lightbox.astro';
 import SidebarToolbar from '../../components/SidebarToolbar.astro';
 import DrawerHeader from '../../components/DrawerHeader.astro';
 import Sources from '../../components/Sources.astro';
-import { allGuides, allTrackers, guidesForGame, trackersForGame, guideSeries, platformOf, formatDate } from '../../lib/data';
+import { allGuides, allTrackers, guidesForGame, trackersForGame, guideSeries, gameIconFor, platformOf, formatDate } from '../../lib/data';
 import type { MarkdownHeading } from 'astro';
 import { guideType } from '../../lib/constants.js';
 import { guideSeo, guideJsonLd, breadcrumbJsonLd } from '../../lib/seo';
@@ -27,6 +27,8 @@ const game = d.game ? await getEntry(d.game) : undefined;
 const platform = game ? platformOf(game.data.platform) : undefined;
 const gameGuides = game ? guidesForGame(await allGuides(), game.id) : [];
 const gameTrackers = game ? trackersForGame(await allTrackers(), game.id) : [];
+
+const icon = await gameIconFor(game);
 
 const series = guideSeries(gameGuides, guide);
 
@@ -96,7 +98,7 @@ const jsonLd = [
 
   <div x-data="sidebarDrawer" @keydown.escape.window="closeDrawer()">
   <SidebarToolbar toc={tocCount > 1} hub={Boolean(game && gameGuides.length + gameTrackers.length > 0)} tocLabel="Contents" />
-  <div class="grid gap-10 lg:grid-cols-[1fr_280px]" x-data="lightbox">
+  <div class="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_280px]" x-data="lightbox">
     <div class="min-w-0">
       {
         gallery.length > 0 && (
@@ -149,7 +151,7 @@ const jsonLd = [
 
       {
         series && (series.prev || series.next) && (
-          <nav class="mt-10 grid gap-3 sm:grid-cols-2" aria-label={`${series.name}: previous and next part`}>
+          <nav class="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2" aria-label={`${series.name}: previous and next part`}>
             {series.prev && (
               <a href={`/guides/${series.prev.id}`} rel="prev" class="card card-hover flex items-center gap-3 p-4">
                 <Icon name="arrow-left" class="size-4 shrink-0 text-amber-400" />
@@ -178,8 +180,8 @@ const jsonLd = [
       {
         game && platform && (
           <a href={`/games/${game.id}`} class="card card-hover flex items-center gap-3 p-3">
-            <span class="block h-16 w-12 shrink-0 overflow-hidden rounded bg-zinc-800">
-              <Cover src={game.data.cover} title={game.data.title} platformShort={platform.short} />
+            <span class="block size-12 shrink-0 overflow-hidden rounded bg-zinc-800">
+              <GameIcon src={icon} title={game.data.title} />
             </span>
             <span class="min-w-0">
               <span class="eyebrow block text-[10px]">Game</span>

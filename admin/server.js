@@ -223,9 +223,10 @@ app.post('/api/guides', async (c) => {
 app.put('/api/guides/:slug', async (c) => {
   const slug = c.req.param('slug');
   const existing = await store.getGuide(slug);
-  const { body: markdown, ...data } = validate(GuideSchema, await c.req.json());
+  const raw = await c.req.json();
+  const { body: markdown, ...data } = validate(GuideSchema, raw);
   await assertGameRef(data.game);
-  return c.json(await store.saveGuide(slug, { ...data, createdAt: existing.createdAt ?? store.now(), updatedAt: store.now() }, markdown));
+  return c.json(await store.saveGuide(slug, { ...keepUnsent(raw, data, existing, GUIDE_LISTS), createdAt: existing.createdAt ?? store.now(), updatedAt: store.now() }, markdown));
 });
 
 app.delete('/api/guides/:slug', async (c) => {
@@ -235,6 +236,25 @@ app.delete('/api/guides/:slug', async (c) => {
   return c.json({ ok: true });
 });
 
+
+/*
+ * Lists whose schema default is [], which makes an *omitted* field indistinguishable from an
+ * emptied one - and a save that never mentioned a field must not silently erase it. That happens
+ * for real: an admin tab left open across a code change keeps posting the shape it was loaded with,
+ * so a field added since would be wiped on the next save of any page.
+ *
+ * Sending the key explicitly still clears it; only leaving it out falls back to what is on disk.
+ */
+const GUIDE_LISTS = ['gallery', 'downloads', 'sources', 'tags'];
+const TRACKER_LISTS = ['sections', 'sources'];
+
+function keepUnsent(raw, data, existing, keys) {
+  const merged = { ...data };
+  for (const key of keys) {
+    if (!(key in raw) && existing[key] !== undefined) merged[key] = existing[key];
+  }
+  return merged;
+}
 
 async function assertGameRef(slug) {
   if (slug && !(await store.gameExists(slug))) throw badRequest(`Linked game "${slug}" does not exist`);
@@ -328,7 +348,8 @@ app.post('/api/trackers', async (c) => {
 app.put('/api/trackers/:slug', async (c) => {
   const slug = c.req.param('slug');
   const existing = await store.getTracker(slug);
-  const data = validate(TrackerSchema, await c.req.json());
+  const raw = await c.req.json();
+  const data = keepUnsent(raw, validate(TrackerSchema, raw), existing, TRACKER_LISTS);
   await assertGameRef(data.game);
   const tracker = { ...data, sections: ensureTrackerItemIds(data.sections), createdAt: existing.createdAt ?? store.now(), updatedAt: store.now() };
   return c.json(await store.saveTracker(slug, tracker));
@@ -337,6 +358,38 @@ app.put('/api/trackers/:slug', async (c) => {
 app.delete('/api/trackers/:slug', async (c) => {
   await store.deleteTracker(c.req.param('slug'));
   return c.json({ ok: true });
+});
+
+/* ---------------- sources (credits, across guides and trackers) ---------------- */
+
+/**
+ * Every source credited anywhere, grouped by the name being credited and carrying the pages that
+ * cite it. Mirrors allSources() on the site so the admin list and /credits agree. Grouping ignores
+ * the URL on purpose: one site gets cited through different deep links and is still one source.
+ */
+app.get('/api/sources', async (c) => {
+  const [guides, trackers] = await Promise.all([store.listGuides(), store.listTrackers()]);
+  const pages = [
+    ...guides.map((g) => ({ kind: 'guide', slug: g.slug, title: g.title, sources: g.sources ?? [] })),
+    ...trackers.map((t) => ({ kind: 'tracker', slug: t.slug, title: t.title, sources: t.sources ?? [] })),
+  ];
+
+  const grouped = new Map();
+  for (const page of pages) {
+    for (const source of page.sources) {
+      const key = String(source.label ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+      if (!key) continue;
+      const entry = grouped.get(key) ?? { label: source.label, url: '', note: '', license: '', urls: [], pages: [] };
+      // The first mention sets the shared fields; later ones only fill in what is still blank.
+      entry.url ||= source.url ?? '';
+      entry.license ||= source.license ?? '';
+      entry.note ||= source.note ?? '';
+      if (source.url && !entry.urls.includes(source.url)) entry.urls.push(source.url);
+      entry.pages.push({ kind: page.kind, slug: page.slug, title: page.title, url: source.url ?? '', note: source.note ?? '' });
+      grouped.set(key, entry);
+    }
+  }
+  return c.json([...grouped.values()].sort((a, b) => a.label.localeCompare(b.label)));
 });
 
 /* ---------------- settings ---------------- */

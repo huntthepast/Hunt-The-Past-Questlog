@@ -389,6 +389,12 @@ sources:
     license: "CC BY-SA"
 ```
 
+Nothing is detected automatically - you name the source yourself. To save retyping, the dialog offers every
+source credited anywhere as a one-click reuse (name and licence carry over; the note stays empty because it
+describes what *this* page took), and the admin's **Sources** section lists them all with the pages that cite
+them, so one click opens the page in the editor. It also flags the one mistake that matters: the same site
+credited under two spellings, which `/credits` would otherwise show as two separate entries.
+
 That list is printed at the end of the page and collected on **`/credits`**, which also carries a standing offer
 to remove anything on request - linked from every page's footer, so a rights holder does not have to hunt for a
 contact. Two routes are offered, both configured in **Settings → Removal requests** (`contact` in

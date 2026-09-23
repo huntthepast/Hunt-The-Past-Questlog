@@ -18,7 +18,7 @@ sources:
     url: "https://vgmaps.de/maps/nes/dragon-warrior"
     note: "Every map linked from this page is hosted there and was drawn by Chiasm (towns, castles and dungeons) and Rick Bruns (the overworld). None of them are copied onto this site."
 createdAt: "2026-09-23T10:00:00.000Z"
-updatedAt: "2026-09-23T04:40:13.748Z"
+updatedAt: "2026-09-23T07:09:58.705Z"
 ---
 
 ## About these maps
@@ -73,5 +73,3 @@ the Rainbow Drop bridge appears on the west shore of Charlock's island.
 3. **Mountain Cave** for the Death Necklace, which pays for most of your next upgrade.
 4. **Garin's Grave** for the Silver Harp, then the **Magic Temple** to trade it for the Staff of Rain.
 5. **Hauksness** for Erdrick's Armor, then the Sunstone shrine and **Charlock Castle** with the Rainbow Drop.
-
-Maps by Chiasm and Rick Bruns, via [Better VGMaps](https://vgmaps.de/maps/nes/dragon-warrior).

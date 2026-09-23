@@ -1,6 +1,6 @@
 /* QuestLog admin UI. Plain Alpine.js components talking to the local JSON API in admin/server.js. */
 
-const VIEWS = ['dashboard', 'games', 'guides', 'trackers', 'sets', 'ra', 'settings', 'publish'];
+const VIEWS = ['dashboard', 'games', 'guides', 'trackers', 'sets', 'sources', 'ra', 'settings', 'publish'];
 const SITE_DEV_URL = 'http://localhost:4321';
 
 async function api(method, url, body, { raw = false } = {}) {
@@ -437,6 +437,26 @@ document.addEventListener('alpine:init', () => {
 
   }));
 
+  /**
+   * Sources credited anywhere on the site, grouped by name. Both editors use this to offer a
+   * one-click reuse, so the same site is always spelled the same way - /credits groups by the
+   * label, and a second spelling would split one source into two cards.
+   */
+  const loadSourceBook = async (self) => {
+    try {
+      self.sourceBook = await api('GET', '/api/sources');
+    } catch {
+      self.sourceBook = [];
+    }
+  };
+
+  /**
+   * Fill a new row from a source used elsewhere. The name and licence carry over because they have
+   * to match; the URL is only a starting point, and the note is left blank because it describes what
+   * this particular page took, which is different every time.
+   */
+  const sourceRowFrom = (known) => ({ label: known.label, url: known.url ?? '', note: '', license: known.license ?? '' });
+
   /* ---------------- guides ---------------- */
 
   const blankGuide = () => ({ slug: '', title: '', type: 'Walkthrough', game: '', summary: '', version: '', order: 0, series: '', checklistColumns: 1, checklistCollapsed: false, tags: '', draft: false, gallery: [], downloads: [], sources: [], body: '' });
@@ -507,9 +527,11 @@ Step by step through the area.
     linkMode: 'guide',
     linkUrl: '',
     linkText: '',
+    sourceBook: [],
 
     async init() {
       await this.load();
+      loadSourceBook(this);
       this.games = await api('GET', '/api/games');
       const param = Alpine.store('app').param;
       if (param === 'new') this.create();
@@ -551,12 +573,18 @@ Step by step through the area.
 
     /** Licences already credited elsewhere on the site, so the same wording is one click away. */
     get licenseSuggestions() {
-      const used = this.guides.flatMap((g) => (g.sources ?? []).map((s) => s.license)).filter(Boolean);
+      const used = this.sourceBook.map((s) => s.license).filter(Boolean);
       return [...new Set(['CC BY 4.0', 'CC BY-SA', 'CC BY-NC', 'Public domain', 'Used with permission', ...used])];
     },
 
-    addSource() {
-      this.form.sources.push({ label: '', url: '', note: '', license: '' });
+    /** Sources credited elsewhere that this guide does not already list. */
+    get reusableSources() {
+      const here = new Set((this.form?.sources ?? []).map((s) => s.label.trim().toLowerCase()));
+      return this.sourceBook.filter((s) => !here.has(s.label.trim().toLowerCase()));
+    },
+
+    addSource(known) {
+      this.form.sources.push(known ? sourceRowFrom(known) : { label: '', url: '', note: '', license: '' });
     },
 
     /** Series names already used by other guides of the selected game, so parts get the exact same spelling. */
@@ -869,6 +897,7 @@ Step by step through the area.
 
     togglePanel(name) {
       this.panel = this.panel === name ? null : name;
+      if (this.panel === 'sources') loadSourceBook(this);
       if (this.panel === 'link') {
         // Whatever is selected in the body becomes the link text, the way an editor's link button works.
         const el = this.$refs.body;
@@ -1019,9 +1048,11 @@ Step by step through the area.
     saving: false,
     /* Editor-only state, kept outside `form` so folding sections never counts as an unsaved change. */
     ui: { collapsed: {}, sections: false },
+    sourceBook: [],
 
     async init() {
       await this.load();
+      loadSourceBook(this);
       this.games = await api('GET', '/api/games');
       const param = Alpine.store('app').param;
       if (param === 'new') this.create();
@@ -1176,8 +1207,14 @@ Step by step through the area.
       for (const item of section.items) item.done = done;
     },
 
-    addSource() {
-      this.form.sources.push({ label: '', url: '', note: '', license: '' });
+    /** Sources credited elsewhere that this tracker does not already list. */
+    get reusableSources() {
+      const here = new Set((this.form?.sources ?? []).map((s) => s.label.trim().toLowerCase()));
+      return this.sourceBook.filter((s) => !here.has(s.label.trim().toLowerCase()));
+    },
+
+    addSource(known) {
+      this.form.sources.push(known ? sourceRowFrom(known) : { label: '', url: '', note: '', license: '' });
     },
 
     payload() {
@@ -1798,6 +1835,70 @@ Step by step through the area.
       } finally {
         this.saving = false;
       }
+    },
+  }));
+
+  /* ---------------- sources ---------------- */
+
+  Alpine.data('sourcesView', () => ({
+    sources: [],
+    q: '',
+    loading: true,
+
+    async init() {
+      await this.load();
+    },
+
+    async load() {
+      this.loading = true;
+      try {
+        this.sources = await api('GET', '/api/sources');
+      } catch (err) {
+        Alpine.store('app').toast(err.message, 'error');
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    get filtered() {
+      const q = this.q.trim().toLowerCase();
+      if (!q) return this.sources;
+      return this.sources.filter((s) => `${s.label} ${s.license} ${s.note} ${s.pages.map((p) => p.title).join(' ')}`.toLowerCase().includes(q));
+    },
+
+    get pageCount() {
+      return this.sources.reduce((total, s) => total + s.pages.length, 0);
+    },
+
+    /** "https://guides.gamercorner.net/dw/arms/" -> "guides.gamercorner.net" */
+    host(url) {
+      try {
+        return new URL(url).host;
+      } catch {
+        return '';
+      }
+    },
+
+    /**
+     * Two entries pointing at the same site under different names. /credits groups by name, so this
+     * is the one mistake that quietly splits a source in two - worth showing rather than hiding.
+     */
+    get duplicates() {
+      const byHost = new Map();
+      for (const source of this.sources) {
+        for (const url of source.urls ?? []) {
+          const host = this.host(url);
+          if (!host) continue;
+          const labels = byHost.get(host) ?? new Set();
+          labels.add(source.label);
+          byHost.set(host, labels);
+        }
+      }
+      return [...byHost.entries()].filter(([, labels]) => labels.size > 1).map(([host, labels]) => ({ host, labels: [...labels] }));
+    },
+
+    open(page) {
+      Alpine.store('app').go(page.kind === 'tracker' ? 'trackers' : 'guides', page.slug);
     },
   }));
 

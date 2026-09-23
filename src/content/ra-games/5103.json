@@ -14,7 +14,7 @@
   "highestAwardKind": "mastered",
   "highestAwardDate": "2024-04-06T10:06:18+00:00",
   "playtimeSeconds": 59591,
-  "syncedAt": "2026-09-21T14:09:49.070Z",
+  "syncedAt": "2026-09-22T15:54:43.263Z",
   "achievements": [
     {
       "id": 347110,
@@ -25,8 +25,8 @@
       "badge": "https://media.retroachievements.org/Badge/711859.png",
       "type": null,
       "displayOrder": 1,
-      "numAwarded": 362,
-      "numAwardedHardcore": 267,
+      "numAwarded": 361,
+      "numAwardedHardcore": 266,
       "earnedAt": "2024-04-04 16:40:05",
       "earnedHardcoreAt": "2024-04-04 16:40:05"
     },
@@ -53,8 +53,8 @@
       "badge": "https://media.retroachievements.org/Badge/711869.png",
       "type": null,
       "displayOrder": 3,
-      "numAwarded": 349,
-      "numAwardedHardcore": 260,
+      "numAwarded": 348,
+      "numAwardedHardcore": 259,
       "earnedAt": "2024-04-04 16:55:01",
       "earnedHardcoreAt": "2024-04-04 16:55:01"
     },
@@ -109,8 +109,8 @@
       "badge": "https://media.retroachievements.org/Badge/711873.png",
       "type": null,
       "displayOrder": 7,
-      "numAwarded": 319,
-      "numAwardedHardcore": 240,
+      "numAwarded": 318,
+      "numAwardedHardcore": 239,
       "earnedAt": "2024-04-04 16:43:09",
       "earnedHardcoreAt": "2024-04-04 16:43:09"
     },
@@ -165,8 +165,8 @@
       "badge": "https://media.retroachievements.org/Badge/711877.png",
       "type": null,
       "displayOrder": 11,
-      "numAwarded": 375,
-      "numAwardedHardcore": 273,
+      "numAwarded": 374,
+      "numAwardedHardcore": 272,
       "earnedAt": "2024-04-04 17:05:12",
       "earnedHardcoreAt": "2024-04-04 17:05:12"
     },
@@ -567,7 +567,7 @@
       "title": "Weapon Master IV",
       "description": "Complete Heat Man's stage on Hard without using the Mega Buster, Metal Blade, E-Tanks, or restarting from a checkpoint (Game Over to reset)",
       "points": 10,
-      "trueRatio": 48,
+      "trueRatio": 47,
       "badge": "https://media.retroachievements.org/Badge/711910.png",
       "type": null,
       "displayOrder": 40,
@@ -735,7 +735,7 @@
       "title": "Don't Stop Me Now",
       "description": "Beat the game without saves or passwords in under 50 minutes (same timing as leaderboard)",
       "points": 25,
-      "trueRatio": 101,
+      "trueRatio": 100,
       "badge": "https://media.retroachievements.org/Badge/711924.png",
       "type": null,
       "displayOrder": 53,
@@ -921,8 +921,8 @@
       "badge": "https://media.retroachievements.org/Badge/711939.png",
       "type": null,
       "displayOrder": 66,
-      "numAwarded": 261,
-      "numAwardedHardcore": 193,
+      "numAwarded": 260,
+      "numAwardedHardcore": 192,
       "earnedAt": "2024-04-06 08:19:52",
       "earnedHardcoreAt": "2024-04-06 08:19:52"
     }

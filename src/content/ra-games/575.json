@@ -14,7 +14,7 @@
   "highestAwardKind": "mastered",
   "highestAwardDate": "2024-04-09T13:56:30+00:00",
   "playtimeSeconds": 106446,
-  "syncedAt": "2026-09-21T14:09:49.070Z",
+  "syncedAt": "2026-09-22T15:54:43.263Z",
   "achievements": [
     {
       "id": 10117,
@@ -39,8 +39,8 @@
       "badge": "https://media.retroachievements.org/Badge/144692.png",
       "type": null,
       "displayOrder": 1,
-      "numAwarded": 3475,
-      "numAwardedHardcore": 1930,
+      "numAwarded": 3478,
+      "numAwardedHardcore": 1931,
       "earnedAt": "2024-04-06 19:48:47",
       "earnedHardcoreAt": "2024-04-06 19:48:47"
     },
@@ -53,8 +53,8 @@
       "badge": "https://media.retroachievements.org/Badge/144693.png",
       "type": null,
       "displayOrder": 2,
-      "numAwarded": 2898,
-      "numAwardedHardcore": 1677,
+      "numAwarded": 2901,
+      "numAwardedHardcore": 1678,
       "earnedAt": "2024-04-06 19:47:52",
       "earnedHardcoreAt": "2024-04-06 19:47:52"
     },
@@ -67,8 +67,8 @@
       "badge": "https://media.retroachievements.org/Badge/144694.png",
       "type": null,
       "displayOrder": 4,
-      "numAwarded": 2521,
-      "numAwardedHardcore": 1463,
+      "numAwarded": 2526,
+      "numAwardedHardcore": 1464,
       "earnedAt": "2024-04-06 20:35:36",
       "earnedHardcoreAt": "2024-04-06 20:35:36"
     },
@@ -81,8 +81,8 @@
       "badge": "https://media.retroachievements.org/Badge/144695.png",
       "type": null,
       "displayOrder": 5,
-      "numAwarded": 2041,
-      "numAwardedHardcore": 1214,
+      "numAwarded": 2042,
+      "numAwardedHardcore": 1215,
       "earnedAt": "2024-04-06 21:10:47",
       "earnedHardcoreAt": "2024-04-06 21:10:47"
     },
@@ -95,7 +95,7 @@
       "badge": "https://media.retroachievements.org/Badge/144696.png",
       "type": null,
       "displayOrder": 6,
-      "numAwarded": 1404,
+      "numAwarded": 1405,
       "numAwardedHardcore": 862,
       "earnedAt": "2024-04-07 13:16:28",
       "earnedHardcoreAt": "2024-04-07 13:16:28"
@@ -109,8 +109,8 @@
       "badge": "https://media.retroachievements.org/Badge/144697.png",
       "type": null,
       "displayOrder": 7,
-      "numAwarded": 1200,
-      "numAwardedHardcore": 759,
+      "numAwarded": 1201,
+      "numAwardedHardcore": 760,
       "earnedAt": "2024-04-07 15:37:02",
       "earnedHardcoreAt": "2024-04-07 15:37:02"
     },
@@ -123,8 +123,8 @@
       "badge": "https://media.retroachievements.org/Badge/144698.png",
       "type": null,
       "displayOrder": 8,
-      "numAwarded": 1066,
-      "numAwardedHardcore": 683,
+      "numAwarded": 1068,
+      "numAwardedHardcore": 684,
       "earnedAt": "2024-04-07 17:24:22",
       "earnedHardcoreAt": "2024-04-07 17:24:22"
     },
@@ -151,7 +151,7 @@
       "badge": "https://media.retroachievements.org/Badge/144700.png",
       "type": null,
       "displayOrder": 10,
-      "numAwarded": 789,
+      "numAwarded": 790,
       "numAwardedHardcore": 521,
       "earnedAt": "2024-04-07 21:47:41",
       "earnedHardcoreAt": "2024-04-07 21:47:41"
@@ -165,7 +165,7 @@
       "badge": "https://media.retroachievements.org/Badge/144701.png",
       "type": null,
       "displayOrder": 11,
-      "numAwarded": 778,
+      "numAwarded": 779,
       "numAwardedHardcore": 503,
       "earnedAt": "2024-04-07 21:50:33",
       "earnedHardcoreAt": "2024-04-07 21:50:33"
@@ -179,8 +179,8 @@
       "badge": "https://media.retroachievements.org/Badge/144702.png",
       "type": null,
       "displayOrder": 12,
-      "numAwarded": 2983,
-      "numAwardedHardcore": 1679,
+      "numAwarded": 2986,
+      "numAwardedHardcore": 1681,
       "earnedAt": "2024-04-06 19:06:52",
       "earnedHardcoreAt": "2024-04-06 19:06:52"
     },
@@ -193,7 +193,7 @@
       "badge": "https://media.retroachievements.org/Badge/144703.png",
       "type": null,
       "displayOrder": 13,
-      "numAwarded": 3680,
+      "numAwarded": 3681,
       "numAwardedHardcore": 2035,
       "earnedAt": "2024-04-06 19:20:36",
       "earnedHardcoreAt": "2024-04-06 19:20:36"
@@ -221,8 +221,8 @@
       "badge": "https://media.retroachievements.org/Badge/144705.png",
       "type": null,
       "displayOrder": 15,
-      "numAwarded": 2668,
-      "numAwardedHardcore": 1437,
+      "numAwarded": 2671,
+      "numAwardedHardcore": 1439,
       "earnedAt": "2024-04-07 21:52:53",
       "earnedHardcoreAt": "2024-04-07 21:52:53"
     },
@@ -235,8 +235,8 @@
       "badge": "https://media.retroachievements.org/Badge/144706.png",
       "type": null,
       "displayOrder": 16,
-      "numAwarded": 1177,
-      "numAwardedHardcore": 793,
+      "numAwarded": 1178,
+      "numAwardedHardcore": 794,
       "earnedAt": "2024-04-06 19:33:18",
       "earnedHardcoreAt": "2024-04-06 19:33:18"
     },
@@ -249,8 +249,8 @@
       "badge": "https://media.retroachievements.org/Badge/144707.png",
       "type": null,
       "displayOrder": 17,
-      "numAwarded": 1072,
-      "numAwardedHardcore": 691,
+      "numAwarded": 1073,
+      "numAwardedHardcore": 692,
       "earnedAt": "2024-04-07 15:38:15",
       "earnedHardcoreAt": "2024-04-07 15:38:15"
     },
@@ -263,8 +263,8 @@
       "badge": "https://media.retroachievements.org/Badge/144709.png",
       "type": null,
       "displayOrder": 19,
-      "numAwarded": 1205,
-      "numAwardedHardcore": 778,
+      "numAwarded": 1206,
+      "numAwardedHardcore": 779,
       "earnedAt": "2024-04-07 17:32:34",
       "earnedHardcoreAt": "2024-04-07 17:32:34"
     },
@@ -291,7 +291,7 @@
       "badge": "https://media.retroachievements.org/Badge/144711.png",
       "type": null,
       "displayOrder": 21,
-      "numAwarded": 512,
+      "numAwarded": 513,
       "numAwardedHardcore": 404,
       "earnedAt": "2024-04-07 20:43:27",
       "earnedHardcoreAt": "2024-04-07 20:43:27"
@@ -347,7 +347,7 @@
       "badge": "https://media.retroachievements.org/Badge/144715.png",
       "type": null,
       "displayOrder": 25,
-      "numAwarded": 335,
+      "numAwarded": 336,
       "numAwardedHardcore": 284,
       "earnedAt": "2024-04-08 12:41:01",
       "earnedHardcoreAt": "2024-04-08 12:41:01"
@@ -417,8 +417,8 @@
       "badge": "https://media.retroachievements.org/Badge/144720.png",
       "type": null,
       "displayOrder": 30,
-      "numAwarded": 1526,
-      "numAwardedHardcore": 929,
+      "numAwarded": 1530,
+      "numAwardedHardcore": 931,
       "earnedAt": "2024-04-07 10:18:35",
       "earnedHardcoreAt": "2024-04-07 10:18:35"
     },
@@ -445,7 +445,7 @@
       "badge": "https://media.retroachievements.org/Badge/144722.png",
       "type": null,
       "displayOrder": 32,
-      "numAwarded": 687,
+      "numAwarded": 688,
       "numAwardedHardcore": 512,
       "earnedAt": "2024-04-07 18:16:25",
       "earnedHardcoreAt": "2024-04-07 18:16:25"
@@ -501,7 +501,7 @@
       "badge": "https://media.retroachievements.org/Badge/144726.png",
       "type": null,
       "displayOrder": 36,
-      "numAwarded": 604,
+      "numAwarded": 606,
       "numAwardedHardcore": 440,
       "earnedAt": "2024-04-07 18:22:22",
       "earnedHardcoreAt": "2024-04-07 18:22:22"
@@ -567,12 +567,12 @@
       "title": "Power Outrage",
       "description": "Defeat ElecManV3 with a Busting Lv. S rating",
       "points": 10,
-      "trueRatio": 37,
+      "trueRatio": 36,
       "badge": "https://media.retroachievements.org/Badge/144731.png",
       "type": null,
       "displayOrder": 41,
-      "numAwarded": 361,
-      "numAwardedHardcore": 300,
+      "numAwarded": 363,
+      "numAwardedHardcore": 301,
       "earnedAt": "2024-04-08 16:36:09",
       "earnedHardcoreAt": "2024-04-08 16:36:09"
     },
@@ -613,7 +613,7 @@
       "badge": "https://media.retroachievements.org/Badge/144734.png",
       "type": null,
       "displayOrder": 44,
-      "numAwarded": 508,
+      "numAwarded": 509,
       "numAwardedHardcore": 394,
       "earnedAt": "2024-04-07 18:00:28",
       "earnedHardcoreAt": "2024-04-07 18:00:28"

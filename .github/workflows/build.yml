@@ -1,0 +1,28 @@
+# Type-checks and builds the site on every push and pull request, so the badge in the README
+# says whether main is publishable. Vercel does its own build on push; this is the early warning.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type-check
+        run: npm run check
+
+      - name: Build
+        run: npm run build

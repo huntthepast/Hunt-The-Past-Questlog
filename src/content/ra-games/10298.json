@@ -14,7 +14,7 @@
   "highestAwardKind": "mastered",
   "highestAwardDate": "2025-10-03T09:00:15+00:00",
   "playtimeSeconds": 10830,
-  "syncedAt": "2026-09-21T14:09:49.070Z",
+  "syncedAt": "2026-09-22T15:54:43.263Z",
   "achievements": [
     {
       "id": 51578,
@@ -35,7 +35,7 @@
       "title": "Tarzan, Son of Man",
       "description": "Complete levels 5 through 8 all in a row.",
       "points": 10,
-      "trueRatio": 21,
+      "trueRatio": 22,
       "badge": "https://media.retroachievements.org/Badge/53049.png",
       "type": null,
       "displayOrder": 0,
@@ -67,7 +67,7 @@
       "badge": "https://media.retroachievements.org/Badge/53051.png",
       "type": null,
       "displayOrder": 0,
-      "numAwarded": 1095,
+      "numAwarded": 1097,
       "numAwardedHardcore": 691,
       "earnedAt": "2025-10-03 05:32:18",
       "earnedHardcoreAt": "2025-10-03 05:32:18"
@@ -385,7 +385,7 @@
       "title": "Do Tip This Boat Over",
       "description": "In HARD MODE, get 100 percent in Level 11.",
       "points": 25,
-      "trueRatio": 103,
+      "trueRatio": 104,
       "badge": "https://media.retroachievements.org/Badge/53074.png",
       "type": null,
       "displayOrder": 0,
@@ -473,7 +473,7 @@
       "badge": "https://media.retroachievements.org/Badge/53080.png",
       "type": null,
       "displayOrder": 0,
-      "numAwarded": 557,
+      "numAwarded": 559,
       "numAwardedHardcore": 404,
       "earnedAt": "2025-10-03 05:33:33",
       "earnedHardcoreAt": "2025-10-03 05:33:33"
@@ -627,7 +627,7 @@
       "badge": "https://media.retroachievements.org/Badge/53091.png",
       "type": null,
       "displayOrder": 0,
-      "numAwarded": 1282,
+      "numAwarded": 1284,
       "numAwardedHardcore": 770,
       "earnedAt": "2025-10-03 05:31:03",
       "earnedHardcoreAt": "2025-10-03 05:31:03"

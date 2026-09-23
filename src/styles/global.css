@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@import "sweetalert2/dist/sweetalert2.css";
+@import "./swal.css";
 
 /* Design tokens. Everything else is plain Tailwind utilities. */
 @theme {

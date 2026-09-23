@@ -5,6 +5,10 @@
 @source "../public/index.html";
 @source "../public/app.js";
 
+/* Dialogs: SweetAlert2 plus the shared QuestLog theme (src/lib/dialogs.js sets the class names). */
+@import "../../node_modules/sweetalert2/dist/sweetalert2.css";
+@import "../../src/styles/swal.css";
+
 @theme {
   --font-display: "Pixelify Sans Variable", ui-monospace, "Cascadia Mono", monospace;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;

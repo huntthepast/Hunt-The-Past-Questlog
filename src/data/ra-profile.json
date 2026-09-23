@@ -1,17 +1,17 @@
 {
-  "syncedAt": "2026-09-21T14:09:49.070Z",
+  "syncedAt": "2026-09-22T15:54:43.263Z",
   "user": "huntthepast",
   "profileUrl": "https://retroachievements.org/user/huntthepast",
   "avatar": "https://media.retroachievements.org/UserPic/huntthepast.png",
   "memberSince": "2024-03-26 17:57:02",
   "motto": "Completing the mission",
-  "richPresence": "Banjo and Kazooie are in Treasure Trove Cove [🧩0/10] [🎵16/100] [💀0/10]",
+  "richPresence": "L11 Fighter, L11 Monk, L11 Red Wizard, L11 White Wizard are enjoying the Chocobo Forest upon the floating continent • 💰5,007",
   "points": 51571,
   "softcorePoints": 0,
   "truePoints": 257892,
-  "rank": 1735,
-  "totalRanked": 164902,
-  "lastGameId": 10210,
+  "rank": 1736,
+  "totalRanked": 165095,
+  "lastGameId": 5553,
   "stats": {
     "gamesPlayed": 74,
     "masteries": 66,
@@ -21,6 +21,18 @@
     "achievementsEarned": 5619
   },
   "recentlyPlayed": [
+    {
+      "gameId": 5553,
+      "title": "Final Fantasy III",
+      "consoleName": "NES/Famicom",
+      "imageIcon": "https://media.retroachievements.org/Images/089329.png",
+      "lastPlayed": "2026-09-22 11:50:34",
+      "numPossible": 90,
+      "numAchieved": 81,
+      "numAchievedHardcore": 81,
+      "possibleScore": 654,
+      "scoreAchieved": 564
+    },
     {
       "gameId": 10210,
       "title": "Banjo-Kazooie",
@@ -128,18 +140,6 @@
       "numAchievedHardcore": 106,
       "possibleScore": 1015,
       "scoreAchieved": 1015
-    },
-    {
-      "gameId": 32910,
-      "title": "Terraria [Subset - Completionist]",
-      "consoleName": "Standalone",
-      "imageIcon": "https://media.retroachievements.org/Images/107695.png",
-      "lastPlayed": "2026-03-21 14:36:43",
-      "numPossible": 330,
-      "numAchieved": 307,
-      "numAchievedHardcore": 307,
-      "possibleScore": 4300,
-      "scoreAchieved": 3640
     }
   ],
   "recentAchievements": [

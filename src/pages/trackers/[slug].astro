@@ -86,7 +86,7 @@ const jsonLd = breadcrumbJsonLd(Astro.site, [
           </span>
           <span x-show="mode === 'mine'" x-cloak>
             <span class="font-semibold text-zinc-100" x-text="myDone"></span> / {progress.total} done &middot; <span class="tabular-nums" x-text="myPct + '%'"></span>
-            <button type="button" class="ml-2 text-xs text-rose-300 hover:underline" @click="if (confirm('Clear your saved progress for this tracker?')) reset()">Reset</button>
+            <button type="button" class="ml-2 text-xs text-rose-300 hover:underline" @click="confirmReset()">Reset</button>
           </span>
         </div>
       </div>

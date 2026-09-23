@@ -51,7 +51,17 @@ const fmtDate = (value) => {
   return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString();
 };
 
-const confirmDiscard = (dirty) => !dirty || confirm('You have unsaved changes. Discard them?');
+/**
+ * SweetAlert2 dialogs. window.dialog is built from the shared module (src/lib/dialogs.js) by the
+ * module tag in index.html, which runs before Alpine starts - so it is always there when a handler fires.
+ */
+const confirmDiscard = async (dirty) =>
+  !dirty ||
+  window.dialog.danger('Discard unsaved changes?', {
+    text: 'Everything you changed since the last save is lost.',
+    confirmText: 'Discard',
+    cancelText: 'Keep editing',
+  });
 
 document.addEventListener('alpine:init', () => {
   /* ---------------- global store ---------------- */
@@ -233,15 +243,15 @@ document.addEventListener('alpine:init', () => {
       });
     },
 
-    create() {
-      if (!confirmDiscard(this.dirty)) return;
+    async create() {
+      if (!(await confirmDiscard(this.dirty))) return;
       this.selected = null;
       this.isNew = true;
       this.setForm(blankGame());
     },
 
     async open(slug) {
-      if (!confirmDiscard(this.dirty)) return;
+      if (!(await confirmDiscard(this.dirty))) return;
       try {
         const g = await api('GET', `/api/games/${slug}`);
         this.selected = slug;
@@ -299,8 +309,8 @@ document.addEventListener('alpine:init', () => {
       return this.form.subsets.find((row) => Number(row.raGameId) === Number(raGameId));
     },
 
-    close() {
-      if (!confirmDiscard(this.dirty)) return;
+    async close() {
+      if (!(await confirmDiscard(this.dirty))) return;
       this.form = null;
       this.selected = null;
       this.isNew = false;
@@ -327,7 +337,7 @@ document.addEventListener('alpine:init', () => {
 
     async remove() {
       if (!this.selected) return;
-      if (!confirm(`Delete "${this.form.title}"? This removes src/content/games/${this.selected}.json.`)) return;
+      if (!(await window.dialog.danger(`Delete "${this.form.title}"?`, { text: `This removes src/content/games/${this.selected}.json.` }))) return;
       try {
         await api('DELETE', `/api/games/${this.selected}`);
         Alpine.store('app').toast('Game deleted');
@@ -561,8 +571,8 @@ Step by step through the area.
       });
     },
 
-    create() {
-      if (!confirmDiscard(this.dirty)) return;
+    async create() {
+      if (!(await confirmDiscard(this.dirty))) return;
       this.selected = null;
       this.isNew = true;
       this.preview = false;
@@ -572,7 +582,7 @@ Step by step through the area.
     },
 
     async open(slug) {
-      if (!confirmDiscard(this.dirty)) return;
+      if (!(await confirmDiscard(this.dirty))) return;
       try {
         const g = await api('GET', `/api/guides/${slug}`);
         this.selected = slug;
@@ -598,8 +608,8 @@ Step by step through the area.
       }
     },
 
-    close() {
-      if (!confirmDiscard(this.dirty)) return;
+    async close() {
+      if (!(await confirmDiscard(this.dirty))) return;
       this.form = null;
       this.selected = null;
       this.dirty = false;
@@ -631,7 +641,8 @@ Step by step through the area.
     },
 
     async remove() {
-      if (!this.selected || !confirm(`Delete guide "${this.form.title}"? Its images in public/guides/${this.selected}/ are deleted too.`)) return;
+      if (!this.selected) return;
+      if (!(await window.dialog.danger(`Delete guide "${this.form.title}"?`, { text: `Its images in public/guides/${this.selected}/ are deleted too.` }))) return;
       try {
         await api('DELETE', `/api/guides/${this.selected}`);
         Alpine.store('app').toast('Guide deleted');
@@ -828,8 +839,8 @@ Step by step through the area.
       this.insert(`${prefix}${text}\n\n`);
     },
 
-    insertTemplate() {
-      if (this.form.body.trim() && !confirm('Insert the walkthrough skeleton at the cursor? Your existing text is kept.')) return;
+    async insertTemplate() {
+      if (this.form.body.trim() && !(await window.dialog.confirm('Insert the walkthrough skeleton?', { text: 'It goes in at the cursor; your existing text is kept.', confirmText: 'Insert' }))) return;
       const slug = this.isNew ? this.slugPreview || 'your-guide' : this.selected;
       this.insertBlock(WALKTHROUGH_TEMPLATE.replaceAll('{{slug}}', slug).trimEnd());
     },
@@ -878,7 +889,7 @@ Step by step through the area.
     },
 
     async deleteAttachment(file) {
-      if (!confirm(`Delete ${file.name}? Any place in the text or gallery that uses it will break.`)) return;
+      if (!(await window.dialog.danger(`Delete ${file.name}?`, { text: 'Any place in the text or gallery that uses it will break.' }))) return;
       try {
         const result = await api('DELETE', `/api/guides/${this.selected}/attachments/${encodeURIComponent(file.name)}`);
         this.attachments = result.files;
@@ -1011,8 +1022,8 @@ Step by step through the area.
       });
     },
 
-    create() {
-      if (!confirmDiscard(this.dirty)) return;
+    async create() {
+      if (!(await confirmDiscard(this.dirty))) return;
       this.selected = null;
       this.isNew = true;
       const form = blankTracker();
@@ -1045,7 +1056,7 @@ Step by step through the area.
     },
 
     async open(slug) {
-      if (!confirmDiscard(this.dirty)) return;
+      if (!(await confirmDiscard(this.dirty))) return;
       try {
         const t = await api('GET', `/api/trackers/${slug}`);
         this.selected = slug;
@@ -1064,8 +1075,8 @@ Step by step through the area.
       }
     },
 
-    close() {
-      if (!confirmDiscard(this.dirty)) return;
+    async close() {
+      if (!(await confirmDiscard(this.dirty))) return;
       this.form = null;
       this.selected = null;
       this.dirty = false;
@@ -1077,8 +1088,8 @@ Step by step through the area.
       this.form.sections.push(section);
       this.jumpTo(section);
     },
-    removeSection(i) {
-      if (this.form.sections[i].items.length && !confirm('Remove this section and all its items?')) return;
+    async removeSection(i) {
+      if (this.form.sections[i].items.length && !(await window.dialog.danger(`Remove "${this.form.sections[i].title || `section ${i + 1}`}"?`, { text: `Its ${this.form.sections[i].items.length} item(s) go with it.`, confirmText: 'Remove' }))) return;
       this.form.sections.splice(i, 1);
     },
     move(list, from, to) {
@@ -1111,9 +1122,9 @@ Step by step through the area.
       return section.items.filter((item) => item.done).length;
     },
     /** Marks every item of one section done (or not). Clearing asks first. */
-    setSectionDone(section, done) {
+    async setSectionDone(section, done) {
       const ticked = this.sectionDone(section);
-      if (!done && ticked > 0 && !confirm(`Untick ${ticked === 1 ? 'the 1 item' : `all ${ticked} items`} in "${section.title || 'this section'}"?`)) return;
+      if (!done && ticked > 0 && !(await window.dialog.confirm(`Untick ${ticked === 1 ? 'the 1 item' : `all ${ticked} items`}?`, { text: `In "${section.title || 'this section'}".`, confirmText: 'Untick', icon: 'warning' }))) return;
       for (const item of section.items) item.done = done;
     },
 
@@ -1141,7 +1152,8 @@ Step by step through the area.
     },
 
     async remove() {
-      if (!this.selected || !confirm(`Delete tracker "${this.form.title}"?`)) return;
+      if (!this.selected) return;
+      if (!(await window.dialog.danger(`Delete tracker "${this.form.title}"?`, { text: `This removes src/content/trackers/${this.selected}.json.` }))) return;
       try {
         await api('DELETE', `/api/trackers/${this.selected}`);
         Alpine.store('app').toast('Tracker deleted');
@@ -1230,15 +1242,15 @@ Step by step through the area.
       });
     },
 
-    create() {
-      if (!confirmDiscard(this.dirty)) return;
+    async create() {
+      if (!(await confirmDiscard(this.dirty))) return;
       this.selected = null;
       this.isNew = true;
       this.setForm({ ...blankSet(), title: 'GOG' });
     },
 
     async open(slug) {
-      if (!confirmDiscard(this.dirty)) return;
+      if (!(await confirmDiscard(this.dirty))) return;
       try {
         const set = await api('GET', `/api/sets/${slug}`);
         this.selected = slug;
@@ -1257,8 +1269,8 @@ Step by step through the area.
       }
     },
 
-    close() {
-      if (!confirmDiscard(this.dirty)) return;
+    async close() {
+      if (!(await confirmDiscard(this.dirty))) return;
       this.form = null;
       this.selected = null;
       this.isNew = false;
@@ -1292,7 +1304,7 @@ Step by step through the area.
 
     async remove() {
       if (!this.selected) return;
-      if (!confirm(`Delete the "${this.form.title}" set of ${this.gameTitle(this.form.game)}? This removes src/content/achievement-sets/${this.selected}.json.`)) return;
+      if (!(await window.dialog.danger(`Delete the "${this.form.title}" set of ${this.gameTitle(this.form.game)}?`, { text: `This removes src/content/achievement-sets/${this.selected}.json.` }))) return;
       try {
         await api('DELETE', `/api/sets/${this.selected}`);
         Alpine.store('app').toast('Set deleted');
@@ -1342,9 +1354,9 @@ Step by step through the area.
       a.unlockedAt = a.unlockedAt ? '' : today();
     },
 
-    setAllUnlocked(on) {
+    async setAllUnlocked(on) {
       const list = this.form.achievements;
-      if (!on && list.some((a) => a.unlockedAt) && !confirm('Untick every achievement in this set?')) return;
+      if (!on && list.some((a) => a.unlockedAt) && !(await window.dialog.confirm('Untick every achievement in this set?', { text: 'The unlock dates you typed are cleared.', confirmText: 'Untick', icon: 'warning' }))) return;
       for (const a of list) a.unlockedAt = on ? a.unlockedAt || today() : '';
     },
 
@@ -1514,8 +1526,11 @@ Step by step through the area.
 
     async mergeSubset(entry) {
       const hours = entry.hoursPlayed ? `, ${entry.hoursPlayed} h` : '';
-      const msg = `Fold "${entry.title}" into "${entry.parent.title}"?\n\nIts achievements stay, shown as a tab on that game's page. The separate library entry (status ${entry.status}${hours}) is removed; the parent is not changed.`;
-      if (!confirm(msg)) return;
+      const merged = await window.dialog.confirm(`Fold "${entry.title}" into "${entry.parent.title}"?`, {
+        text: `Its achievements stay, shown as a tab on that game's page.\n\nThe separate library entry (status ${entry.status}${hours}) is removed, and its rating, hours and dates move to the parent. The parent's own stats are not changed.`,
+        confirmText: 'Merge',
+      });
+      if (!merged) return;
       this.merging = entry.slug;
       try {
         const result = await api('POST', '/api/ra/subsets/merge', { slug: entry.slug });
@@ -1716,7 +1731,7 @@ Step by step through the area.
     },
 
     async followRa() {
-      if (!confirm('Discard the manual arrangement and follow the order from your RetroAchievements profile?')) return;
+      if (!(await window.dialog.confirm('Follow the RetroAchievements order?', { text: 'Your manual arrangement of the trophy shelf is discarded.', confirmText: 'Follow RA', icon: 'warning' }))) return;
       this.saving = true;
       try {
         const state = await api('PUT', '/api/shelf', { order: [], hidden: [] });
@@ -1828,7 +1843,11 @@ Step by step through the area.
     },
 
     async publish() {
-      if (!confirm(`Commit all changes with message "${this.message}" and push to ${this.git?.remote || 'origin'}?`)) return;
+      const go = await window.dialog.confirm('Commit and push everything?', {
+        text: `Message: "${this.message}"\n\nPushing to ${this.git?.remote || 'origin'}. Vercel rebuilds the site straight after.`,
+        confirmText: 'Commit & push',
+      });
+      if (!go) return;
       this.publishing = true;
       this.publishResult = null;
       try {

@@ -1,4 +1,11 @@
 import type { Alpine } from 'alpinejs';
+// JS-only build: the styles come from src/styles/swal.css through global.css, so they load in a
+// predictable order instead of being injected at runtime.
+import Swal from 'sweetalert2/dist/sweetalert2.esm.js';
+import { createDialogs } from './lib/dialogs.js';
+
+/** SweetAlert2 dialogs in the site's colours, shared with the local admin. */
+const dialog = createDialogs(Swal);
 
 /**
  * Alpine components used by the public site.
@@ -768,10 +775,17 @@ export default (Alpine: Alpine) => {
     },
 
     /** Ticks (or unticks) every item of one checklist block. Unticking asks first, since it throws away ticks. */
-    setBlock(block: ChecklistBlock, checked: boolean) {
+    async setBlock(block: ChecklistBlock, checked: boolean) {
       const inputs = Array.from(block.list.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
       const ticked = inputs.filter((b) => b.checked).length;
-      if (!checked && ticked > 0 && !confirm(`Untick ${ticked === 1 ? 'the 1 item' : `all ${ticked} items`} in this checklist?`)) return;
+      if (!checked && ticked > 0) {
+        const ok = await dialog.confirm(`Untick ${ticked === 1 ? 'the 1 item' : `all ${ticked} items`}?`, {
+          text: 'Only your own ticks in this browser are cleared.',
+          confirmText: 'Untick',
+          icon: 'warning',
+        });
+        if (!ok) return;
+      }
       for (const box of inputs) {
         box.checked = checked;
         this.state[this.boxes.indexOf(box)] = checked;
@@ -898,11 +912,18 @@ export default (Alpine: Alpine) => {
     },
 
     /** Ticks (or unticks) every item of one section in the reader's own progress. Unticking asks first. */
-    setSection(index: number, done: boolean) {
+    async setSection(index: number, done: boolean) {
       const section = options.sections?.[index];
       if (this.mode !== 'mine' || !section) return;
       const ticked = this.sectionDone(index);
-      if (!done && ticked > 0 && !confirm(`Untick ${ticked === 1 ? 'the 1 item' : `all ${ticked} items`} in this section?`)) return;
+      if (!done && ticked > 0) {
+        const ok = await dialog.confirm(`Untick ${ticked === 1 ? 'the 1 item' : `all ${ticked} items`}?`, {
+          text: 'Only your own ticks in this browser are cleared.',
+          confirmText: 'Untick',
+          icon: 'warning',
+        });
+        if (!ok) return;
+      }
       for (const id of section.ids) {
         if (done) this.mine[id] = true;
         else delete this.mine[id];
@@ -948,6 +969,15 @@ export default (Alpine: Alpine) => {
     reset() {
       this.mine = {};
       this.persist();
+    },
+
+    /** "Reset" next to the progress counter: throws away every tick this browser saved. */
+    async confirmReset() {
+      const ok = await dialog.danger('Clear your progress for this tracker?', {
+        text: 'Your ticks are saved in this browser only, and they are gone for good. The owner\'s progress is not touched.',
+        confirmText: 'Clear',
+      });
+      if (ok) this.reset();
     },
 
     persist() {

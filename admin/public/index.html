@@ -8,6 +8,12 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/styles.css" />
   <script src="/vendor/marked.js"></script>
+  <script src="/vendor/sweetalert2.js"></script>
+  <script type="module">
+    // window.dialog replaces confirm()/alert()/prompt(); the same helpers run on the public site.
+    import { createDialogs } from '/vendor/dialogs.js';
+    window.dialog = createDialogs(window.Swal);
+  </script>
   <script src="/app.js"></script>
   <script defer src="/vendor/alpine.js"></script>
 </head>

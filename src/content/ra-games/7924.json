@@ -14,7 +14,7 @@
   "highestAwardKind": "mastered",
   "highestAwardDate": "2025-07-29T08:04:30+00:00",
   "playtimeSeconds": 41111,
-  "syncedAt": "2026-09-21T14:09:49.070Z",
+  "syncedAt": "2026-09-22T15:54:43.263Z",
   "achievements": [
     {
       "id": 199873,
@@ -25,8 +25,8 @@
       "badge": "https://media.retroachievements.org/Badge/221990.png",
       "type": null,
       "displayOrder": 0,
-      "numAwarded": 282,
-      "numAwardedHardcore": 272,
+      "numAwarded": 283,
+      "numAwardedHardcore": 273,
       "earnedAt": "2025-07-25 16:05:56",
       "earnedHardcoreAt": "2025-07-25 16:05:56"
     },
@@ -39,8 +39,8 @@
       "badge": "https://media.retroachievements.org/Badge/221991.png",
       "type": null,
       "displayOrder": 0,
-      "numAwarded": 262,
-      "numAwardedHardcore": 252,
+      "numAwarded": 263,
+      "numAwardedHardcore": 253,
       "earnedAt": "2025-07-28 07:14:44",
       "earnedHardcoreAt": "2025-07-28 07:14:44"
     },
@@ -217,7 +217,7 @@
       "title": "Open Sesame",
       "description": "Defeat the Lich and open the pathway",
       "points": 25,
-      "trueRatio": 96,
+      "trueRatio": 97,
       "badge": "https://media.retroachievements.org/Badge/222004.png",
       "type": null,
       "displayOrder": 0,

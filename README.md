@@ -1,11 +1,33 @@
+<div align="center">
+
 # QuestLog
+
+**A self-hosted game journal: library, progress, RetroAchievements + Steam achievements, and your own walkthroughs.**
+Static site, no backend, edited through a local-only admin that never leaves your machine.
+
+[**Live site**](https://hunt-the-past-questlog.vercel.app) ·
+[Screenshots](#screenshots) ·
+[Quick start](#quick-start) ·
+[How it works](#where-the-data-lives)
+
+[![Build](https://github.com/huntthepast/Hunt-The-Past-Questlog/actions/workflows/build.yml/badge.svg)](https://github.com/huntthepast/Hunt-The-Past-Questlog/actions/workflows/build.yml)
+[![Code: MIT](https://img.shields.io/badge/code-MIT-amber?color=f59e0b)](LICENSE)
+[![Content: CC BY 4.0](https://img.shields.io/badge/content-CC%20BY%204.0-amber?color=f59e0b)](LICENSE-CONTENT.md)
+![Astro](https://img.shields.io/badge/Astro-7-BC52EE?logo=astro&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss&logoColor=white)
+![Alpine.js](https://img.shields.io/badge/Alpine.js-3-77C1D2?logo=alpinedotjs&logoColor=white)
+
+<img src="docs/screenshots/library.png" alt="The library page: cover grid with status badges and filters" width="820">
+
+</div>
 
 Hunt the Past's game journal: a public, fully static website (Astro + Tailwind CSS v4 + Alpine.js) that tracks
 
 - the games I own and have played (library),
 - the games I want to play (wishlist),
 - my all-time favorites,
-- my RetroAchievements profile, unlocks, masteries and per-game achievement progress,
+- my RetroAchievements profile, unlocks, masteries and per-game achievement progress - plus Steam and hand-made
+  achievement sets, shown as tabs on the same game page,
 - where every game stands: playing, on hold, played, beaten, completed, mastered, dropped,
 - my own walkthroughs, cheat lists, tips, reviews, notes and missable / collectible trackers.
 
@@ -13,14 +35,23 @@ The public site has **no backend**. Everything it shows is read at build time fr
 repository, so it deploys to Vercel as plain static files.
 
 Editing happens through a **local-only admin** (`npm run admin`) that runs on your own computer, writes those files for
-you, syncs RetroAchievements, and can commit + push when you are ready. It binds to `127.0.0.1`, is never deployed,
-and is the only place the RetroAchievements API key is ever used.
+you, syncs RetroAchievements and Steam, and can commit + push when you are ready. It binds to `127.0.0.1`, is never
+deployed, and is the only place your API keys are ever used.
 
 ```
  you  ──>  local admin (127.0.0.1:3333)  ──writes──>  src/content/*, src/data/*  ──git push──>  GitHub  ──>  Vercel (astro build)
                       │
-                      └── RetroAchievements API (key stays in .env on your machine)
+                      └── RetroAchievements / Steam APIs (keys stay in .env on your machine)
 ```
+
+## Screenshots
+
+| Game page: achievement sets as tabs | Achievements: profile, shelf, per-game progress |
+| --- | --- |
+| [![Game page](docs/screenshots/game.png)](docs/screenshots/game.png) | [![Achievements page](docs/screenshots/achievements.png)](docs/screenshots/achievements.png) |
+| **Guides: sortable tables, checklists, sidebar** | **Progress: status board with filters** |
+| [![Guide page](docs/screenshots/guide.png)](docs/screenshots/guide.png) | [![Progress page](docs/screenshots/progress.png)](docs/screenshots/progress.png) |
+
 
 ## Quick start
 
@@ -276,6 +307,14 @@ images point at it.
 
 `admin/` is listed in `.vercelignore` and is never started by Vercel: the deployment is just the `dist/` folder.
 
+## Dialogs
+
+Confirmations use [SweetAlert2](https://sweetalert2.github.io/) instead of the browser's own `confirm()`, on the site
+and in the admin alike. The helpers live in [`src/lib/dialogs.js`](src/lib/dialogs.js) (`confirm`, `danger`, `alert`,
+`prompt`, `toast`) and the look in [`src/styles/swal.css`](src/styles/swal.css); the admin loads the same module from
+`/vendor/dialogs.js`, so both sides stay identical. Destructive actions get the red `danger` variant with the cancel
+button focused.
+
 ## Security notes on the admin
 
 - Listens on `127.0.0.1` only; requests with a foreign `Host` header are rejected (DNS-rebinding guard) and
@@ -297,6 +336,28 @@ src/
   lib/                 constants.js (shared vocabulary), data.ts (queries/formatting), ui.ts (color maps)
   layouts/, components/, pages/, styles/global.css
 ```
+
+## Making the repository findable
+
+Everything below lives in GitHub's settings rather than in the code, so it has to be done once, by hand:
+
+1. **About box** (repo home page, the gear next to "About"):
+   - Description: `A self-hosted game journal: library, progress, RetroAchievements + Steam achievements and your own
+     walkthroughs. Static Astro site, local-only admin, no backend.`
+   - Website: `https://hunt-the-past-questlog.vercel.app`
+   - Topics: `astro`, `tailwindcss`, `alpinejs`, `retroachievements`, `steam-api`, `game-tracker`,
+     `game-collection`, `backlog`, `walkthroughs`, `static-site`, `self-hosted`, `gaming`
+   - Tick "Releases" and "Packages" off if they stay empty; leave "Deployments" on (Vercel fills it).
+2. **Social preview** (Settings -> General -> Social preview -> Edit): upload
+   [`docs/social-preview.png`](docs/social-preview.png). That is the card people see when the link is shared on
+   Discord, Reddit, X or Bluesky; without it they get a grey placeholder.
+3. **Pin the repository** on your GitHub profile, and put the live URL in your profile bio and your
+   RetroAchievements profile - a couple of real links matter more than anything on-page.
+4. Optional: a short post in the places where this kind of thing gets found - r/selfhosted, r/retrogaming,
+   the RetroAchievements Discord, the Astro "Showcase" channel. Lead with a screenshot.
+
+The screenshots in this file are regenerated with a headless browser against `npm run preview`; the social card is
+composed from `docs/screenshots/library.png`.
 
 ## License
 

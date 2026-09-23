@@ -6,6 +6,26 @@
   "description": "Hunt the Past's QuestLog — a static game journal (library, progress, achievements, guides) with a local-only admin.",
   "author": "Hunt the Past",
   "license": "MIT",
+  "homepage": "https://hunt-the-past-questlog.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huntthepast/Hunt-The-Past-Questlog.git"
+  },
+  "bugs": {
+    "url": "https://github.com/huntthepast/Hunt-The-Past-Questlog/issues"
+  },
+  "keywords": [
+    "astro",
+    "tailwindcss",
+    "alpinejs",
+    "retroachievements",
+    "steam-api",
+    "game-collection",
+    "backloggery-alternative",
+    "game-tracker",
+    "walkthroughs",
+    "static-site"
+  ],
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -24,6 +44,7 @@
     "alpinejs": "^3.17.3",
     "astro": "^7.3.3",
     "marked": "^18.0.13",
+    "sweetalert2": "^11.26.25",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {

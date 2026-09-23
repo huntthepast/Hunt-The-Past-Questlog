@@ -531,6 +531,9 @@ async function sendFile(c, file) {
 const VENDOR = {
   'alpine.js': path.join(PATHS.nodeModules, 'alpinejs', 'dist', 'cdn.min.js'),
   'marked.js': path.join(PATHS.nodeModules, 'marked', 'lib', 'marked.umd.js'),
+  'sweetalert2.js': path.join(PATHS.nodeModules, 'sweetalert2', 'dist', 'sweetalert2.min.js'),
+  // Shared with the public site so both look the same (see src/lib/dialogs.js).
+  'dialogs.js': path.join(PATHS.root, 'src', 'lib', 'dialogs.js'),
 };
 app.get('/vendor/:name', (c) => {
   const file = VENDOR[c.req.param('name')];

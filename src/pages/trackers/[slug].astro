@@ -9,6 +9,7 @@ import ProgressBar from '../../components/ProgressBar.astro';
 import GuideHub from '../../components/GuideHub.astro';
 import SidebarToolbar from '../../components/SidebarToolbar.astro';
 import DrawerHeader from '../../components/DrawerHeader.astro';
+import Sources from '../../components/Sources.astro';
 import { allTrackers, allGuides, guidesForGame, trackersForGame, trackerProgress, platformOf, formatDate, site } from '../../lib/data';
 import { trackerTypeById } from '../../lib/constants.js';
 import { trackerSeo, breadcrumbJsonLd } from '../../lib/seo';
@@ -214,6 +215,8 @@ const jsonLd = breadcrumbJsonLd(Astro.site, [
             ))
           }
         </div>
+
+        <Sources sources={d.sources} title={d.title} path={`/trackers/${tracker.id}`} />
 
         <p class="mt-8 text-xs text-zinc-500">Updated {formatDate(d.updatedAt)}</p>
       </div>

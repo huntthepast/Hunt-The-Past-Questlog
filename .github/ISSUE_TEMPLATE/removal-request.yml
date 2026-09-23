@@ -1,0 +1,61 @@
+name: Removal request
+description: Ask for material of yours to be taken off the site
+title: "Removal request: "
+# Applied server-side when the issue is created. Unlike the ?labels= query parameter, this does not
+# need the reporter to have write access - which matters, because the people who file these never do.
+labels: ["removal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If something on QuestLog is yours and you would rather it was not there, this is all it takes.
+        You do not have to prove ownership, cite a law, or send anything formal - asking is enough, and the
+        material comes down first rather than being argued about.
+
+        **This issue will be public.** The page address and what the material is are enough to act on, so
+        leave out anything you would rather not post.
+
+  - type: input
+    id: page
+    attributes:
+      label: Page on the site
+      description: The address of the page the material appears on.
+      placeholder: https://hunt-the-past-questlog.vercel.app/guides/...
+    validations:
+      required: true
+
+  - type: textarea
+    id: material
+    attributes:
+      label: What on that page is yours
+      description: A map, a table, a screenshot, a paragraph - whatever it is, and roughly where on the page.
+    validations:
+      required: true
+
+  - type: input
+    id: connection
+    attributes:
+      label: How you are connected to it
+      description: Author, publisher, the site that hosts it, or acting on their behalf.
+      placeholder: I drew these maps / I run the archive they are hosted on
+    validations:
+      required: true
+
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: What would you like to happen
+      options:
+        - Take it down
+        - Leave it, but credit it differently
+        - Not sure - I would rather talk about it first
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Optional. A link to the original, how you would prefer to be credited, anything that helps.
+    validations:
+      required: false

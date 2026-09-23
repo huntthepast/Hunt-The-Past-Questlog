@@ -1,0 +1,269 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Icon from '../components/Icon.astro';
+import EmptyState from '../components/EmptyState.astro';
+import { site, allSources, removalRequest } from '../lib/data';
+import { RA_SITE } from '../lib/constants.js';
+import { breadcrumbJsonLd } from '../lib/seo';
+
+const sources = await allSources();
+const request = removalRequest();
+
+/** Page chips shown per source before the rest fold behind a "+N more" button. */
+const PAGES_SHOWN = 8;
+/** Sources needed before the search box is worth showing; below this, reading the list is faster. */
+const FILTER_FROM = 8;
+
+// The data feeds the whole site rather than one page, so they are credited here by hand.
+const steamSets = Object.keys(import.meta.glob('/src/content/achievement-sets/*.json')).length
+  ? (await getCollection('achievementSets')).filter((set) => set.data.source === 'steam')
+  : [];
+const siteWide = [
+  {
+    label: 'RetroAchievements',
+    url: RA_SITE,
+    note: 'Achievement lists, badge images, points and unlock dates come from the RetroAchievements Web API. The achievements themselves were designed by the set authors credited on each set.',
+  },
+  ...(steamSets.length
+    ? [
+        {
+          label: 'Steam',
+          url: 'https://store.steampowered.com',
+          note: 'Achievement names, icons and global unlock rates for Steam games come from the Steam Web API. They belong to Valve and the game publishers.',
+        },
+      ]
+    : []),
+  {
+    label: 'Game publishers and developers',
+    note: 'Game titles, box art, screenshots and logos are used to identify the games I write about and to comment on them. They belong to their publishers, who have no connection to this site.',
+  },
+];
+
+const jsonLd = breadcrumbJsonLd(Astro.site, [
+  { name: 'Home', path: '/' },
+  { name: 'Credits', path: '/credits' },
+]);
+---
+
+<Base
+  title="Credits & removal requests"
+  description="Where the material on this site came from, and how to ask for something of yours to be taken down."
+  jsonLd={jsonLd}
+>
+  <SectionHeading level="h1" eyebrow="Attribution" title="Credits & removal requests">
+    <p class="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-400">
+      This is a personal game journal, and some of what makes it useful was made by other people: maps drawn by
+      fans, item tables compiled over years, wikis, achievement sets. Everything borrowed is credited on the page
+      that uses it and listed below. If something here is yours and you want it gone, there is a link for that.
+    </p>
+  </SectionHeading>
+
+  <!-- First on the page on purpose: someone who came here to complain should not have to scroll. -->
+  <section id="removal" class="scroll-mt-24">
+    <div class="card border-amber-500/30 bg-amber-500/[0.04] p-5 sm:p-6">
+      <h2 class="h-display flex items-center gap-2 text-2xl">
+        <Icon name="flag" class="size-5 text-amber-400" />
+        Ask for something to be removed
+      </h2>
+      <p class="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-300">
+        If you made something that appears on this site - a map, a table, a screenshot, a piece of writing - and you
+        would rather it was not here, tell me and it comes down. You do not have to prove ownership, quote a law, or
+        send anything formal. Asking is enough.
+      </p>
+
+      <div class="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]">
+        <div>
+          <p class="eyebrow mb-2">Include if you can</p>
+          <ul class="space-y-1.5 text-sm text-zinc-400">
+            <li class="flex gap-2"><span class="mt-2 size-1 shrink-0 rounded-full bg-amber-400/60" aria-hidden="true"></span>The address of the page on this site.</li>
+            <li class="flex gap-2"><span class="mt-2 size-1 shrink-0 rounded-full bg-amber-400/60" aria-hidden="true"></span>Which part of it is yours.</li>
+            <li class="flex gap-2"><span class="mt-2 size-1 shrink-0 rounded-full bg-amber-400/60" aria-hidden="true"></span>How you are connected to it - author, publisher, or acting for them.</li>
+            <li class="flex gap-2"><span class="mt-2 size-1 shrink-0 rounded-full bg-amber-400/60" aria-hidden="true"></span>Whether you want it removed, or only credited differently.</li>
+          </ul>
+          <p class="mt-4 text-xs leading-relaxed text-zinc-500">
+            I read these myself, so give me a few days. The page comes down or the material is stripped out of it
+            first; anything we need to sort out afterwards can wait until it is gone. The site is rebuilt from a
+            git repository, so a removal also takes it out of the next build rather than leaving it cached.
+          </p>
+        </div>
+
+        <div class="lg:border-l lg:border-zinc-800 lg:pl-5">
+          <p class="eyebrow mb-2">Send it to</p>
+          {
+            request.kind === 'email' ? (
+              <a href={request.href} class="btn btn-accent w-full justify-center">
+                <Icon name="mail" class="size-4" />
+                {request.label}
+              </a>
+            ) : (
+              <a href={request.href} target="_blank" rel="noopener" class="btn btn-accent w-full justify-center">
+                <Icon name="flag" class="size-4" />
+                Open a removal request
+              </a>
+            )
+          }
+          <p class="mt-3 text-xs leading-relaxed text-zinc-500">
+            {
+              request.kind === 'email'
+                ? 'The link opens your mail app with the subject and questions already filled in - delete whatever does not apply.'
+                : 'The link opens a pre-filled issue on the repository that builds this site. It is public, so leave out anything you would rather not post.'
+            }
+          </p>
+          <p class="mt-3 text-xs leading-relaxed text-zinc-500">
+            Every guide that uses outside material also has this link at the bottom, already pointing at that page.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-12">
+    <SectionHeading level="h2" eyebrow="Policy" title="How I use other people's material" />
+    <ul class="mt-4 grid gap-3 sm:grid-cols-2">
+      <li class="card p-4 text-sm text-zinc-400">
+        <span class="mb-1 block font-medium text-zinc-100">Link, don't rehost</span>
+        Where the original is online and stays online, I link to it instead of copying it. The Dragon Warrior map
+        guide is a list of links to the archive that hosts them, not a copy of the maps.
+      </li>
+      <li class="card p-4 text-sm text-zinc-400">
+        <span class="mb-1 block font-medium text-zinc-100">Credit on the page itself</span>
+        Anything borrowed is named at the bottom of the page that uses it, with a link back, so nobody has to dig
+        through a licence file to find out who made it.
+      </li>
+      <li class="card p-4 text-sm text-zinc-400">
+        <span class="mb-1 block font-medium text-zinc-100">Facts get rewritten</span>
+        Prices, drop rates and locations are facts and cannot be owned, but someone still did the work of
+        collecting them. Tables here are re-typed and re-worded, and the compiler is credited anyway.
+      </li>
+      <li class="card p-4 text-sm text-zinc-400">
+        <span class="mb-1 block font-medium text-zinc-100">Removal beats argument</span>
+        If a source would rather not appear here, that is the end of it. I would rather lose a page than keep
+        something its author does not want reproduced.
+      </li>
+    </ul>
+  </section>
+
+  <section class="mt-12">
+    <SectionHeading level="h2" eyebrow="Used across the site" title="Data sources" />
+    <ul class="mt-4 space-y-3">
+      {
+        siteWide.map((source) => (
+          <li class="card p-4">
+            {source.url ? (
+              <a href={source.url} target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-medium text-amber-400 hover:underline">
+                {source.label} <Icon name="external" class="size-3.5" />
+              </a>
+            ) : (
+              <span class="font-medium text-zinc-100">{source.label}</span>
+            )}
+            <p class="mt-1 text-sm leading-relaxed text-zinc-400">{source.note}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="mt-12">
+    <SectionHeading level="h2" eyebrow="Used on single pages" title="Sources by page">
+      <p class="mt-2 text-sm text-zinc-400">
+        {
+          sources.length > 0
+            ? 'Each guide or tracker that builds on someone else’s work names its sources here and at the bottom of the page.'
+            : 'No page currently declares outside sources. When one does, it is listed here automatically.'
+        }
+      </p>
+    </SectionHeading>
+    {
+      sources.length > 0 && (
+        <div x-data="listFilter">
+          {/* The list grows by distinct source, which is slow - the same places get cited over and over.
+              The search box only appears once there are enough entries for scanning to beat reading. */}
+          {sources.length >= FILTER_FROM && (
+            <div class="card mb-4 p-3">
+              <label class="relative block">
+                <span class="sr-only">Search sources</span>
+                <Icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+                <input type="search" x-model.debounce.150ms="q" placeholder="Search by source, licence or the page that used it..." class="input pl-9" />
+              </label>
+              <p class="mt-3 border-t border-zinc-800 pt-2.5 text-xs text-zinc-500">
+                Showing <span class="font-semibold text-zinc-300" x-text="visible">{sources.length}</span> of <span x-text="total">{sources.length}</span> sources
+                <button type="button" class="ml-2 text-amber-400 hover:underline" x-show="active" x-cloak @click="reset()">
+                  Clear
+                </button>
+              </p>
+            </div>
+          )}
+
+          <ul class="space-y-3">
+            {sources.map((source) => (
+              <li class="card p-4" data-item data-search={[source.label, source.url, source.license, source.note, ...source.pages.map((p) => p.title)].filter(Boolean).join(' ')}>
+                <div class="flex flex-wrap items-baseline gap-2">
+                  {source.url ? (
+                    <a href={source.url} target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-medium text-amber-400 hover:underline">
+                      {source.label} <Icon name="external" class="size-3.5" />
+                    </a>
+                  ) : (
+                    <span class="font-medium text-zinc-100">{source.label}</span>
+                  )}
+                  {source.license && <span class="chip bg-zinc-800 text-zinc-400 ring-zinc-700">{source.license}</span>}
+                </div>
+                {source.note && <p class="mt-1 text-sm leading-relaxed text-zinc-400">{source.note}</p>}
+
+                {/* One source can end up on dozens of pages (every guide for a series citing its wiki), so the
+                    chips past the first handful fold away. The count stays visible either way. */}
+                <div x-data="showMore">
+                  <ul class="mt-2 flex flex-wrap gap-2">
+                    {source.pages.slice(0, PAGES_SHOWN).map((page) => (
+                      <li>
+                        <a href={page.path} class="chip bg-zinc-900 text-zinc-300 ring-zinc-800 hover:text-amber-300">
+                          {page.title}
+                        </a>
+                      </li>
+                    ))}
+                    {source.pages.length > PAGES_SHOWN && (
+                      <>
+                        {source.pages.slice(PAGES_SHOWN).map((page) => (
+                          <li x-show="expanded" x-cloak>
+                            <a href={page.path} class="chip bg-zinc-900 text-zinc-300 ring-zinc-800 hover:text-amber-300">
+                              {page.title}
+                            </a>
+                          </li>
+                        ))}
+                        <li>
+                          <button type="button" class="chip bg-zinc-900 text-amber-400 ring-zinc-800 hover:text-amber-300" @click="toggle()" :aria-expanded="expanded">
+                            <span x-show="!expanded">+{source.pages.length - PAGES_SHOWN} more</span>
+                            <span x-show="expanded" x-cloak>Show fewer</span>
+                          </button>
+                        </li>
+                      </>
+                    )}
+                  </ul>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div x-show="visible === 0" x-cloak class="mt-4">
+            <EmptyState title="No matching source" icon="filter">
+              <button type="button" class="text-amber-400 hover:underline" @click="reset()">Clear the search</button>
+            </EmptyState>
+          </div>
+        </div>
+      )
+    }
+  </section>
+
+  <section class="mt-12">
+    <SectionHeading level="h2" eyebrow="The other direction" title="Reusing my work" />
+    <p class="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-400">
+      Everything I wrote here - the guides, trackers, reviews and notes - is free to copy, change and republish,
+      even commercially, as long as you credit <span class="text-zinc-200">{site.owner}</span> and link back. That is
+      <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener license" class="text-amber-400 hover:underline">CC BY 4.0</a>;
+      the code that builds the site is MIT. The full terms, including what those licences do
+      <em>not</em> cover, are in
+      <a href="https://github.com/huntthepast/Hunt-The-Past-Questlog/blob/main/LICENSE-CONTENT.md" target="_blank" rel="noopener" class="text-amber-400 hover:underline">LICENSE-CONTENT.md</a>.
+    </p>
+  </section>
+</Base>

@@ -13,6 +13,10 @@ tags:
 draft: false
 gallery: []
 downloads: []
+sources:
+  - label: "Gamer Corner Guides"
+    url: "https://guides.gamercorner.net/dw/items/"
+    note: "Item effects, prices and locations were compiled there; the tables here are re-typed and re-worded from that data."
 createdAt: "2026-09-22T09:00:00.000Z"
 updatedAt: "2026-09-22T13:54:00.698Z"
 ---

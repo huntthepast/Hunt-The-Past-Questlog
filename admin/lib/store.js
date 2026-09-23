@@ -101,7 +101,7 @@ export function stringifyMarkdown(data, body) {
   return `---\n${front}\n---\n\n${body.replace(/\r\n/g, '\n').trimEnd()}\n`;
 }
 
-const GUIDE_KEY_ORDER = ['title', 'type', 'game', 'summary', 'version', 'order', 'series', 'checklistColumns', 'checklistCollapsed', 'tags', 'draft', 'gallery', 'downloads', 'createdAt', 'updatedAt'];
+const GUIDE_KEY_ORDER = ['title', 'type', 'game', 'summary', 'version', 'order', 'series', 'checklistColumns', 'checklistCollapsed', 'tags', 'draft', 'gallery', 'downloads', 'sources', 'createdAt', 'updatedAt'];
 const guideFile = (slug) => path.join(PATHS.guides, `${assertSlug(slug)}.md`);
 
 export const guideExists = async (slug) => isSlug(slug) && existsSync(guideFile(slug));
@@ -137,7 +137,7 @@ export async function deleteGuide(slug) {
 
 /* ---------------- trackers ---------------- */
 
-const TRACKER_KEY_ORDER = ['title', 'type', 'game', 'summary', 'checklistColumns', 'checklistCollapsed', 'sections', 'createdAt', 'updatedAt'];
+const TRACKER_KEY_ORDER = ['title', 'type', 'game', 'summary', 'checklistColumns', 'checklistCollapsed', 'sections', 'sources', 'createdAt', 'updatedAt'];
 const trackerFile = (slug) => path.join(PATHS.trackers, `${assertSlug(slug)}.json`);
 
 export const trackerExists = async (slug) => isSlug(slug) && existsSync(trackerFile(slug));

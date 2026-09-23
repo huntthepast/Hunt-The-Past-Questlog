@@ -1,0 +1,7 @@
+# One template means GitHub now shows a chooser before the issue box. Blank issues stay on so filing a
+# quick note on your own repository still takes one click.
+blank_issues_enabled: true
+contact_links:
+  - name: Sources, credits and the removal policy
+    url: https://hunt-the-past-questlog.vercel.app/credits
+    about: Where material on the site came from, and any other way to get in touch about it.

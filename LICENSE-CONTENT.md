@@ -42,3 +42,22 @@ to them:
 - **Fonts and libraries** in `node_modules/` or loaded from a CDN, under their own licences.
 
 If you reuse a guide that builds on one of those sources, credit that source too.
+
+Every page that uses outside material lists its sources at the bottom, and all of them are collected at
+<https://hunt-the-past-questlog.vercel.app/credits>.
+
+## Asking for your material to be removed
+
+If something on this site is yours and you would rather it was not here, say so and it comes down. You do not
+have to prove ownership, cite a statute, or send anything formal - asking is enough, and the material is pulled
+first rather than argued about.
+
+- **Where to write:** the address on <https://hunt-the-past-questlog.vercel.app/credits#removal>. If none is
+  listed there, open an issue on this repository.
+- **Helpful to include:** the address of the page, which part of it is yours, how you are connected to it, and
+  whether you want it removed or only credited differently.
+- **What happens:** the page comes down or the material is stripped out of it, usually within a few days, and
+  the change is committed here so the next build no longer contains it.
+
+This is a personal hobby site with no advertising and nothing to gain from a fight; a source that would rather
+not appear here simply does not.

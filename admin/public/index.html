@@ -517,6 +517,10 @@
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
                       <span x-show="form.downloads.length" x-text="form.downloads.length"></span>
                     </button>
+                    <button type="button" class="tool" :class="panel === 'sources' && 'tool-active'" @click="togglePanel('sources')" title="Sources: credit material taken from elsewhere - shown at the end of the guide with a removal link, and listed on /credits">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" /></svg>
+                      <span x-show="form.sources.length" x-text="form.sources.length"></span>
+                    </button>
                     <button type="button" class="tool" @click="insertTemplate()" title="Template: insert the walkthrough skeleton (intro, controls, characters, areas with map + checklist, credits)">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
                       Template
@@ -791,6 +795,43 @@
                   </div>
 
 
+
+                  <!-- Sources dialog: who to credit for material that is not mine, and the removal trail -->
+                  <div x-show="panel === 'sources'" x-cloak class="fixed inset-0 z-50 grid place-items-center p-4" @click.self="panel = null" role="dialog" aria-modal="true" aria-label="Sources">
+                    <div class="card flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden bg-zinc-950 shadow-2xl">
+                      <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+                        <p class="font-display text-xl text-zinc-100">Sources &amp; credits</p>
+                        <button type="button" class="btn btn-sm" @click="panel = null" aria-label="Close">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                      <div class="min-h-0 flex-1 overflow-y-auto p-4">
+                        <p class="text-xs leading-relaxed text-zinc-500">
+                          Anything on this page you did not make yourself: a map archive, a wiki, a fan site whose tables you re-typed.
+                          Each one is credited in a block at the end of the guide, next to a link that lets its owner ask for it to be
+                          taken down, and is collected on <code class="text-zinc-300">/credits</code>. Leave this empty when the page is all yours.
+                        </p>
+                        <div class="mt-3 space-y-2">
+                          <template x-for="(src, i) in form.sources" :key="i">
+                            <div class="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
+                              <div class="flex flex-wrap items-center gap-2">
+                                <input class="input sm:w-56" x-model="src.label" placeholder="Who to credit (Better VGMaps)" required />
+                                <input class="input flex-1" x-model="src.url" placeholder="https://... (optional)" />
+                                <input class="input sm:w-40" x-model="src.license" :list="'licenses-' + i" placeholder="Licence (optional)" />
+                                <datalist :id="'licenses-' + i">
+                                  <template x-for="name in licenseSuggestions" :key="name"><option :value="name"></option></template>
+                                </datalist>
+                                <button type="button" class="btn btn-sm btn-danger" @click="form.sources.splice(i, 1)" aria-label="Remove source">&times;</button>
+                              </div>
+                              <input class="input mt-2 w-full" x-model="src.note" placeholder="What was taken, and from whom (Maps drawn by Chiasm and Rick Bruns)" />
+                            </div>
+                          </template>
+                        </div>
+                        <button type="button" class="btn btn-sm mt-3" @click="addSource()">+ Add source</button>
+                      </div>
+                    </div>
+                  </div>
+
                   <textarea x-show="!preview" x-ref="body" class="min-h-[32rem] w-full resize-y bg-transparent p-4 font-mono text-sm leading-relaxed text-zinc-100 focus:outline-none" x-model="form.body" placeholder="Write markdown here. GitHub-flavored: tables, task lists and footnotes all work. Use the Template button for the walkthrough skeleton."></textarea>
                   <div x-show="preview" class="preview-prose p-6" x-html="rendered"></div>
                 </div>
@@ -988,6 +1029,37 @@
                     </div>
                   </template>
                   <button type="button" class="btn" @click="addSection()">+ Add section</button>
+                </div>
+
+                <!-- Credit for data that is not mine (a wiki, a fan site), plus the removal trail it feeds. -->
+                <div class="border-t border-zinc-800 pt-4">
+                  <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span class="label mb-0">Sources &amp; credits</span>
+                      <p class="text-xs text-zinc-500">Where the data came from, if you did not compile it yourself. Shown at the end of the tracker with a removal link, and listed on <code class="text-zinc-400">/credits</code>.</p>
+                    </div>
+                    <button type="button" class="btn btn-sm" @click="addSource()">+ Add source</button>
+                  </div>
+                  <div class="space-y-2">
+                    <template x-for="(src, i) in form.sources" :key="i">
+                      <div class="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <input class="input sm:w-56" x-model="src.label" placeholder="Who to credit (Mega Man Wiki)" required />
+                          <input class="input flex-1" x-model="src.url" placeholder="https://... (optional)" />
+                          <input class="input sm:w-40" x-model="src.license" list="tracker-licenses" placeholder="Licence (optional)" />
+                          <button type="button" class="btn btn-sm btn-danger" @click="form.sources.splice(i, 1)" aria-label="Remove source">&times;</button>
+                        </div>
+                        <input class="input mt-2 w-full" x-model="src.note" placeholder="What was taken (Chip numbers, names and codes were compiled there)" />
+                      </div>
+                    </template>
+                  </div>
+                  <datalist id="tracker-licenses">
+                    <option value="CC BY 4.0"></option>
+                    <option value="CC BY-SA"></option>
+                    <option value="CC BY-NC"></option>
+                    <option value="Public domain"></option>
+                    <option value="Used with permission"></option>
+                  </datalist>
                 </div>
               </form>
             </template>
@@ -1499,6 +1571,19 @@
                 <label class="field"><span class="label">RetroAchievements username (for the footer link)</span><input class="input" x-model="site.raUsername" /></label>
                 <label class="field"><span class="label">Google Search Console verification code</span><input class="input font-mono" x-model="site.googleSiteVerification" placeholder="content value of the meta tag Search Console gives you" /></label>
               </div>
+              <div class="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
+                <span class="label mb-0">Removal requests</span>
+                <p class="mb-3 text-xs leading-relaxed text-zinc-500">
+                  Printed on <code class="text-zinc-400">/credits</code> and linked from every page's footer, so whoever made material
+                  you reused can ask for it back. The address goes on a public page - use one you are happy to publish. Leave it empty
+                  and requests fall back to a pre-filled issue on the repository below.
+                </p>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <label class="field"><span class="label">Contact email</span><input class="input" type="email" x-model.trim="site.contact.email" placeholder="questlog@example.com" /></label>
+                  <label class="field"><span class="label">Repository (fallback)</span><input class="input" x-model.trim="site.contact.repo" placeholder="https://github.com/user/repo" /></label>
+                </div>
+              </div>
+
               <div>
                 <div class="mb-2 flex items-center justify-between">
                   <span class="label mb-0">Footer links</span>

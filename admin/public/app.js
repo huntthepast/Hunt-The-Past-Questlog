@@ -439,7 +439,7 @@ document.addEventListener('alpine:init', () => {
 
   /* ---------------- guides ---------------- */
 
-  const blankGuide = () => ({ slug: '', title: '', type: 'Walkthrough', game: '', summary: '', version: '', order: 0, series: '', checklistColumns: 1, checklistCollapsed: false, tags: '', draft: false, gallery: [], downloads: [], body: '' });
+  const blankGuide = () => ({ slug: '', title: '', type: 'Walkthrough', game: '', summary: '', version: '', order: 0, series: '', checklistColumns: 1, checklistCollapsed: false, tags: '', draft: false, gallery: [], downloads: [], sources: [], body: '' });
 
   /* GameFAQs-style skeleton. Headings feed the auto-generated table of contents. */
   const WALKTHROUGH_TEMPLATE = `## Introduction
@@ -518,7 +518,7 @@ Step by step through the area.
         if (this._loading) return;
         this.dirty = true;
       });
-      // Dialogs (gallery, link, downloads) and the outline drawer lock page scrolling and close on Escape.
+      // Dialogs (gallery, link, downloads, sources) and the outline drawer lock page scrolling and close on Escape.
       this.$watch('panel', (open) => document.body.classList.toggle('overflow-hidden', Boolean(open)));
       window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && this.panel) this.panel = null;
@@ -547,6 +547,16 @@ Step by step through the area.
     /** Categories already used in this gallery, so the same spelling is one click away. */
     get galleryCategories() {
       return [...new Set((this.form?.gallery ?? []).map((g) => g.category).filter(Boolean))];
+    },
+
+    /** Licences already credited elsewhere on the site, so the same wording is one click away. */
+    get licenseSuggestions() {
+      const used = this.guides.flatMap((g) => (g.sources ?? []).map((s) => s.license)).filter(Boolean);
+      return [...new Set(['CC BY 4.0', 'CC BY-SA', 'CC BY-NC', 'Public domain', 'Used with permission', ...used])];
+    },
+
+    addSource() {
+      this.form.sources.push({ label: '', url: '', note: '', license: '' });
     },
 
     /** Series names already used by other guides of the selected game, so parts get the exact same spelling. */
@@ -610,6 +620,7 @@ Step by step through the area.
           tags: (g.tags ?? []).join(', '),
           gallery: (g.gallery ?? []).map((item) => ({ ...item, caption: item.caption ?? '', category: item.category ?? '' })),
           downloads: (g.downloads ?? []).map((item) => ({ ...item, note: item.note ?? '' })),
+          sources: (g.sources ?? []).map((item) => ({ ...item, url: item.url ?? '', note: item.note ?? '', license: item.license ?? '' })),
         });
         await this.loadAttachments();
       } catch (err) {
@@ -628,8 +639,10 @@ Step by step through the area.
     payload() {
       return {
         ...this.form,
-        gallery: this.form.gallery.map((g) => ({ src: g.src, title: g.title, caption: g.caption || undefined })),
+        gallery: this.form.gallery.map((g) => ({ src: g.src, title: g.title, caption: g.caption || undefined, category: g.category || undefined })),
         downloads: this.form.downloads.map((d) => ({ label: d.label, url: d.url, note: d.note || undefined })),
+        // A source with no name to credit is an empty row the author left behind; drop it rather than fail validation.
+        sources: this.form.sources.filter((s) => s.label.trim()).map((s) => ({ label: s.label, url: s.url || undefined, note: s.note || undefined, license: s.license || undefined })),
       };
     },
 
@@ -989,7 +1002,7 @@ Step by step through the area.
 
   /* ---------------- trackers ---------------- */
 
-  const blankTracker = () => ({ slug: '', title: '', type: 'checklist', game: '', summary: '', checklistColumns: 1, checklistCollapsed: false, sections: [] });
+  const blankTracker = () => ({ slug: '', title: '', type: 'checklist', game: '', summary: '', checklistColumns: 1, checklistCollapsed: false, sections: [], sources: [] });
   // _uid only identifies a section inside the editor (collapse state, jump targets); the schema drops it on save.
   let sectionUid = 0;
   const blankSection = () => ({ _uid: ++sectionUid, title: '', items: [], bulk: '' });
@@ -1103,6 +1116,7 @@ Step by step through the area.
           checklistColumns: t.checklistColumns ?? 1,
           checklistCollapsed: Boolean(t.checklistCollapsed),
           sections: (t.sections ?? []).map((s) => ({ ...blankSection(), ...s, items: (s.items ?? []).map((i) => ({ ...blankItem(), ...i, note: i.note ?? '' })) })),
+          sources: (t.sources ?? []).map((item) => ({ ...item, url: item.url ?? '', note: item.note ?? '', license: item.license ?? '' })),
         });
       } catch (err) {
         Alpine.store('app').toast(err.message, 'error');
@@ -1162,10 +1176,16 @@ Step by step through the area.
       for (const item of section.items) item.done = done;
     },
 
+    addSource() {
+      this.form.sources.push({ label: '', url: '', note: '', license: '' });
+    },
+
     payload() {
       return {
         ...this.form,
         sections: this.form.sections.map((s) => ({ title: s.title, items: s.items.map((i) => ({ id: i.id || undefined, label: i.label, note: i.note || undefined, done: Boolean(i.done) })) })),
+        // A source with no name to credit is an empty row the author left behind; drop it rather than fail validation.
+        sources: this.form.sources.filter((s) => s.label.trim()).map((s) => ({ label: s.label, url: s.url || undefined, note: s.note || undefined, license: s.license || undefined })),
       };
     },
 
@@ -1792,7 +1812,7 @@ Step by step through the area.
 
     async init() {
       const [site, platforms] = await Promise.all([api('GET', '/api/site'), api('GET', '/api/platforms')]);
-      this.site = { ...site, links: site.links ?? [] };
+      this.site = { ...site, links: site.links ?? [], contact: { email: '', repo: '', ...(site.contact ?? {}) } };
       this.platforms = platforms.map((p) => ({ ...p, raConsoleId: p.raConsoleId ?? '' }));
       this.existingIds = new Set(platforms.map((p) => p.id));
     },

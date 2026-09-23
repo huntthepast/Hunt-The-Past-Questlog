@@ -1763,6 +1763,14 @@
       ]
     }
   ],
+  "sources": [
+    {
+      "label": "Mega Man Wiki",
+      "url": "https://megaman.fandom.com",
+      "note": "Chip numbers, names, codes and version exclusives were compiled there.",
+      "license": "CC BY-SA"
+    }
+  ],
   "createdAt": "2026-09-20T16:17:54.354Z",
   "updatedAt": "2026-09-21T04:05:41.528Z"
 }

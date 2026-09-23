@@ -73,6 +73,14 @@ const DownloadSchema = z.object({
   note: optionalText,
 });
 
+/** Credit for material taken from elsewhere. Drives the page's credits block and /credits. */
+const SourceSchema = z.object({
+  label: text.min(1, 'Source needs a name to credit'),
+  url: optionalText,
+  note: optionalText,
+  license: optionalText,
+});
+
 export const GuideSchema = z.object({
   title: text.min(1, 'Title is required'),
   type: z.preprocess((v) => (v === '' || v === null ? undefined : v), text.min(1).default('Notes')),
@@ -87,6 +95,7 @@ export const GuideSchema = z.object({
   draft: bool.default(false),
   gallery: z.array(GalleryItemSchema).default([]),
   downloads: z.array(DownloadSchema).default([]),
+  sources: z.array(SourceSchema).default([]),
   body: z.string().default(''),
 });
 
@@ -110,6 +119,7 @@ export const TrackerSchema = z.object({
   checklistColumns: z.preprocess((v) => (v === '' || v === null || v === undefined ? 1 : Number(v)), z.number().int().min(1).max(3).default(1)),
   checklistCollapsed: bool.default(false),
   sections: z.array(TrackerSectionSchema).default([]),
+  sources: z.array(SourceSchema).default([]),
 });
 
 const JournalSchema = z.object({
@@ -161,6 +171,13 @@ export const SiteSchema = z.object({
   raUsername: text.default(''),
   googleSiteVerification: text.default(''),
   links: z.array(z.object({ label: text.min(1), url: text.pipe(z.url()) })).default([]),
+  /** Where a rights holder reaches you to ask for their material to be taken down (see /credits). */
+  contact: z
+    .object({
+      email: z.preprocess((v) => (v === null || v === undefined ? '' : v), text.default('')),
+      repo: z.preprocess((v) => (v === null || v === undefined ? '' : v), text.default('')),
+    })
+    .default({ email: '', repo: '' }),
 });
 
 /** Validates `input` against `schema`, throwing a 400 with readable messages on failure. */

@@ -6,6 +6,25 @@ import { STATUS_IDS, OWNERSHIP_IDS, TRACKER_TYPE_IDS } from './lib/constants.js'
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}/, 'Expected an ISO date (YYYY-MM-DD)');
 const enumOf = (ids: string[]) => z.enum(ids as [string, ...string[]]);
 
+/**
+ * Where the material on a page came from when it is not mine (a fan site, a wiki, a map archive).
+ * Shown as a credits block at the end of the page and collected on /credits, so the person who made
+ * it can find their own work here and ask for it to be taken down.
+ */
+const sources = z
+  .array(
+    z.object({
+      /** Who or what to credit: "Better VGMaps", "Mega Man Wiki". */
+      label: z.string().min(1),
+      url: z.string().optional(),
+      /** What was taken, and from whom: "Maps drawn by Chiasm and Rick Bruns". */
+      note: z.string().optional(),
+      /** Their terms, if they state any: "CC BY-SA", "used with permission". */
+      license: z.string().optional(),
+    }),
+  )
+  .default([]);
+
 /** One JSON file per game: src/content/games/<slug>.json */
 const games = defineCollection({
   loader: glob({ pattern: '**/*.json', base: './src/content/games' }),
@@ -86,6 +105,7 @@ const guides = defineCollection({
       .default([]),
     /** External downloads (e.g. a zip attached to a GitHub release). */
     downloads: z.array(z.object({ label: z.string().min(1), url: z.string().min(1), note: z.string().optional() })).default([]),
+    sources,
     createdAt: z.string(),
     updatedAt: z.string(),
   }),
@@ -117,6 +137,7 @@ const trackers = defineCollection({
         }),
       )
       .default([]),
+    sources,
     createdAt: z.string(),
     updatedAt: z.string(),
   }),

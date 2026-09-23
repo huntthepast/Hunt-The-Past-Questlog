@@ -9,6 +9,7 @@ import GuideHub from '../../components/GuideHub.astro';
 import Lightbox from '../../components/Lightbox.astro';
 import SidebarToolbar from '../../components/SidebarToolbar.astro';
 import DrawerHeader from '../../components/DrawerHeader.astro';
+import Sources from '../../components/Sources.astro';
 import { allGuides, allTrackers, guidesForGame, trackersForGame, guideSeries, platformOf, formatDate } from '../../lib/data';
 import type { MarkdownHeading } from 'astro';
 import { guideType } from '../../lib/constants.js';
@@ -143,6 +144,8 @@ const jsonLd = [
           <Content />
         </article>
       </div>
+
+      <Sources sources={d.sources} title={d.title} path={`/guides/${guide.id}`} />
 
       {
         series && (series.prev || series.next) && (

@@ -376,6 +376,35 @@ composed from `docs/screenshots/library.png`.
 
 The site footer states this too, so readers see it without opening the repository.
 
+### Crediting other people, and taking their work down
+
+Guides often build on someone else's work - a map archive, a wiki, a fan site's item tables. Each guide and
+tracker carries a `sources` list (name, link, note, licence), edited in the admin under **Sources & credits**:
+
+```yaml
+sources:
+  - label: "Better VGMaps"
+    url: "https://vgmaps.de/maps/nes/dragon-warrior"
+    note: "Maps drawn by Chiasm and Rick Bruns; linked, not copied."
+    license: "CC BY-SA"
+```
+
+That list is printed at the end of the page and collected on **`/credits`**, which also carries a standing offer
+to remove anything on request - linked from every page's footer, so a rights holder does not have to hunt for a
+contact. Set the address it points at in **Settings → Removal requests** (`contact.email` in `src/data/site.json`);
+with no address, requests fall back to the **Removal request** issue form
+(`.github/ISSUE_TEMPLATE/removal-request.yml`) on `contact.repo`, with the page already filled into its first
+field. The form carries the `removal` label itself rather than passing `?labels=` in the URL - GitHub drops that
+parameter unless the reporter can label issues, which someone filing from outside never can. The label has to
+exist in the repository or it is silently skipped.
+
+The credits list grows by *distinct source*, not by page - the same places get cited over and over, so it stays
+short far longer than the guide count suggests. Two thresholds at the top of `src/pages/credits.astro` keep it
+readable without any work later: `PAGES_SHOWN` (8) folds a source's extra pages behind a "+N more" button, and
+`FILTER_FROM` (8) reveals a search box once there are enough sources to be worth scanning. Both stay invisible
+until they are needed. Deliberately no pagination: this page exists to be searched by someone looking for their
+own name, and Ctrl+F only sees the page it is on.
+
 ## Customizing
 
 - Colors and fonts: `src/styles/global.css` (`@theme` block) and the color maps in `src/lib/ui.ts`.

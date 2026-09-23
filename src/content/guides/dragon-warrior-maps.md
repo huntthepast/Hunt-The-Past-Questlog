@@ -13,6 +13,10 @@ tags:
 draft: false
 gallery: []
 downloads: []
+sources:
+  - label: "Better VGMaps"
+    url: "https://vgmaps.de/maps/nes/dragon-warrior"
+    note: "Every map linked from this page is hosted there and was drawn by Chiasm (towns, castles and dungeons) and Rick Bruns (the overworld). None of them are copied onto this site."
 createdAt: "2026-09-23T10:00:00.000Z"
 updatedAt: "2026-09-23T04:40:13.748Z"
 ---

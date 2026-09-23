@@ -13,6 +13,10 @@ tags:
 draft: false
 gallery: []
 downloads: []
+sources:
+  - label: "Gamer Corner Guides"
+    url: "https://guides.gamercorner.net/dw/arms/"
+    note: "Attack and defense values, buy and sell prices and shop locations were compiled there; the tables here are re-typed and re-worded from that data."
 createdAt: "2026-09-21T15:30:00.000Z"
 updatedAt: "2026-09-21T16:57:50.386Z"
 ---

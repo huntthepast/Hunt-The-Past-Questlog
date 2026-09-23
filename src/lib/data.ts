@@ -4,7 +4,7 @@ import platforms from '../data/platforms.json';
 import site from '../data/site.json';
 import raProfileJson from '../data/ra-profile.json';
 import shelfJson from '../data/shelf.json';
-import { STATUSES, statusById, isExternalUrl } from './constants.js';
+import { STATUSES, statusById, isExternalUrl, SITE_URL } from './constants.js';
 
 export type Game = CollectionEntry<'games'>;
 export type Guide = CollectionEntry<'guides'>;
@@ -194,6 +194,93 @@ export function guideSeries(guides: Guide[], guide: Guide) {
     index,
     prev: index > 0 ? parts[index - 1] : undefined,
     next: index >= 0 && index < parts.length - 1 ? parts[index + 1] : undefined,
+  };
+}
+
+/* ---------- outside material: credits and removal requests ---------- */
+
+export type Source = { label: string; url?: string; note?: string; license?: string };
+/** One source, with every page of this site that says it used it. */
+export type SourceUse = Source & { pages: { title: string; path: string; kind: 'Guide' | 'Tracker' }[] };
+
+// Grouped by the name being credited, not by the link: two guides can cite the same site through
+// different deep links (/dw/arms/ and /dw/items/) and the person behind it is still one entry.
+const sourceKey = (source: Source) => source.label.trim().toLowerCase().replace(/\s+/g, ' ');
+
+/**
+ * Every outside source declared by a guide or tracker, grouped by source and sorted by name, so a
+ * rights holder can find their own work on /credits instead of reading every page.
+ */
+export async function allSources(): Promise<SourceUse[]> {
+  const pages: { entry: Guide | Tracker; path: string; kind: 'Guide' | 'Tracker' }[] = [
+    ...(await allGuides()).map((entry) => ({ entry, path: `/guides/${entry.id}`, kind: 'Guide' as const })),
+    ...(await allTrackers()).map((entry) => ({ entry, path: `/trackers/${entry.id}`, kind: 'Tracker' as const })),
+  ];
+  const grouped = new Map<string, SourceUse>();
+  for (const { entry, path, kind } of pages) {
+    for (const source of entry.data.sources) {
+      const key = sourceKey(source);
+      // The first mention sets the label and link; later ones only add their page and fill in blanks.
+      const existing = grouped.get(key) ?? { ...source, pages: [] };
+      existing.url ??= source.url;
+      existing.license ??= source.license;
+      existing.pages.push({ title: entry.data.title, path, kind });
+      grouped.set(key, existing);
+    }
+  }
+  return [...grouped.values()].sort((a, b) => a.label.localeCompare(b.label));
+}
+
+const contact = (site as { contact?: { email?: string; repo?: string } }).contact ?? {};
+
+/** The issue form in .github/ISSUE_TEMPLATE that the GitHub fallback opens. */
+const REMOVAL_FORM = 'removal-request.yml';
+
+/**
+ * Where a removal request goes. An address in site.json is used when there is one; otherwise the
+ * request falls back to the repository's removal issue form, so the page is never a dead end.
+ *
+ * `page` is the page being complained about, which is put in the subject line - and, for the issue
+ * form, in its first field - so the request arrives already saying what it is about.
+ */
+export function removalRequest(page?: { title: string; path: string }) {
+  const about = page ? `${page.title} (${SITE_URL}${page.path})` : SITE_URL;
+  const subject = `Removal request - ${about}`;
+
+  if (contact.email) {
+    // No form to fill in here, so the questions go in the body as a list to type under.
+    const body = [
+      'Which page:',
+      page ? `${SITE_URL}${page.path}` : '',
+      '',
+      'What on it is yours:',
+      '',
+      'How you are connected to it (author, publisher, rights holder):',
+      '',
+      'Remove it, or credit it differently?',
+      '',
+    ].join('\n');
+    return {
+      kind: 'email' as const,
+      href: `mailto:${contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+      label: contact.email,
+      external: false,
+    };
+  }
+  const repo = contact.repo?.replace(/\/$/, '');
+  if (!repo) return { kind: 'issue' as const, href: '/credits#removal', label: 'open an issue on GitHub', external: false };
+
+  // The issue form in .github/ISSUE_TEMPLATE asks the questions as fields and carries the "removal"
+  // label itself. A ?labels= parameter would be dropped here: GitHub ignores it unless the reporter
+  // can label issues, which a rights holder filing from outside never can.
+  // Field ids double as prefill parameters, so `page` arrives already filled in.
+  const params = new URLSearchParams({ template: REMOVAL_FORM, title: subject });
+  if (page) params.set('page', `${SITE_URL}${page.path}`);
+  return {
+    kind: 'issue' as const,
+    href: `${repo}/issues/new?${params}`,
+    label: 'open an issue on GitHub',
+    external: true,
   };
 }
 

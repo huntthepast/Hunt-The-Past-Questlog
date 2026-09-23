@@ -236,17 +236,22 @@ const contact = (site as { contact?: { email?: string; repo?: string } }).contac
 /** The issue form in .github/ISSUE_TEMPLATE that the GitHub fallback opens. */
 const REMOVAL_FORM = 'removal-request.yml';
 
+export type RemovalRoute = { kind: 'email' | 'issue'; href: string; label: string; external: boolean };
+
 /**
- * Where a removal request goes. An address in site.json is used when there is one; otherwise the
- * request falls back to the repository's removal issue form, so the page is never a dead end.
+ * The ways a removal request can reach the owner. Email comes first when there is an address: it is
+ * private, needs no account, and a rights holder may not want to post their complaint in public. The
+ * repository's issue form is offered next to it for anyone who would rather have a tracked, public
+ * record - and stands in as `primary` when no address is configured, so the page is never a dead end.
  *
  * `page` is the page being complained about, which is put in the subject line - and, for the issue
  * form, in its first field - so the request arrives already saying what it is about.
  */
-export function removalRequest(page?: { title: string; path: string }) {
+export function removalRequest(page?: { title: string; path: string }): { primary: RemovalRoute; alternate?: RemovalRoute } {
   const about = page ? `${page.title} (${SITE_URL}${page.path})` : SITE_URL;
   const subject = `Removal request - ${about}`;
 
+  let email: RemovalRoute | undefined;
   if (contact.email) {
     // No form to fill in here, so the questions go in the body as a list to type under.
     const body = [
@@ -260,28 +265,28 @@ export function removalRequest(page?: { title: string; path: string }) {
       'Remove it, or credit it differently?',
       '',
     ].join('\n');
-    return {
-      kind: 'email' as const,
+    email = {
+      kind: 'email',
       href: `mailto:${contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
       label: contact.email,
       external: false,
     };
   }
-  const repo = contact.repo?.replace(/\/$/, '');
-  if (!repo) return { kind: 'issue' as const, href: '/credits#removal', label: 'open an issue on GitHub', external: false };
 
-  // The issue form in .github/ISSUE_TEMPLATE asks the questions as fields and carries the "removal"
-  // label itself. A ?labels= parameter would be dropped here: GitHub ignores it unless the reporter
-  // can label issues, which a rights holder filing from outside never can.
-  // Field ids double as prefill parameters, so `page` arrives already filled in.
-  const params = new URLSearchParams({ template: REMOVAL_FORM, title: subject });
-  if (page) params.set('page', `${SITE_URL}${page.path}`);
-  return {
-    kind: 'issue' as const,
-    href: `${repo}/issues/new?${params}`,
-    label: 'open an issue on GitHub',
-    external: true,
-  };
+  let issue: RemovalRoute | undefined;
+  const repo = contact.repo?.replace(/\/$/, '');
+  if (repo) {
+    // The issue form in .github/ISSUE_TEMPLATE asks the questions as fields and carries the "removal"
+    // label itself. A ?labels= parameter would be dropped here: GitHub ignores it unless the reporter
+    // can label issues, which a rights holder filing from outside never can.
+    // Field ids double as prefill parameters, so `page` arrives already filled in.
+    const params = new URLSearchParams({ template: REMOVAL_FORM, title: subject });
+    if (page) params.set('page', `${SITE_URL}${page.path}`);
+    issue = { kind: 'issue', href: `${repo}/issues/new?${params}`, label: 'removal request form', external: true };
+  }
+
+  const primary = email ?? issue ?? { kind: 'email' as const, href: '/credits#removal', label: 'the credits page', external: false };
+  return { primary, alternate: email && issue ? issue : undefined };
 }
 
 export function trackerProgress(tracker: Tracker) {

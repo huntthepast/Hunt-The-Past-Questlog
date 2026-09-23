@@ -9,7 +9,7 @@ import { RA_SITE } from '../lib/constants.js';
 import { breadcrumbJsonLd } from '../lib/seo';
 
 const sources = await allSources();
-const request = removalRequest();
+const { primary, alternate } = removalRequest();
 
 /** Page chips shown per source before the rest fold behind a "+N more" button. */
 const PAGES_SHOWN = 8;
@@ -91,26 +91,40 @@ const jsonLd = breadcrumbJsonLd(Astro.site, [
 
         <div class="lg:border-l lg:border-zinc-800 lg:pl-5">
           <p class="eyebrow mb-2">Send it to</p>
-          {
-            request.kind === 'email' ? (
-              <a href={request.href} class="btn btn-accent w-full justify-center">
-                <Icon name="mail" class="size-4" />
-                {request.label}
+
+          {/* Both routes are buttons so the second one is as easy to spot as the first. The amber one is
+              the recommendation; the plain one is the same weight of control, not a footnote. */}
+          <div class="grid gap-2">
+            {primary.kind === 'email' ? (
+              <a href={primary.href} class="btn btn-accent w-full justify-center">
+                <Icon name="mail" class="size-4 shrink-0" />
+                <span class="min-w-0 break-all">{primary.label}</span>
               </a>
             ) : (
-              <a href={request.href} target="_blank" rel="noopener" class="btn btn-accent w-full justify-center">
-                <Icon name="flag" class="size-4" />
-                Open a removal request
+              <a href={primary.href} target="_blank" rel="noopener" class="btn btn-accent w-full justify-center">
+                <Icon name="github" solid class="size-4 shrink-0" />
+                Removal request form
               </a>
-            )
-          }
+            )}
+
+            {alternate && (
+              <a href={alternate.href} target="_blank" rel="noopener" class="btn w-full justify-center">
+                <Icon name="github" solid class="size-4 shrink-0" />
+                Removal request form
+              </a>
+            )}
+          </div>
+
           <p class="mt-3 text-xs leading-relaxed text-zinc-500">
             {
-              request.kind === 'email'
-                ? 'The link opens your mail app with the subject and questions already filled in - delete whatever does not apply.'
-                : 'The link opens a pre-filled issue on the repository that builds this site. It is public, so leave out anything you would rather not post.'
+              primary.kind === 'email'
+                ? 'Email opens a draft with the subject and questions already filled in - delete whatever does not apply, or just write the address down and send your own.'
+                : 'The form opens on the repository that builds this site, with the questions as fields.'
             }
+            {alternate && ' The form asks the same questions on GitHub, where the issue stays public and trackable until it is closed.'}
+            {!alternate && primary.kind === 'issue' && ' It is public, so leave out anything you would rather not post.'}
           </p>
+
           <p class="mt-3 text-xs leading-relaxed text-zinc-500">
             Every guide that uses outside material also has this link at the bottom, already pointing at that page.
           </p>

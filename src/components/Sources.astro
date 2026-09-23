@@ -14,7 +14,8 @@ interface Props {
 }
 
 const { sources, title, path } = Astro.props;
-const request = removalRequest({ title, path });
+// One link inline: whichever route is primary. The credits page lists them all.
+const { primary } = removalRequest({ title, path });
 ---
 
 {
@@ -45,7 +46,7 @@ const request = removalRequest({ title, path });
       <p class="mt-4 border-t border-zinc-800 pt-3 text-xs leading-relaxed text-zinc-500">
         This material belongs to the people above, not to me, and is credited and linked rather than passed off as
         mine. If any of it is yours and you would rather it was not here,{' '}
-        <a href={request.href} target={request.external ? '_blank' : undefined} rel={request.external ? 'noopener' : undefined} class="text-amber-400 hover:underline">
+        <a href={primary.href} target={primary.external ? '_blank' : undefined} rel={primary.external ? 'noopener' : undefined} class="text-amber-400 hover:underline">
           ask and it comes down
         </a>{' '}
         - no argument, no lawyer needed. See <a href="/credits#removal" class="text-amber-400 hover:underline">removal requests</a>.

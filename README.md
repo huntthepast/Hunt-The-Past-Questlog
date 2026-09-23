@@ -391,10 +391,16 @@ sources:
 
 That list is printed at the end of the page and collected on **`/credits`**, which also carries a standing offer
 to remove anything on request - linked from every page's footer, so a rights holder does not have to hunt for a
-contact. Set the address it points at in **Settings → Removal requests** (`contact.email` in `src/data/site.json`);
-with no address, requests fall back to the **Removal request** issue form
-(`.github/ISSUE_TEMPLATE/removal-request.yml`) on `contact.repo`, with the page already filled into its first
-field. The form carries the `removal` label itself rather than passing `?labels=` in the URL - GitHub drops that
+contact. Two routes are offered, both configured in **Settings → Removal requests** (`contact` in
+`src/data/site.json`):
+
+- **Email** (`contact.email`) - the primary route, and the only private one. The link opens a mail draft with the
+  subject and questions already written.
+- **The repository's issue form** (`contact.repo` + `.github/ISSUE_TEMPLATE/removal-request.yml`) - offered
+  alongside it for anyone who wants a public, trackable record, with the page already filled into its first
+  field. It stands in as the primary route if no address is set, so the page is never a dead end.
+
+The form carries the `removal` label itself rather than passing `?labels=` in the URL - GitHub drops that
 parameter unless the reporter can label issues, which someone filing from outside never can. The label has to
 exist in the repository or it is silently skipped.
 

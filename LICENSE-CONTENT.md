@@ -52,8 +52,9 @@ If something on this site is yours and you would rather it was not here, say so 
 have to prove ownership, cite a statute, or send anything formal - asking is enough, and the material is pulled
 first rather than argued about.
 
-- **Where to write:** the address on <https://hunt-the-past-questlog.vercel.app/credits#removal>. If none is
-  listed there, open an issue on this repository.
+- **Where to write:** <retro.gamers.ready@gmail.com>. If you would rather have a public, trackable record,
+  open a [removal request](https://github.com/huntthepast/Hunt-The-Past-Questlog/issues/new?template=removal-request.yml)
+  on this repository instead - it asks the same questions.
 - **Helpful to include:** the address of the page, which part of it is yours, how you are connected to it, and
   whether you want it removed or only credited differently.
 - **What happens:** the page comes down or the material is stripped out of it, usually within a few days, and

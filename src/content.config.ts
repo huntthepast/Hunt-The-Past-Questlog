@@ -76,9 +76,13 @@ const guides = defineCollection({
     checklistCollapsed: z.boolean().default(false),
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
-    /** Image gallery shown above the text (maps, charts...). src is a /guides/<slug>/... path or a URL. */
+    /**
+     * Image gallery shown above the text (maps, charts...). src is a /guides/<slug>/... path or a URL.
+     * `category` groups the wall into sections ("Overworld", "Towns", "Dungeons"); images without one
+     * are shown first, under no heading.
+     */
     gallery: z
-      .array(z.object({ src: z.string().min(1), title: z.string().min(1), caption: z.string().optional() }))
+      .array(z.object({ src: z.string().min(1), title: z.string().min(1), caption: z.string().optional(), category: z.string().optional() }))
       .default([]),
     /** External downloads (e.g. a zip attached to a GitHub release). */
     downloads: z.array(z.object({ label: z.string().min(1), url: z.string().min(1), note: z.string().optional() })).default([]),

@@ -158,6 +158,7 @@ gallery:                    # optional image wall shown above the text, with a f
   - src: "/guides/chrono-trigger-maps/guardia-forest.png"
     title: "Guardia Forest"
     caption: "600 AD"
+    category: "Overworld"   # optional: groups the wall into sections (Overworld, Towns, Dungeons...)
 downloads:                  # optional buttons in the sidebar (e.g. a zip attached to a GitHub release)
   - label: "All maps (zip)"
     url: "https://github.com/<you>/<repo>/releases/download/v1/maps.zip"
@@ -189,7 +190,9 @@ admin's **Gallery** dialog land in `public/guides/<slug>/`; the **Template** but
 walkthrough skeleton (intro, controls, characters, one map + checklist + walkthrough block per area, credits),
 and **Link to guide** inserts links to another guide's sections; **Outline** lists every heading of the body and jumps the
 editor to it, and **Tick all / Untick all** flip the `- [ ]` lines in the selection (or the checklist under the cursor).
-Clicking any image opens a lightbox. Markdown tables are interactive on the site: click a header to sort (prices like
+Clicking any image opens a lightbox that pages through every image on the page. Gallery images with a `category`
+are grouped under a heading of that name (in the order the categories first appear); ones without a category come
+first, with no heading. Markdown tables are interactive on the site: click a header to sort (prices like
 "1,200 G" sort as numbers), columns with a few repeated values (Type, Location...) get filter chips, and tables with six or
 more rows get a search box - the **Table** dialog in the admin can also turn rows pasted from a spreadsheet into a table.
 

@@ -678,6 +678,9 @@
                             <p class="text-xs text-zinc-500">Shown above the text with a lightbox, in this order</p>
                           </div>
                           <p x-show="!form.gallery.length" class="rounded-lg border border-dashed border-zinc-800 px-3 py-4 text-center text-sm text-zinc-500">Nothing in the gallery yet - use <span class="text-zinc-300">+ Gallery</span> on an image above. Good for a set of maps: give each one the area name.</p>
+                          <datalist id="gallery-category-suggestions">
+                            <template x-for="c in galleryCategories" :key="c"><option :value="c"></option></template>
+                          </datalist>
                           <ol x-show="form.gallery.length" class="divide-y divide-zinc-800 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
                             <template x-for="(g, i) in form.gallery" :key="g.src">
                               <li class="flex items-center gap-2 p-2">
@@ -685,6 +688,7 @@
                                 <img :src="g.src" alt="" class="size-10 shrink-0 rounded bg-zinc-950 object-cover" loading="lazy" />
                                 <input class="input" x-model="g.title" placeholder="Title (e.g. Guardia Forest)" required />
                                 <input class="input" x-model="g.caption" placeholder="Caption (optional)" />
+                                <input class="input sm:w-40" x-model.trim="g.category" list="gallery-category-suggestions" placeholder="Category" title="Groups the gallery into sections on the site (Overworld, Towns, Dungeons...). Leave empty for no section." />
                                 <button type="button" class="btn btn-sm" :disabled="i === 0" @click="move(form.gallery, i, i - 1)" title="Move up">&uarr;</button>
                                 <button type="button" class="btn btn-sm" :disabled="i === form.gallery.length - 1" @click="move(form.gallery, i, i + 1)" title="Move down">&darr;</button>
                                 <button type="button" class="btn btn-sm btn-danger" @click="form.gallery.splice(i, 1)" title="Remove from the gallery (keeps the file)">&times;</button>

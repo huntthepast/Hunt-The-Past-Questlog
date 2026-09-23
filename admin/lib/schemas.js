@@ -64,6 +64,7 @@ const GalleryItemSchema = z.object({
   src: text.min(1, 'Gallery image is missing its path'),
   title: text.min(1, 'Gallery image needs a title'),
   caption: optionalText,
+  category: optionalText,
 });
 
 const DownloadSchema = z.object({

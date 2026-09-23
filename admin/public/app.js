@@ -540,6 +540,11 @@ Step by step through the area.
       return [...new Set([...(Alpine.store('app').meta.guideTypes ?? []), ...used])];
     },
 
+    /** Categories already used in this gallery, so the same spelling is one click away. */
+    get galleryCategories() {
+      return [...new Set((this.form?.gallery ?? []).map((g) => g.category).filter(Boolean))];
+    },
+
     /** Series names already used by other guides of the selected game, so parts get the exact same spelling. */
     get seriesSuggestions() {
       const game = this.form?.game;
@@ -599,7 +604,7 @@ Step by step through the area.
           checklistColumns: g.checklistColumns ?? 1,
           checklistCollapsed: Boolean(g.checklistCollapsed),
           tags: (g.tags ?? []).join(', '),
-          gallery: (g.gallery ?? []).map((item) => ({ ...item, caption: item.caption ?? '' })),
+          gallery: (g.gallery ?? []).map((item) => ({ ...item, caption: item.caption ?? '', category: item.category ?? '' })),
           downloads: (g.downloads ?? []).map((item) => ({ ...item, note: item.note ?? '' })),
         });
         await this.loadAttachments();

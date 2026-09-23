@@ -142,7 +142,9 @@
   @apply prose prose-invert prose-zinc max-w-none
     prose-headings:font-bold prose-headings:tracking-tight prose-headings:scroll-mt-24
     prose-h2:mt-10 prose-h2:border-b prose-h2:border-zinc-800 prose-h2:pb-2
-    prose-a:text-amber-400 prose-a:no-underline hover:prose-a:underline
+    /* prose-a:hover, not hover:prose-a - the latter compiles to ".guide-prose:hover a", which
+       underlines every link in the article as soon as the pointer enters it. */
+    prose-a:text-amber-400 prose-a:no-underline prose-a:hover:underline
     prose-strong:text-zinc-100
     prose-code:rounded prose-code:bg-zinc-800/80 prose-code:px-1 prose-code:py-0.5 prose-code:text-amber-200 prose-code:before:content-none prose-code:after:content-none
     prose-pre:border prose-pre:border-zinc-800 prose-pre:bg-zinc-900
@@ -191,6 +193,33 @@
 .zoomable:focus-visible .zoomable-badge,
 .group:hover .zoomable-badge {
   @apply border-amber-400 bg-amber-400 text-zinc-950 opacity-100;
+}
+
+/* Links that leave the site (tagged by markExternalLinks in src/alpine.ts, or by the marked renderer
+   for reviews and notes) carry a small arrow so the new tab is no surprise. Images and the gallery
+   cards are excluded - the arrow belongs on text links only. */
+.guide-prose a[target='_blank']:not(:has(img))::after {
+  content: '';
+  display: inline-block;
+  width: 0.65em;
+  height: 0.65em;
+  /* Kept tight against the last letter: the arrow is part of the link, so any gap here would be
+     hoverable space that looks like it is outside the link. */
+  margin-left: 0.12em;
+  vertical-align: 0.05em;
+  background-color: currentColor;
+  opacity: 0.85;
+  -webkit-mask: var(--external-link-icon) no-repeat center / contain;
+  mask: var(--external-link-icon) no-repeat center / contain;
+}
+
+.guide-prose a[target='_blank']:hover::after {
+  opacity: 1;
+}
+
+:root {
+  /* Same glyph as the Icon component's "external". */
+  --external-link-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25'/%3E%3C/svg%3E");
 }
 
 /* "Tick all" / "Clear" in a tracker section header. */

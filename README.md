@@ -190,7 +190,10 @@ admin's **Gallery** dialog land in `public/guides/<slug>/`; the **Template** but
 walkthrough skeleton (intro, controls, characters, one map + checklist + walkthrough block per area, credits),
 and **Link to guide** inserts links to another guide's sections; **Outline** lists every heading of the body and jumps the
 editor to it, and **Tick all / Untick all** flip the `- [ ]` lines in the selection (or the checklist under the cursor).
-Clicking any image opens a lightbox that pages through every image on the page. Gallery images with a `category`
+Links in a guide, review or note that point off-site open in a new tab (`isExternalUrl` in `src/lib/constants.js`
+decides); links within the site and `#anchors` stay in the same tab. Off-site links also carry a small arrow, so
+the new tab is no surprise. The admin's **Link** button inserts either kind: one of your guides (or a section of it),
+or any other address. Clicking any image opens a lightbox that pages through every image on the page. Gallery images with a `category`
 are grouped under a heading of that name (in the order the categories first appear); ones without a category come
 first, with no heading. Markdown tables are interactive on the site: click a header to sort (prices like
 "1,200 G" sort as numbers), columns with a few repeated values (Type, Location...) get filter chips, and tables with six or

@@ -14,7 +14,7 @@ draft: false
 gallery: []
 downloads: []
 createdAt: "2026-09-23T10:00:00.000Z"
-updatedAt: "2026-09-23T10:00:00.000Z"
+updatedAt: "2026-09-23T04:40:13.748Z"
 ---
 
 ## About these maps
@@ -70,4 +70,4 @@ the Rainbow Drop bridge appears on the west shore of Charlock's island.
 4. **Garin's Grave** for the Silver Harp, then the **Magic Temple** to trade it for the Staff of Rain.
 5. **Hauksness** for Erdrick's Armor, then the Sunstone shrine and **Charlock Castle** with the Rainbow Drop.
 
-Maps by [Chiasm](https://vgmaps.de/maps/nes/dragon-warrior) and Rick Bruns, via Better VGMaps.
+Maps by Chiasm and Rick Bruns, via [Better VGMaps](https://vgmaps.de/maps/nes/dragon-warrior).

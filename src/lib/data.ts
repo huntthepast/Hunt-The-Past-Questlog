@@ -4,7 +4,7 @@ import platforms from '../data/platforms.json';
 import site from '../data/site.json';
 import raProfileJson from '../data/ra-profile.json';
 import shelfJson from '../data/shelf.json';
-import { STATUSES, statusById } from './constants.js';
+import { STATUSES, statusById, isExternalUrl } from './constants.js';
 
 export type Game = CollectionEntry<'games'>;
 export type Guide = CollectionEntry<'guides'>;
@@ -359,7 +359,21 @@ export const formatNumber = (n: number) => new Intl.NumberFormat('en-US').format
 
 /* ---------- markdown (for free-text fields like reviews/notes) ---------- */
 
-marked.use({ gfm: true, breaks: true });
+const escapeAttr = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+marked.use({
+  gfm: true,
+  breaks: true,
+  renderer: {
+    // Same rule as the guide bodies: off-site links open in a new tab.
+    link(token) {
+      const href = escapeAttr(String(token.href ?? ''));
+      const title = token.title ? ` title="${escapeAttr(token.title)}"` : '';
+      const external = isExternalUrl(token.href) ? ' target="_blank" rel="noopener noreferrer"' : '';
+      return `<a href="${href}"${title}${external}>${this.parser.parseInline(token.tokens)}</a>`;
+    },
+  },
+});
 
 export function renderMarkdown(source?: string): string {
   if (!source) return '';

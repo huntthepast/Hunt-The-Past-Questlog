@@ -503,6 +503,10 @@ Step by step through the area.
     linkGuides: [],
     linkGuide: '',
     linkHeadings: [],
+    /** "guide" = pick one of your own guides, "external" = any URL (opens in a new tab on the site). */
+    linkMode: 'guide',
+    linkUrl: '',
+    linkText: '',
 
     async init() {
       await this.load();
@@ -852,7 +856,13 @@ Step by step through the area.
 
     togglePanel(name) {
       this.panel = this.panel === name ? null : name;
-      if (this.panel === 'link') this.openLinkPicker();
+      if (this.panel === 'link') {
+        // Whatever is selected in the body becomes the link text, the way an editor's link button works.
+        const el = this.$refs.body;
+        const selected = el ? el.value.slice(el.selectionStart ?? 0, el.selectionEnd ?? 0).trim() : '';
+        if (selected && !selected.includes('\n')) this.linkText = selected;
+        this.openLinkPicker();
+      }
     },
 
     /* ---- attachments & gallery ---- */
@@ -955,6 +965,25 @@ Step by step through the area.
       const href = heading ? `/guides/${guide.slug}#${heading.slug}` : `/guides/${guide.slug}`;
       const text = heading ? heading.text : guide.title;
       this.insert(`[${text}](${href})`);
+    },
+
+    /** The URL as it will be written: bare hosts get https:// so the site treats them as external. */
+    get linkUrlNormalised() {
+      const url = String(this.linkUrl ?? '').trim();
+      if (!url) return '';
+      if (/^(https?:\/\/|mailto:|\/|#)/i.test(url)) return url;
+      return `https://${url}`;
+    },
+
+    /** Any address: another site, a mailto:, or a path on this site. */
+    insertExternalLink() {
+      const href = this.linkUrlNormalised;
+      if (!href) return;
+      const text = String(this.linkText ?? '').trim() || href.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+      this.insert(`[${text}](${href})`);
+      this.linkUrl = '';
+      this.linkText = '';
+      this.panel = null;
     },
   }));
 

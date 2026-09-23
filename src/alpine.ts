@@ -3,6 +3,7 @@ import type { Alpine } from 'alpinejs';
 // predictable order instead of being injected at runtime.
 import Swal from 'sweetalert2/dist/sweetalert2.esm.js';
 import { createDialogs } from './lib/dialogs.js';
+import { isExternalUrl } from './lib/constants.js';
 
 /** SweetAlert2 dialogs in the site's colours, shared with the local admin. */
 const dialog = createDialogs(Swal);
@@ -34,7 +35,24 @@ type FacetValue = string | string[];
 
 const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every((v) => b.includes(v));
 
+/**
+ * Links written in markdown that point off-site open in a new tab. Reviews and notes get this from
+ * the marked renderer at build time; guide bodies go through Astro's own markdown, which takes no
+ * rehype plugins here, so they are tagged once the page is up. Without JS the links still work,
+ * they just stay in the same tab.
+ */
+function markExternalLinks() {
+  for (const link of Array.from(document.querySelectorAll<HTMLAnchorElement>('.guide-prose a[href]'))) {
+    if (link.target || !isExternalUrl(link.getAttribute('href'))) continue;
+    link.target = '_blank';
+    link.rel = [...new Set([...link.rel.split(/\s+/), 'noopener', 'noreferrer'])].filter(Boolean).join(' ');
+  }
+}
+
 export default (Alpine: Alpine) => {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', markExternalLinks, { once: true });
+  else markExternalLinks();
+
   /**
    * Generic client-side filter/sort/paginate for server-rendered lists.
    * Items are elements with `data-item` inside the component root and expose their

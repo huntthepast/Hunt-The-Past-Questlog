@@ -22,6 +22,23 @@ export const OWNERSHIP = [
 
 export const OWNERSHIP_IDS = OWNERSHIP.map((o) => o.id);
 
+/** Where the public site lives; keep in step with `site` in astro.config.mjs. */
+export const SITE_URL = 'https://hunt-the-past-questlog.vercel.app';
+
+/**
+ * True for a link that leaves this site, so it can open in a new tab. Relative paths ("/guides/x"),
+ * anchors and mailto: stay in place; anything absolute that is not our own host counts as external.
+ */
+export function isExternalUrl(href) {
+  const url = String(href ?? '').trim();
+  if (!/^(https?:)?\/\//i.test(url)) return false;
+  try {
+    return new URL(url, SITE_URL).host !== new URL(SITE_URL).host;
+  } catch {
+    return false;
+  }
+}
+
 export const STEAM_STORE = 'https://store.steampowered.com';
 export const steamStoreUrl = (appId) => `${STEAM_STORE}/app/${appId}`;
 /** Steam's portrait library art (falls back to the wide header image on the site when missing). */

@@ -307,7 +307,7 @@
                             <template x-if="subsetRow(sub.raGameId)">
                               <div class="grid gap-3 sm:grid-cols-4">
                                 <label class="field"><span class="label">Rating (0-10)</span><input class="input" type="number" min="0" max="10" step="0.5" x-model="subsetRow(sub.raGameId).rating" /></label>
-                                <label class="field"><span class="label">Hours played</span><input class="input" type="number" min="0" step="0.1" x-model="subsetRow(sub.raGameId).hoursPlayed" :placeholder="sub.playtimeHours ? String(sub.playtimeHours) : ''" /></label>
+                                <label class="field"><span class="label">Hours played</span><input class="input" type="number" min="0" step="any" x-model="subsetRow(sub.raGameId).hoursPlayed" :placeholder="sub.playtimeHours ? String(sub.playtimeHours) : ''" /></label>
                                 <label class="field"><span class="label">Started</span><input class="input" type="date" x-model="subsetRow(sub.raGameId).startedAt" /></label>
                                 <label class="field"><span class="label">Finished</span><input class="input" type="date" x-model="subsetRow(sub.raGameId).finishedAt" /></label>
                                 <label class="field sm:col-span-2"><span class="label">Review (markdown)</span><textarea class="input min-h-20" x-model="subsetRow(sub.raGameId).review" placeholder="What did you think of this set?"></textarea></label>
@@ -349,7 +349,7 @@
                           <input type="checkbox" class="size-4 accent-amber-400" x-model="form.favorite" /> Favorite
                         </label>
                         <label class="field"><span class="label">Rating (0-10)</span><input class="input" type="number" min="0" max="10" step="0.5" x-model="form.rating" /></label>
-                        <label class="field"><span class="label">Hours played</span><input class="input" type="number" min="0" step="0.5" x-model="form.hoursPlayed" /></label>
+                        <label class="field"><span class="label">Hours played</span><input class="input" type="number" min="0" step="any" x-model="form.hoursPlayed" /></label>
                         <div></div>
                         <label class="field"><span class="label">Started</span><input class="input" type="date" x-model="form.startedAt" /></label>
                         <label class="field"><span class="label">Finished</span><input class="input" type="date" x-model="form.finishedAt" /></label>
@@ -1263,7 +1263,7 @@
                   <p class="text-xs text-zinc-500">Shown when this set is not the game's primary one (a game on RetroAchievements keeps its own stats under the RA tab; otherwise the first set uses the game's stats and these are for extra sets).</p>
                   <div class="grid gap-3 sm:grid-cols-4">
                     <label class="field"><span class="label">Rating (0-10)</span><input class="input" type="number" min="0" max="10" step="0.5" x-model="form.journal.rating" /></label>
-                    <label class="field"><span class="label">Hours played</span><input class="input" type="number" min="0" step="0.1" x-model="form.journal.hoursPlayed" /></label>
+                    <label class="field"><span class="label">Hours played</span><input class="input" type="number" min="0" step="any" x-model="form.journal.hoursPlayed" /></label>
                     <label class="field"><span class="label">Started</span><input class="input" type="date" x-model="form.journal.startedAt" /></label>
                     <label class="field"><span class="label">Finished</span><input class="input" type="date" x-model="form.journal.finishedAt" /></label>
                     <label class="field sm:col-span-2"><span class="label">Review (markdown)</span><textarea class="input min-h-20" x-model="form.journal.review"></textarea></label>

@@ -17,9 +17,17 @@ const optionalDate = z.preprocess(
   (v) => (v === '' || v === null ? undefined : v),
   z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD').optional(),
 );
+/*
+ * Comma-separated text from a form field, or an array from an import. Blanks are dropped rather than
+ * rejected: "" is what an empty input sends and would otherwise split to [""], and "RPG, " leaves a
+ * trailing empty entry - neither is a mistake worth failing a save over.
+ */
 const stringList = z.preprocess(
-  (v) => (typeof v === 'string' ? v.split(',') : Array.isArray(v) ? v : []),
-  z.array(z.string().trim().min(1)).transform((arr) => [...new Set(arr)]),
+  (v) =>
+    (typeof v === 'string' ? v.split(',') : Array.isArray(v) ? v : [])
+      .map((item) => (typeof item === 'string' ? item.trim() : item))
+      .filter((item) => item !== ''),
+  z.array(z.string().min(1)).transform((arr) => [...new Set(arr)]),
 );
 const bool = z.preprocess((v) => v === true || v === 'true' || v === 'on' || v === 1 || v === '1', z.boolean());
 const slug = z.string().regex(SLUG_RE, 'Slug may only contain lowercase letters, numbers and dashes');

@@ -3,16 +3,17 @@ import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import StatTile from '../components/StatTile.astro';
 import SectionHeading from '../components/SectionHeading.astro';
-import GameCard from '../components/GameCard.astro';
 import GuideCard from '../components/GuideCard.astro';
 import TrackerCard from '../components/TrackerCard.astro';
 import Cover from '../components/Cover.astro';
 import StatusBadge from '../components/StatusBadge.astro';
+import ProgressBar from '../components/ProgressBar.astro';
 import EmptyState from '../components/EmptyState.astro';
 import {
   site,
   raProfile,
   raSynced,
+  raGamePaths,
   allGames,
   allGuides,
   allTrackers,
@@ -33,7 +34,19 @@ const trackers = await allTrackers();
 const stats = libraryStats(games);
 const gameById = new Map(games.map((g) => [g.id, g]));
 
-const nowPlaying = games.filter((g) => g.data.ownership === 'owned' && g.data.status === 'playing').slice(0, 6);
+/*
+ * What I last actually played, from RetroAchievements rather than a status I have to remember to set.
+ * RA returns these newest first; sorted anyway so the featured one is never the wrong game.
+ */
+const recentlyPlayed = [...(raProfile.recentlyPlayed ?? [])].sort((a, b) => b.lastPlayed.localeCompare(a.lastPlayed));
+const lastPlayed = recentlyPlayed.find((g) => g.gameId === raProfile.lastGameId) ?? recentlyPlayed[0];
+const alsoPlayed = recentlyPlayed.filter((g) => g !== lastPlayed).slice(0, 5);
+// RA's rich presence describes the session it came from, so it only belongs on that game.
+const presence = lastPlayed && lastPlayed.gameId === raProfile.lastGameId ? raProfile.richPresence : '';
+const raPaths = await raGamePaths(games);
+// Where a played game lives here, if it is in the library at all.
+const pathFor = (gameId: number) => raPaths.get(gameId) ?? `${RA_SITE}/game/${gameId}`;
+const isLocal = (gameId: number) => raPaths.has(gameId);
 const recentlyFinished = games
   .filter((g) => g.data.ownership === 'owned' && isDone(g))
   .sort((a, b) => (b.data.finishedAt ?? b.data.updatedAt).localeCompare(a.data.finishedAt ?? a.data.updatedAt))
@@ -74,19 +87,66 @@ const latestTrackers = trackers.slice(0, 3);
     }
   </section>
 
-  <!-- Now playing -->
+  <!-- Last seen playing: taken from RetroAchievements, so it is right without being maintained -->
   <section class="mb-12">
-    <SectionHeading eyebrow="Right now" title="Now Playing" href="/progress#playing" linkLabel="All progress" />
+    <SectionHeading eyebrow="Right now" title="Last Seen Playing" href="/progress" linkLabel="All progress" />
     {
-      nowPlaying.length ? (
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {nowPlaying.map((game) => (
-            <GameCard game={game} />
-          ))}
+      lastPlayed ? (
+        <div class="card overflow-hidden">
+          <a href={pathFor(lastPlayed.gameId)} {...(isLocal(lastPlayed.gameId) ? {} : { target: '_blank', rel: 'noopener' })} class="flex flex-col gap-4 p-4 transition hover:bg-zinc-800/40 sm:flex-row sm:items-center sm:gap-5">
+            <img
+              src={raImage(lastPlayed.imageIcon)}
+              alt=""
+              width="64"
+              height="64"
+              class="size-16 shrink-0 self-start rounded-lg bg-zinc-800 ring-1 ring-zinc-700/60"
+            />
+            <div class="min-w-0 flex-1">
+              <p class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <span class="font-display text-xl text-zinc-50">{lastPlayed.title}</span>
+                <span class="chip bg-zinc-800 text-zinc-400 ring-zinc-700">{lastPlayed.consoleName}</span>
+              </p>
+              {presence && <p class="mt-1 text-sm italic leading-relaxed text-zinc-400">{presence}</p>}
+              <div class="mt-3 flex items-center gap-3">
+                <ProgressBar value={(lastPlayed.numAchieved / Math.max(1, lastPlayed.numPossible)) * 100} size="sm" class="max-w-xs" />
+                <span class="shrink-0 text-xs tabular-nums text-zinc-400">
+                  {lastPlayed.numAchieved} / {lastPlayed.numPossible}
+                </span>
+              </div>
+            </div>
+            <p class="shrink-0 text-xs text-zinc-500 sm:text-right">
+              <span class="block">{formatDateTime(lastPlayed.lastPlayed)}</span>
+              <span class="mt-0.5 block text-zinc-600">as of the last sync</span>
+            </p>
+          </a>
+
+          {alsoPlayed.length > 0 && (
+            <div class="border-t border-zinc-800 px-4 py-3">
+              <p class="eyebrow mb-2">Before that</p>
+              <ul class="flex flex-wrap gap-2">
+                {alsoPlayed.map((game) => (
+                  <li>
+                    <a
+                      href={pathFor(game.gameId)}
+                      {...(isLocal(game.gameId) ? {} : { target: '_blank', rel: 'noopener' })}
+                      class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 py-1.5 pl-1.5 pr-3 text-sm transition hover:border-zinc-700 hover:text-amber-300"
+                      title={`${game.title} - ${game.numAchieved} of ${game.numPossible} achievements`}
+                    >
+                      <img src={raImage(game.imageIcon)} alt="" width="28" height="28" loading="lazy" class="size-7 shrink-0 rounded bg-zinc-800" />
+                      <span class="max-w-40 truncate text-zinc-300">{game.title}</span>
+                      <span class="shrink-0 text-xs tabular-nums text-zinc-500">
+                        {game.numAchieved}/{game.numPossible}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       ) : (
-        <EmptyState title="Nothing in progress" icon="gamepad">
-          Mark a game as <em>Playing</em> in the admin and it will show up here.
+        <EmptyState title="Nothing played yet" icon="gamepad">
+          This follows RetroAchievements - run a sync in the admin and whatever you played last shows up here.
         </EmptyState>
       )
     }
@@ -136,7 +196,8 @@ const latestTrackers = trackers.slice(0, 3);
             {recentAchievements.map((a) => (
               <li>
                 <a href={`${RA_SITE}/achievement/${a.id}`} target="_blank" rel="noopener" class="flex items-center gap-3 p-3 transition hover:bg-zinc-800/50">
-                  <img src={raImage(a.badge)} alt="" width="48" height="48" loading="lazy" class="size-12 shrink-0 rounded bg-zinc-800" />
+                  {/* 56px to match the cover height in Recently Finished, so both columns tick down in step. */}
+                  <img src={raImage(a.badge)} alt="" width="56" height="56" loading="lazy" class="size-14 shrink-0 rounded bg-zinc-800" />
                   <span class="min-w-0 flex-1">
                     <span class="flex items-center gap-1.5 truncate font-medium text-zinc-100">
                       {a.title}

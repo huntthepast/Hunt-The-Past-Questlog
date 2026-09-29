@@ -28,7 +28,7 @@ The maps below were drawn by **Chiasm** and **Rick Bruns** and are hosted by
 [Better VGMaps](https://vgmaps.de/maps/nes/dragon-warrior). They are their work, not mine, so this guide links to
 each one rather than copying it - open a link and the full-size map loads on their site.
 
-I have groups them under **Overworld**, **Towns & castles** and **Dungeons**, the same three sections used below.
+I have grouped them under **Overworld**, **Towns & castles** and **Dungeons**, the same three sections used below.
 
 Names follow the US release, *Dragon Warrior*.
 

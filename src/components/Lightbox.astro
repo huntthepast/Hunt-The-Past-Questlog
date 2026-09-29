@@ -45,4 +45,31 @@ import Icon from './Icon.astro';
       <Icon name="arrow-right" class="size-4" />
     </button>
   </div>
+
+  <!--
+    The rest of the gallery, for jumping straight to an image instead of walking there with the
+    arrows. Thumbnails reuse the gallery's own file - which the page has already fetched for the
+    tile that was clicked - and stay lazy, so a wall of maps is not pulled down for a strip that
+    may never be scrolled.
+  -->
+  <div x-show="images.length > 1" class="shrink-0 cursor-default border-t border-zinc-800 bg-zinc-950/80 px-4 py-3">
+    <ul x-ref="strip" class="filmstrip" aria-label="All images on this page">
+      <template x-for="(image, i) in images" :key="image.src">
+        <li>
+          <button
+            type="button"
+            @click="go(i)"
+            :data-active="i === index"
+            :aria-current="i === index"
+            :title="image.caption ? image.title + ' - ' + image.caption : image.title"
+            :aria-label="image.title || 'Image ' + (i + 1)"
+            class="block aspect-[4/3] w-16 shrink-0 cursor-pointer overflow-hidden rounded-md border bg-zinc-900 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 sm:w-20"
+            :class="i === index ? 'border-amber-400' : 'border-zinc-700 opacity-60 hover:border-zinc-500 hover:opacity-100'"
+          >
+            <img :src="image.src" :alt="image.title" loading="lazy" decoding="async" class="h-full w-full object-cover" />
+          </button>
+        </li>
+      </template>
+    </ul>
+  </div>
 </div>

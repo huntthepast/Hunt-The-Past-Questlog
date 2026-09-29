@@ -423,6 +423,12 @@ export default (Alpine: Alpine) => {
       return { src, title: el.dataset.title || '', caption: el.dataset.caption || '' };
     },
 
+
+      // Keep the strip's marked thumbnail in sight however the shown image was reached: a click on
+      // another thumbnail, the arrows, the keyboard, or opening on an image far down the gallery.
+      this.$watch('index', () => this.reveal());
+      // Opening straight onto the twelfth map should find the strip already there, not slide to it.
+      this.$watch('open', (open: boolean) => open && this.reveal('auto'));
     collect() {
       const seen = new Set<string>();
       this.images = Array.from(this.$root.querySelectorAll<HTMLElement>('[data-lightbox]'))
@@ -451,6 +457,22 @@ export default (Alpine: Alpine) => {
    */
   /**
    * The phone half of FilterBar: the controls fold away behind a button, and `active` marks the
+    go(index: number) {
+      this.index = index;
+    },
+
+    /**
+     * Scrolls the bottom strip to the current thumbnail. A tick behind, because the marker it looks
+     * for is written by the render this runs in front of.
+     */
+    reveal(behavior: ScrollBehavior = 'smooth') {
+      this.$nextTick(() => {
+        const thumb = (this.$refs.strip as HTMLElement | undefined)?.querySelector('[data-active]');
+        // 'nearest' vertically: the strip sits in a fixed overlay, so there is nothing to scroll to
+        // reach it, and asking would only drag the page behind it around.
+        thumb?.scrollIntoView({ block: 'nearest', inline: 'center', behavior });
+      });
+    },
    * button when a filter is set so a hidden filter can never quietly explain an empty list.
    * Reads its parent listFilter's state - nested Alpine scopes chain to the one outside them.
    */

@@ -104,6 +104,13 @@
     @apply bg-amber-400 text-zinc-950 ring-amber-400;
   }
 
+  /* The lightbox's bottom strip: every image of the gallery, side by side, scrolled horizontally. */
+  .filmstrip {
+    @apply flex gap-2 overflow-x-auto overscroll-x-contain pb-1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-zinc-700) transparent;
+  }
+
   /* Page sidebar: a sticky, self-scrolling column on lg and up; a slide-in drawer below that
      (opened from the SidebarToolbar, see the sidebarDrawer Alpine component). */
   .page-sidebar {

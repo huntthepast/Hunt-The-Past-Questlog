@@ -37,8 +37,8 @@ to them:
   game publishers.
 - **Third-party reference data used in individual guides**, credited on the page itself. For example the
   Dragon Warrior equipment and item tables come from
-  [gamercorner.net](https://guides.gamercorner.net/dw/), and the Mega Man Battle Network 5 chip tracker comes
-  from the [Mega Man Wiki](https://megaman.fandom.com) (CC BY-SA).
+  [gamercorner.net](https://guides.gamercorner.net/dw/), and the Mega Man Battle Network 1 and 5 chip trackers
+  come from the [Mega Man Wiki](https://megaman.fandom.com) (CC BY-SA).
 - **Fonts and libraries** in `node_modules/` or loaded from a CDN, under their own licences.
 
 If you reuse a guide that builds on one of those sources, credit that source too.

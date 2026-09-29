@@ -16,12 +16,15 @@
   "subsets": [
     {
       "raGameId": 19921,
+      "rating": 6,
       "hoursPlayed": 52.4,
+      "startedAt": "2025-09-23",
       "finishedAt": "2025-09-27",
-      "startedAt": "2025-09-23"
+      "review": "Have you ever heard the definition of insanity? Well, if you try to get this subset mastery, you'll understand what insanity feels like. \n\nNo, really, don't do this if you don't want to waste your time. Playing the same 13 levels over and over on 3 difficulties each with 14 different playable characters is a massive time sink. wHo wOuLd hAvE kNoWn?! \n\nAnyway, I did it, and it's over now. I'm probably crazy enough to do the no-damage version of this too, and I'm afraid that when that happens, I won't be the same person anymore.",
+      "notes": "Never Again..."
     }
   ],
   "tags": [],
   "addedAt": "2026-09-18T07:05:38.732Z",
-  "updatedAt": "2026-09-21T14:09:49.070Z"
+  "updatedAt": "2026-09-23T17:22:03.669Z"
 }

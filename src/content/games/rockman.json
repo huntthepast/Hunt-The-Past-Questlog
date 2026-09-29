@@ -11,11 +11,14 @@
   "ownership": "owned",
   "favorite": false,
   "status": "mastered",
+  "rating": 7,
   "hoursPlayed": 1.8,
   "startedAt": "2024-03-31",
   "finishedAt": "2024-03-31",
   "raGameId": 8331,
+  "subsets": [],
+  "review": "A pretty good port of the original NES game with some nice additional content. It's just too bad the player collision is wonky in this one. Overall, it's a decent way to play Mega Man 1, but if you want an experience closer to the original but with more additional content, get the Legacy Collection instead.\n\nAchievement-wise, it's pretty easy to master and a good way to get used to mastering Mega Man games, since there's no typical no-damage achievement here. So go ahead and give this one a try.",
   "tags": [],
   "addedAt": "2026-09-18T07:05:54.497Z",
-  "updatedAt": "2026-09-21T14:09:49.070Z"
+  "updatedAt": "2026-09-23T17:08:22.772Z"
 }

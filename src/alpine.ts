@@ -3,7 +3,7 @@ import type { Alpine } from 'alpinejs';
 // predictable order instead of being injected at runtime.
 import Swal from 'sweetalert2/dist/sweetalert2.esm.js';
 import { createDialogs } from './lib/dialogs.js';
-import { isExternalUrl } from './lib/constants.js';
+import { isExternalUrl, youtubeId, youtubeListId, youtubeThumb, youtubeEmbed, youtubeWatch } from './lib/constants.js';
 
 /** SweetAlert2 dialogs in the site's colours, shared with the local admin. */
 const dialog = createDialogs(Swal);
@@ -52,9 +52,66 @@ function markExternalLinks() {
   }
 }
 
+/**
+ * A YouTube link alone on its own line in a guide becomes a player in place.
+ *
+ * Done here rather than at build time because guide bodies go through Astro's own markdown, which
+ * takes no rehype plugin in this setup. The upshot is the right fallback anyway: with no JavaScript
+ * the link stays a link, and it is still a link to the same video.
+ *
+ * Only a paragraph that is nothing but the link is converted - a link inside a sentence is left
+ * alone, because replacing it would swallow the sentence.
+ */
+function embedVideoLinks() {
+  for (const paragraph of Array.from(document.querySelectorAll<HTMLParagraphElement>('.guide-prose p'))) {
+    const link = paragraph.querySelector('a');
+    if (!link || paragraph.textContent?.trim() !== link.textContent?.trim()) continue;
+
+    const id = youtubeId(link.getAttribute('href'));
+    if (!id) continue;
+
+    const listId = youtubeListId(link.getAttribute('href'));
+    // A pasted link's text is the URL itself, which makes a useless accessible name for the player.
+    const linkText = link.textContent?.trim() ?? '';
+    const title = !linkText || /^https?:\/\//i.test(linkText) ? 'YouTube video' : linkText;
+    const figure = document.createElement('figure');
+    figure.className = 'not-prose my-6';
+    figure.innerHTML = `
+      <div class="group relative aspect-video w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950" data-video>
+        <a href="${youtubeWatch(id, listId)}" target="_blank" rel="noopener" class="absolute inset-0 block">
+          <img src="${youtubeThumb(id)}" alt="" loading="lazy" decoding="async" class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
+          <span class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></span>
+          <span class="absolute inset-0 grid place-items-center">
+            <span class="grid size-16 place-items-center rounded-full bg-black/60 text-white ring-1 ring-white/25 backdrop-blur transition group-hover:bg-rose-600 group-hover:ring-rose-400">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-7 translate-x-0.5"><path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" /></svg>
+            </span>
+          </span>
+        </a>
+      </div>`;
+
+    const frame = figure.querySelector<HTMLElement>('[data-video]')!;
+    const poster = frame.querySelector('a')!;
+    poster.addEventListener('click', (event) => {
+      event.preventDefault();
+      const iframe = document.createElement('iframe');
+      iframe.src = youtubeEmbed(id, listId);
+      iframe.title = title;
+      iframe.className = 'absolute inset-0 h-full w-full';
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+      iframe.allowFullscreen = true;
+      poster.remove();
+      frame.appendChild(iframe);
+    });
+
+    paragraph.replaceWith(figure);
+  }
+}
+
 export default (Alpine: Alpine) => {
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', markExternalLinks, { once: true });
-  else markExternalLinks();
+  const enhanceProse = () => { markExternalLinks(); embedVideoLinks(); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enhanceProse, { once: true });
+  else enhanceProse();
 
   /**
    * Generic client-side filter/sort/paginate for server-rendered lists.
@@ -422,6 +479,30 @@ export default (Alpine: Alpine) => {
        * for one pixel of scroll, so a flick of the wheel jumps clean over that window, the observed
        * state never changes, and the callback never fires. Reading the position on scroll always
        * gives the right answer. The bar never changes the layout, so this cannot feed back on itself.
+  /**
+   * A YouTube poster that becomes a player on click. The iframe is built here rather than rendered
+   * with the page, so nothing is requested from YouTube - and no cookie is set - until someone asks
+   * to watch. Once built it stays, so pausing and replaying does not refetch it.
+   */
+  Alpine.data('videoEmbed', (src: string, title: string) => ({
+    playing: false,
+
+    play() {
+      if (this.playing) return;
+      this.playing = true;
+      const host = this.$refs.player as HTMLElement | undefined;
+      if (!host || host.querySelector('iframe')) return;
+      const frame = document.createElement('iframe');
+      frame.src = src;
+      frame.title = title;
+      frame.className = 'h-full w-full';
+      frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      frame.allowFullscreen = true;
+      host.appendChild(frame);
+    },
+  }));
+
        */
       const sentinel = this.$refs.sentinel as HTMLElement | undefined;
       if (!sentinel) return;

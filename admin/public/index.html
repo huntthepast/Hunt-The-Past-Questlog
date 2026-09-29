@@ -387,6 +387,24 @@
                       <label class="field"><span class="label">Review</span><textarea class="input min-h-28" x-model="form.review" placeholder="What did you think?"></textarea></label>
                       <label class="field"><span class="label">Notes</span><textarea class="input min-h-20" x-model="form.notes" placeholder="Where you left off, what to do next..."></textarea></label>
                     </fieldset>
+
+                    <fieldset class="card space-y-3 p-4">
+                      <legend class="px-1 text-xs font-semibold uppercase tracking-wider text-amber-400/90">Videos</legend>
+                      <p class="text-xs text-zinc-500">YouTube runs for this game, shown on its page. For footage that goes with a written guide, put it on the guide instead. Players only load when a reader presses play.</p>
+                      <div class="space-y-2">
+                        <template x-for="(v, i) in form.videos" :key="i">
+                          <div class="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
+                            <div class="flex flex-wrap items-center gap-2">
+                              <input class="input flex-1" x-model.trim="v.url" placeholder="https://youtu.be/..." />
+                              <input class="input sm:w-52" x-model="v.title" placeholder="Title (optional)" />
+                              <button type="button" class="btn btn-sm btn-danger" @click="form.videos.splice(i, 1)" aria-label="Remove video">&times;</button>
+                            </div>
+                            <input class="input mt-2 w-full" x-model="v.note" placeholder="Note (optional)" />
+                          </div>
+                        </template>
+                      </div>
+                      <button type="button" class="btn btn-sm" @click="addGameVideo()">+ Add video</button>
+                    </fieldset>
                   </div>
                 </div>
               </form>
@@ -542,6 +560,10 @@
                     <button type="button" class="tool" :class="panel === 'downloads' && 'tool-active'" @click="togglePanel('downloads')" title="Downloads: files linked from the sidebar (e.g. a zip on a GitHub release)">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
                       <span x-show="form.downloads.length" x-text="form.downloads.length"></span>
+                    </button>
+                    <button type="button" class="tool" :class="panel === 'videos' && 'tool-active'" @click="togglePanel('videos')" title="Video: drop a YouTube link into the guide where it belongs, or list one at the end">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h8.25a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H4.5A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" /></svg>
+                      <span x-show="form.videos.length" x-text="form.videos.length"></span>
                     </button>
                     <button type="button" class="tool" :class="panel === 'sources' && 'tool-active'" @click="togglePanel('sources')" title="Sources: credit material taken from elsewhere - shown at the end of the guide with a removal link, and listed on /credits">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" /></svg>
@@ -821,6 +843,48 @@
                   </div>
 
 
+
+                  <!-- Videos: one inline at the cursor, or a list rendered at the end of the guide -->
+                  <div x-show="panel === 'videos'" x-cloak class="fixed inset-0 z-50 grid place-items-center p-4" @click.self="panel = null" role="dialog" aria-modal="true" aria-label="Videos">
+                    <div class="card flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden bg-zinc-950 shadow-2xl">
+                      <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+                        <p class="font-display text-xl text-zinc-100">Videos</p>
+                        <button type="button" class="btn btn-sm" @click="panel = null" aria-label="Close">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                      <div class="min-h-0 flex-1 overflow-y-auto p-4">
+                        <form class="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3" @submit.prevent="insertVideoInline()">
+                          <p class="text-xs text-zinc-400">Drop it into the text at the cursor - good for "here is this achievement" at the step it belongs to. A link alone on its own line becomes a player there.</p>
+                          <div class="mt-2 flex flex-wrap gap-2">
+                            <input class="input flex-1" x-model.trim="videoUrl" placeholder="https://youtu.be/... or https://www.youtube.com/watch?v=..." />
+                            <button type="submit" class="btn btn-sm btn-accent" :disabled="!videoUrl">Insert at cursor</button>
+                          </div>
+                        </form>
+
+                        <div class="mt-4 flex items-center justify-between">
+                          <div>
+                            <span class="label mb-0">Listed at the end</span>
+                            <p class="text-xs text-zinc-500">A Videos section after the guide - for the full run, rather than a clip at one step.</p>
+                          </div>
+                          <button type="button" class="btn btn-sm" @click="addVideo()">+ Add video</button>
+                        </div>
+                        <div class="mt-2 space-y-2">
+                          <template x-for="(v, i) in form.videos" :key="i">
+                            <div class="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
+                              <div class="flex flex-wrap items-center gap-2">
+                                <input class="input flex-1" x-model.trim="v.url" placeholder="https://youtu.be/..." required />
+                                <input class="input sm:w-56" x-model="v.title" placeholder="Title (optional)" />
+                                <button type="button" class="btn btn-sm btn-danger" @click="form.videos.splice(i, 1)" aria-label="Remove video">&times;</button>
+                              </div>
+                              <input class="input mt-2 w-full" x-model="v.note" placeholder="Note (optional) - what the run is, when it was recorded" />
+                            </div>
+                          </template>
+                        </div>
+                        <p x-show="!form.videos.length" class="mt-2 rounded-lg border border-dashed border-zinc-800 px-3 py-4 text-center text-sm text-zinc-500">No listed videos. The player only loads when a reader presses play, so extra entries cost nothing until watched.</p>
+                      </div>
+                    </div>
+                  </div>
 
                   <!-- Sources dialog: who to credit for material that is not mine, and the removal trail -->
                   <div x-show="panel === 'sources'" x-cloak class="fixed inset-0 z-50 grid place-items-center p-4" @click.self="panel = null" role="dialog" aria-modal="true" aria-label="Sources">

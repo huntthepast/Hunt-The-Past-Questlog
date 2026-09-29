@@ -46,7 +46,7 @@ function assertSlug(slug) {
 const GAME_KEY_ORDER = [
   'title', 'platform', 'cover', 'icon', 'genres', 'developer', 'publisher', 'releaseYear',
   'ownership', 'favorite', 'status', 'rating', 'hoursPlayed', 'startedAt', 'finishedAt',
-  'raGameId', 'steamAppId', 'subsets', 'review', 'notes', 'tags', 'addedAt', 'updatedAt',
+  'raGameId', 'steamAppId', 'subsets', 'videos', 'review', 'notes', 'tags', 'addedAt', 'updatedAt',
 ];
 
 /** Re-orders keys and drops undefined values so files look the same no matter who wrote them. */
@@ -101,7 +101,7 @@ export function stringifyMarkdown(data, body) {
   return `---\n${front}\n---\n\n${body.replace(/\r\n/g, '\n').trimEnd()}\n`;
 }
 
-const GUIDE_KEY_ORDER = ['title', 'type', 'game', 'summary', 'version', 'order', 'series', 'checklistColumns', 'checklistCollapsed', 'tags', 'draft', 'gallery', 'downloads', 'sources', 'createdAt', 'updatedAt'];
+const GUIDE_KEY_ORDER = ['title', 'type', 'game', 'summary', 'version', 'order', 'series', 'checklistColumns', 'checklistCollapsed', 'tags', 'draft', 'gallery', 'downloads', 'videos', 'sources', 'createdAt', 'updatedAt'];
 const guideFile = (slug) => path.join(PATHS.guides, `${assertSlug(slug)}.md`);
 
 export const guideExists = async (slug) => isSlug(slug) && existsSync(guideFile(slug));

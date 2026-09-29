@@ -8,6 +8,8 @@ import Icon from '../../components/Icon.astro';
 import ProgressBar from '../../components/ProgressBar.astro';
 import GuideHub from '../../components/GuideHub.astro';
 import RaSetTabs from '../../components/RaSetTabs.astro';
+import VideoEmbed from '../../components/VideoEmbed.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
 import {
   allGames,
   allGuides,
@@ -338,6 +340,20 @@ const jsonLd = [
             )}
           </div>
         ))
+      }
+
+
+      {
+        d.videos.length > 0 && (
+          <section class="mt-10" aria-label="Videos">
+            <SectionHeading level="h2" eyebrow="Watch" title={d.videos.length === 1 ? 'Video' : 'Videos'} />
+            <div class="grid gap-5 sm:grid-cols-2">
+              {d.videos.map((video) => (
+                <VideoEmbed url={video.url} title={video.title} note={video.note} />
+              ))}
+            </div>
+          </section>
+        )
       }
 
       <!-- Achievements: RetroAchievements (main set + subsets), Steam and manual sets as tabs -->

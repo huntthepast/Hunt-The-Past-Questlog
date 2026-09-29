@@ -172,6 +172,7 @@ document.addEventListener('alpine:init', () => {
     platform: '',
     cover: '',
     icon: '',
+    videos: [],
     genres: '',
     developer: '',
     publisher: '',
@@ -262,6 +263,7 @@ document.addEventListener('alpine:init', () => {
           ...g,
           cover: g.cover ?? '',
           icon: g.icon ?? '',
+          videos: (g.videos ?? []).map((item) => ({ ...item, title: item.title ?? '', note: item.note ?? '' })),
           developer: g.developer ?? '',
           publisher: g.publisher ?? '',
           releaseYear: g.releaseYear ?? '',
@@ -319,12 +321,20 @@ document.addEventListener('alpine:init', () => {
       this.dirty = false;
     },
 
+    addGameVideo() {
+      this.form.videos.push({ url: '', title: '', note: '' });
+    },
+
     async save() {
       if (!this.form) return;
       this.saving = true;
       try {
         // Subset rows are only stored when they hold something; blank rows exist just to be editable.
-        const payload = { ...this.form, subsets: this.form.subsets.filter((row) => ['rating', 'hoursPlayed', 'startedAt', 'finishedAt', 'review', 'notes'].some((key) => row[key] !== '' && row[key] != null)) };
+        const payload = {
+          ...this.form,
+          subsets: this.form.subsets.filter((row) => ['rating', 'hoursPlayed', 'startedAt', 'finishedAt', 'review', 'notes'].some((key) => row[key] !== '' && row[key] != null)),
+          videos: this.form.videos.filter((v) => v.url.trim()).map((v) => ({ url: v.url, title: v.title || undefined, note: v.note || undefined })),
+        };
         const saved = this.isNew ? await api('POST', '/api/games', payload) : await api('PUT', `/api/games/${this.selected}`, payload);
         Alpine.store('app').toast(`Saved "${saved.title}"`);
         await this.load();
@@ -463,7 +473,7 @@ document.addEventListener('alpine:init', () => {
 
   /* ---------------- guides ---------------- */
 
-  const blankGuide = () => ({ slug: '', title: '', type: 'Walkthrough', game: '', summary: '', version: '', order: 0, series: '', checklistColumns: 1, checklistCollapsed: false, tags: '', draft: false, gallery: [], downloads: [], sources: [], body: '' });
+  const blankGuide = () => ({ slug: '', title: '', type: 'Walkthrough', game: '', summary: '', version: '', order: 0, series: '', checklistColumns: 1, checklistCollapsed: false, tags: '', draft: false, gallery: [], downloads: [], videos: [], sources: [], body: '' });
 
   /* GameFAQs-style skeleton. Headings feed the auto-generated table of contents. */
   const WALKTHROUGH_TEMPLATE = `## Introduction
@@ -532,6 +542,7 @@ Step by step through the area.
     linkUrl: '',
     linkText: '',
     sourceBook: [],
+    videoUrl: '',
 
     async init() {
       await this.load();
@@ -589,6 +600,21 @@ Step by step through the area.
 
     addSource(known) {
       this.form.sources.push(known ? sourceRowFrom(known) : { label: '', url: '', note: '', license: '' });
+    },
+
+    addVideo() {
+      this.form.videos.push({ url: '', title: '', note: '' });
+    },
+
+    /** A link alone on its own line becomes a player where it sits, so it lands at the right step. */
+    insertVideoInline() {
+      const url = String(this.videoUrl ?? '').trim();
+      if (!url) return;
+      this.insert(`
+${url}
+`);
+      this.videoUrl = '';
+      this.panel = null;
     },
 
     /** Series names already used by other guides of the selected game, so parts get the exact same spelling. */
@@ -652,6 +678,7 @@ Step by step through the area.
           tags: (g.tags ?? []).join(', '),
           gallery: (g.gallery ?? []).map((item) => ({ ...item, caption: item.caption ?? '', category: item.category ?? '' })),
           downloads: (g.downloads ?? []).map((item) => ({ ...item, note: item.note ?? '' })),
+          videos: (g.videos ?? []).map((item) => ({ ...item, title: item.title ?? '', note: item.note ?? '' })),
           sources: (g.sources ?? []).map((item) => ({ ...item, url: item.url ?? '', note: item.note ?? '', license: item.license ?? '' })),
         });
         await this.loadAttachments();
@@ -673,7 +700,8 @@ Step by step through the area.
         ...this.form,
         gallery: this.form.gallery.map((g) => ({ src: g.src, title: g.title, caption: g.caption || undefined, category: g.category || undefined })),
         downloads: this.form.downloads.map((d) => ({ label: d.label, url: d.url, note: d.note || undefined })),
-        // A source with no name to credit is an empty row the author left behind; drop it rather than fail validation.
+        // Rows left blank are the author's leftovers, not a mistake worth failing a save over.
+        videos: this.form.videos.filter((v) => v.url.trim()).map((v) => ({ url: v.url, title: v.title || undefined, note: v.note || undefined })),
         sources: this.form.sources.filter((s) => s.label.trim()).map((s) => ({ label: s.label, url: s.url || undefined, note: s.note || undefined, license: s.license || undefined })),
       };
     },

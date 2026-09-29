@@ -33,6 +33,13 @@ const bool = z.preprocess((v) => v === true || v === 'true' || v === 'on' || v =
 const slug = z.string().regex(SLUG_RE, 'Slug may only contain lowercase letters, numbers and dashes');
 const optionalSlug = z.preprocess((v) => (v === '' || v === null ? undefined : v), slug.optional());
 
+/** A YouTube link rendered as a player on the guide or game page. */
+const VideoSchema = z.object({
+  url: text.min(1, 'Video needs a YouTube link'),
+  title: optionalText,
+  note: optionalText,
+});
+
 export const GameSchema = z.object({
   title: text.min(1, 'Title is required'),
   platform: slug,
@@ -64,6 +71,7 @@ export const GameSchema = z.object({
       }),
     )
     .default([]),
+  videos: z.array(VideoSchema).default([]),
   review: optionalText,
   notes: optionalText,
   tags: stringList.default([]),
@@ -104,6 +112,7 @@ export const GuideSchema = z.object({
   draft: bool.default(false),
   gallery: z.array(GalleryItemSchema).default([]),
   downloads: z.array(DownloadSchema).default([]),
+  videos: z.array(VideoSchema).default([]),
   sources: z.array(SourceSchema).default([]),
   body: z.string().default(''),
 });

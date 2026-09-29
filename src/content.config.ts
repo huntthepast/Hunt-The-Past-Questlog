@@ -11,6 +11,23 @@ const enumOf = (ids: string[]) => z.enum(ids as [string, ...string[]]);
  * Shown as a credits block at the end of the page and collected on /credits, so the person who made
  * it can find their own work here and ask for it to be taken down.
  */
+/**
+ * YouTube links shown as players. A guide uses them for the run that goes with it; a game for
+ * footage that has no written guide behind it. A link can also be dropped straight into a guide
+ * body on its own line, which becomes a player in place.
+ */
+const videos = z
+  .array(
+    z.object({
+      url: z.string().min(1),
+      /** Shown over the poster frame; falls back to a generic label. */
+      title: z.string().optional(),
+      /** A line under the player: what the run is, when it was recorded. */
+      note: z.string().optional(),
+    }),
+  )
+  .default([]);
+
 const sources = z
   .array(
     z.object({
@@ -70,6 +87,7 @@ const games = defineCollection({
         }),
       )
       .default([]),
+    videos,
     review: z.string().optional(),
     notes: z.string().optional(),
     tags: z.array(z.string()).default([]),
@@ -111,6 +129,7 @@ const guides = defineCollection({
       .default([]),
     /** External downloads (e.g. a zip attached to a GitHub release). */
     downloads: z.array(z.object({ label: z.string().min(1), url: z.string().min(1), note: z.string().optional() })).default([]),
+    videos,
     sources,
     createdAt: z.string(),
     updatedAt: z.string(),

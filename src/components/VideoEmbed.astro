@@ -1,0 +1,63 @@
+---
+import Icon from './Icon.astro';
+import { youtubeId, youtubeListId, youtubeThumb, youtubeEmbed, youtubeWatch } from '../lib/constants.js';
+
+/**
+ * A YouTube video as a poster frame with a play button; the player itself is only fetched when
+ * someone presses play.
+ *
+ * A plain <iframe> pulls several hundred KB of third-party script and sets cookies the moment the
+ * page loads, whether or not anyone watches - multiply that by three videos in a walkthrough and it
+ * is most of the page. This costs an image until it is wanted, and uses youtube-nocookie even then.
+ *
+ * Without JavaScript the poster is a normal link to YouTube, so the video is never unreachable.
+ */
+interface Props {
+  url: string;
+  title?: string;
+  note?: string;
+  class?: string;
+}
+
+const { url, title, note, class: className = '' } = Astro.props;
+
+const id = youtubeId(url);
+const listId = youtubeListId(url);
+const label = title?.trim() || 'Watch on YouTube';
+---
+
+{
+  id && (
+    <figure class:list={['not-prose', className]}>
+      <div
+        class="group relative aspect-video w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950"
+        x-data={`videoEmbed(${JSON.stringify(youtubeEmbed(id, listId))}, ${JSON.stringify(label)})`}
+      >
+        <a
+          href={youtubeWatch(id, listId)}
+          target="_blank"
+          rel="noopener"
+          class="absolute inset-0 block"
+          x-show="!playing"
+          @click.prevent="play()"
+          aria-label={`Play: ${label}`}
+        >
+          <img src={youtubeThumb(id)} alt="" loading="lazy" decoding="async" class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
+          <span class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" aria-hidden="true"></span>
+          <span class="absolute inset-0 grid place-items-center" aria-hidden="true">
+            <span class="grid size-16 place-items-center rounded-full bg-black/60 text-white ring-1 ring-white/25 backdrop-blur transition group-hover:bg-rose-600 group-hover:ring-rose-400">
+              <Icon name="play" solid class="size-7 translate-x-0.5" />
+            </span>
+          </span>
+          {title && (
+            <span class="absolute inset-x-0 bottom-0 block truncate px-3 py-2 text-sm font-medium text-white drop-shadow">{title}</span>
+          )}
+        </a>
+
+        {/* Built on click by videoEmbed, so nothing from YouTube is requested before then. */}
+        <div class="absolute inset-0" x-show="playing" x-cloak x-ref="player"></div>
+      </div>
+      {note && <figcaption class="mt-2 text-xs text-zinc-500">{note}</figcaption>}
+    </figure>
+  )
+}

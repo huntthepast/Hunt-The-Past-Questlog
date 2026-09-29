@@ -129,7 +129,8 @@ app.post('/api/games', async (c) => {
 app.put('/api/games/:slug', async (c) => {
   const slug = c.req.param('slug');
   const existing = await store.getGame(slug);
-  const data = validate(GameSchema, await c.req.json());
+  const raw = await c.req.json();
+  const data = keepUnsent(raw, validate(GameSchema, raw), existing, GAME_LISTS);
   await assertPlatformExists(data.platform);
   const game = await store.saveGame(slug, { ...data, addedAt: existing.addedAt ?? store.now(), updatedAt: store.now() });
   return c.json(game);
@@ -254,7 +255,8 @@ app.delete('/api/guides/:slug', async (c) => {
  *
  * Sending the key explicitly still clears it; only leaving it out falls back to what is on disk.
  */
-const GUIDE_LISTS = ['gallery', 'downloads', 'sources', 'tags'];
+const GAME_LISTS = ['genres', 'tags', 'subsets', 'videos'];
+const GUIDE_LISTS = ['gallery', 'downloads', 'videos', 'sources', 'tags'];
 const TRACKER_LISTS = ['sections', 'sources'];
 
 function keepUnsent(raw, data, existing, keys) {

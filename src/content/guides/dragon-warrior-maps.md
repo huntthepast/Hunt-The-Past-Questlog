@@ -13,6 +13,7 @@ tags:
 draft: false
 gallery: []
 downloads: []
+videos: []
 sources:
   - label: "Better VGMaps"
     url: "https://vgmaps.de/maps/nes/dragon-warrior"

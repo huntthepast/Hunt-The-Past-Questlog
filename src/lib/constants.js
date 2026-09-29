@@ -149,6 +149,52 @@ export const raImage = (path) => {
   return RA_MEDIA + (path.startsWith('/') ? path : '/' + path);
 };
 
+/* ---------- YouTube ---------- */
+
+/**
+ * The video id out of any shape of YouTube link: watch?v=, youtu.be/, /embed/, /live/ or /shorts/.
+ * Returns '' for anything else, which is how callers tell a video link from an ordinary one.
+ */
+export function youtubeId(url) {
+  const value = String(url ?? '').trim();
+  if (!value) return '';
+  try {
+    const parsed = new URL(value, 'https://youtube.com');
+    const host = parsed.host.replace(/^www\./, '');
+    if (host === 'youtu.be') return parsed.pathname.slice(1).split('/')[0] || '';
+    if (!/(^|\.)(youtube\.com|youtube-nocookie\.com)$/.test(host)) return '';
+    if (parsed.pathname === '/watch') return parsed.searchParams.get('v') ?? '';
+    const match = /^\/(embed|shorts|live|v)\/([^/?#]+)/.exec(parsed.pathname);
+    return match ? match[2] : '';
+  } catch {
+    return '';
+  }
+}
+
+/** The playlist id, when the link points at one. Playlists play as a video with a queue. */
+export function youtubeListId(url) {
+  try {
+    return new URL(String(url ?? ''), 'https://youtube.com').searchParams.get('list') ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/** Poster frame, served by YouTube's image CDN - no player, no cookies. */
+export const youtubeThumb = (id) => (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : '');
+
+/** The player URL, only ever loaded after someone presses play. nocookie keeps it tracker-free. */
+export function youtubeEmbed(id, listId = '') {
+  if (!id) return '';
+  const params = new URLSearchParams({ autoplay: '1', rel: '0' });
+  if (listId) params.set('list', listId);
+  return `https://www.youtube-nocookie.com/embed/${id}?${params}`;
+}
+
+/** The canonical link to open on YouTube itself. */
+export const youtubeWatch = (id, listId = '') =>
+  id ? `https://www.youtube.com/watch?v=${id}${listId ? `&list=${listId}` : ''}` : '';
+
 /** Maps a RetroAchievements award kind to one of our statuses. */
 export const statusFromAwardKind = (kind, numAwarded = 0) => {
   switch (kind) {

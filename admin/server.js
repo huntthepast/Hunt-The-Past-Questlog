@@ -11,6 +11,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { Hono } from 'hono';
 import { csrf } from 'hono/csrf';
+import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import { serve } from '@hono/node-server';
 
@@ -40,6 +41,9 @@ if (existsSync(PATHS.env)) {
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.ADMIN_PORT) || 3333;
 const ORIGINS = [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
+/** The Astro dev server (`npm run dev`), whose tracker pages can tick your progress through the admin. */
+const SITE_PORT = Number(process.env.SITE_PORT) || 4321;
+const SITE_ORIGINS = [`http://localhost:${SITE_PORT}`, `http://127.0.0.1:${SITE_PORT}`];
 
 /* ---------------- app ---------------- */
 
@@ -51,6 +55,12 @@ app.use('*', async (c, next) => {
   if (host !== 'localhost' && host !== '127.0.0.1') return c.text('Forbidden', 403);
   await next();
 });
+
+/*
+ * The one route another origin may call: a tracker page on the local dev site ticking your own
+ * progress. Everything else stays without CORS headers, so no other page can read or write it.
+ */
+app.use('/api/trackers/:slug/progress', cors({ origin: SITE_ORIGINS, allowMethods: ['GET', 'PATCH'], allowHeaders: ['Content-Type'] }));
 
 // Block cross-site form posts. JSON calls are already protected by the lack of CORS headers.
 app.use('/api/*', csrf({ origin: ORIGINS }));
@@ -369,6 +379,49 @@ app.put('/api/trackers/:slug', async (c) => {
 app.delete('/api/trackers/:slug', async (c) => {
   await store.deleteTracker(c.req.param('slug'));
   return c.json({ ok: true });
+});
+
+/*
+ * Your ticks, set from the tracker page itself on the dev site instead of through the editor.
+ * Only `done` is touched, so an edit here can never disturb labels, notes or order.
+ */
+const progressOf = (tracker) => Object.fromEntries(tracker.sections.flatMap((s) => s.items.map((i) => [i.id, Boolean(i.done)])));
+
+/** Writes to one tracker run one at a time, so quick ticks in a row cannot overwrite each other. */
+const trackerQueues = new Map();
+const settled = (slug) => (trackerQueues.get(slug) ?? Promise.resolve()).catch(() => {});
+/*
+ * The newest tick seen per item. Requests are sent the moment you click and may overtake each other
+ * on the way here, so a tick-then-untick of the same item could otherwise land the wrong way round.
+ */
+const lastSeq = new Map();
+
+// Waits for pending writes: reading while one is half-written would return a broken file.
+app.get('/api/trackers/:slug/progress', async (c) => {
+  const slug = c.req.param('slug');
+  await settled(slug);
+  return c.json({ done: progressOf(await store.getTracker(slug)) });
+});
+
+const ProgressPatchSchema = z.object({ done: z.record(z.string(), z.boolean()), seq: z.number().default(0) });
+
+app.patch('/api/trackers/:slug/progress', async (c) => {
+  const slug = c.req.param('slug');
+  const { done, seq } = validate(ProgressPatchSchema, await c.req.json());
+  const run = settled(slug).then(async () => {
+    const tracker = await store.getTracker(slug);
+    const known = new Set(tracker.sections.flatMap((s) => s.items.map((i) => i.id)));
+    const unknown = Object.keys(done).filter((id) => !known.has(id));
+    if (unknown.length) throw conflict(`This tracker no longer has ${unknown.join(', ')}. Reload the page.`);
+    const fresh = Object.entries(done).filter(([id]) => seq >= (lastSeq.get(`${slug}/${id}`) ?? 0));
+    if (!fresh.length) return tracker;
+    for (const [id] of fresh) lastSeq.set(`${slug}/${id}`, seq);
+    const apply = Object.fromEntries(fresh);
+    const sections = tracker.sections.map((s) => ({ ...s, items: s.items.map((i) => (i.id in apply ? { ...i, done: apply[i.id] } : i)) }));
+    return store.saveTracker(slug, { ...tracker, sections, updatedAt: store.now() });
+  });
+  trackerQueues.set(slug, run);
+  return c.json({ done: progressOf(await run) });
 });
 
 /* ---------------- sources (credits, across guides and trackers) ---------------- */

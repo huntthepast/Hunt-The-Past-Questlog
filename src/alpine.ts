@@ -108,6 +108,14 @@ function embedVideoLinks() {
   }
 }
 
+/** Where `npm run admin` listens. Only read on the dev site; see the tracker component. */
+const ADMIN_DEV_URL = 'http://127.0.0.1:3333';
+/** Order of owner ticks, rising across page reloads (it starts from the clock). */
+let seqCounter = 0;
+const nextSeq = () => Date.now() * 1000 + (seqCounter++ % 1000);
+let unloading = false;
+addEventListener('pagehide', () => (unloading = true));
+
 export default (Alpine: Alpine) => {
   const enhanceProse = () => { markExternalLinks(); embedVideoLinks(); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enhanceProse, { once: true });
@@ -415,6 +423,12 @@ export default (Alpine: Alpine) => {
         event.preventDefault();
         openFrom(target);
       });
+
+      // Keep the strip's marked thumbnail in sight however the shown image was reached: a click on
+      // another thumbnail, the arrows, the keyboard, or opening on an image far down the gallery.
+      this.$watch('index', () => this.reveal());
+      // Opening straight onto the twelfth map should find the strip already there, not slide to it.
+      this.$watch('open', (open: boolean) => open && this.reveal('auto'));
     },
 
     describe(el: HTMLElement): LightboxImage | null {
@@ -423,12 +437,6 @@ export default (Alpine: Alpine) => {
       return { src, title: el.dataset.title || '', caption: el.dataset.caption || '' };
     },
 
-
-      // Keep the strip's marked thumbnail in sight however the shown image was reached: a click on
-      // another thumbnail, the arrows, the keyboard, or opening on an image far down the gallery.
-      this.$watch('index', () => this.reveal());
-      // Opening straight onto the twelfth map should find the strip already there, not slide to it.
-      this.$watch('open', (open: boolean) => open && this.reveal('auto'));
     collect() {
       const seen = new Set<string>();
       this.images = Array.from(this.$root.querySelectorAll<HTMLElement>('[data-lightbox]'))
@@ -449,14 +457,6 @@ export default (Alpine: Alpine) => {
     next() {
       this.index = (this.index + 1) % this.images.length;
     },
-  }));
-
-  /**
-   * Page sidebar that turns into a slide-in drawer below the lg breakpoint. The sidebar markup is
-   * rendered once; on phones a sticky toolbar opens it (optionally scrolled to a given panel).
-   */
-  /**
-   * The phone half of FilterBar: the controls fold away behind a button, and `active` marks the
     go(index: number) {
       this.index = index;
     },
@@ -473,6 +473,38 @@ export default (Alpine: Alpine) => {
         thumb?.scrollIntoView({ block: 'nearest', inline: 'center', behavior });
       });
     },
+  }));
+
+  /**
+   * Page sidebar that turns into a slide-in drawer below the lg breakpoint. The sidebar markup is
+   * rendered once; on phones a sticky toolbar opens it (optionally scrolled to a given panel).
+   */
+  /**
+   * A YouTube poster that becomes a player on click. The iframe is built here rather than rendered
+   * with the page, so nothing is requested from YouTube - and no cookie is set - until someone asks
+   * to watch. Once built it stays, so pausing and replaying does not refetch it.
+   */
+  Alpine.data('videoEmbed', (src: string, title: string) => ({
+    playing: false,
+
+    play() {
+      if (this.playing) return;
+      this.playing = true;
+      const host = this.$refs.player as HTMLElement | undefined;
+      if (!host || host.querySelector('iframe')) return;
+      const frame = document.createElement('iframe');
+      frame.src = src;
+      frame.title = title;
+      frame.className = 'h-full w-full';
+      frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      frame.allowFullscreen = true;
+      host.appendChild(frame);
+    },
+  }));
+
+  /**
+   * The phone half of FilterBar: the controls fold away behind a button, and `active` marks the
    * button when a filter is set so a hidden filter can never quietly explain an empty list.
    * Reads its parent listFilter's state - nested Alpine scopes chain to the one outside them.
    */
@@ -501,30 +533,6 @@ export default (Alpine: Alpine) => {
        * for one pixel of scroll, so a flick of the wheel jumps clean over that window, the observed
        * state never changes, and the callback never fires. Reading the position on scroll always
        * gives the right answer. The bar never changes the layout, so this cannot feed back on itself.
-  /**
-   * A YouTube poster that becomes a player on click. The iframe is built here rather than rendered
-   * with the page, so nothing is requested from YouTube - and no cookie is set - until someone asks
-   * to watch. Once built it stays, so pausing and replaying does not refetch it.
-   */
-  Alpine.data('videoEmbed', (src: string, title: string) => ({
-    playing: false,
-
-    play() {
-      if (this.playing) return;
-      this.playing = true;
-      const host = this.$refs.player as HTMLElement | undefined;
-      if (!host || host.querySelector('iframe')) return;
-      const frame = document.createElement('iframe');
-      frame.src = src;
-      frame.title = title;
-      frame.className = 'h-full w-full';
-      frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
-      frame.referrerPolicy = 'strict-origin-when-cross-origin';
-      frame.allowFullscreen = true;
-      host.appendChild(frame);
-    },
-  }));
-
        */
       const sentinel = this.$refs.sentinel as HTMLElement | undefined;
       if (!sentinel) return;
@@ -1041,10 +1049,15 @@ export default (Alpine: Alpine) => {
    * "owner" mode shows the site owner's progress baked into the HTML.
    * "mine" mode lets a visitor tick items for themselves; state lives in localStorage only.
    */
-  type TrackerOptions = { columns?: number; collapsed?: boolean; sections?: { ids: string[]; done: number }[] };
+  type TrackerOptions = { columns?: number; collapsed?: boolean; sections?: { ids: string[] }[]; owner?: Record<string, boolean> };
   Alpine.data('tracker', (trackerId: string, total: number, options: TrackerOptions = {}) => ({
     mode: 'owner' as 'owner' | 'mine',
     mine: {} as Record<string, boolean>,
+    /** The owner's ticks, as built. Only changes when the admin is connected (see connectAdmin). */
+    owner: { ...(options.owner ?? {}) } as Record<string, boolean>,
+    /** True on the dev site while the local admin runs: the owner's progress can then be ticked here. */
+    canEdit: false,
+    saving: 0,
     total,
     storageKey: `questlog:tracker:${trackerId}`,
     /* Layout preferences (columns, collapsed sections); the author's defaults apply until the reader changes them. */
@@ -1064,6 +1077,65 @@ export default (Alpine: Alpine) => {
       // Jumping to a section from the sidebar (or a shared #section-N link) opens it if it was collapsed.
       this.expandFromHash();
       window.addEventListener('hashchange', () => this.expandFromHash());
+      // Compiled out of the production build: the deployed site never looks for an admin.
+      if (import.meta.env.DEV) this.connectAdmin();
+    },
+
+    /* ---- owner editing (dev site + local admin only) ---- */
+
+    adminUrl(): string {
+      return `${ADMIN_DEV_URL}/api/trackers/${encodeURIComponent(trackerId)}/progress`;
+    },
+
+    /** Asks the admin for the file's current ticks; answering at all is what unlocks editing. */
+    async connectAdmin() {
+      try {
+        const response = await fetch(this.adminUrl(), { signal: AbortSignal.timeout(1500) });
+        if (!response.ok) return;
+        const { done } = await response.json();
+        this.owner = done;
+        this.canEdit = true;
+      } catch {
+        /* admin not running - the owner view stays read-only, as on the live site */
+      }
+    },
+
+    /**
+     * Applies owner ticks at once and saves them behind the scenes.
+     *
+     * Each save rewrites a content file, and `astro dev` answers that by reloading the page. So a
+     * request is sent the moment you click rather than queued here, where a reload would drop it;
+     * the admin puts them in order (by `seq`, which keeps rising across reloads). A failed save
+     * puts the ticks back and says why - unless the page is already reloading, which is not a failure.
+     */
+    async setOwner(changes: Record<string, boolean>) {
+      const before = Object.fromEntries(Object.keys(changes).map((id) => [id, Boolean(this.owner[id])]));
+      Object.assign(this.owner, changes);
+      this.saving++;
+      try {
+        const response = await fetch(this.adminUrl(), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ done: changes, seq: nextSeq() }),
+          keepalive: true,
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || `The admin answered ${response.status}`);
+      } catch (error) {
+        if (unloading) return;
+        Object.assign(this.owner, before);
+        dialog.alert('Could not save that tick', { text: (error as Error).message, icon: 'error' });
+      } finally {
+        this.saving--;
+      }
+    },
+
+    get ownerDone(): number {
+      return Object.values(this.owner).filter(Boolean).length;
+    },
+
+    get ownerPct(): number {
+      return this.total ? Math.round((this.ownerDone / this.total) * 100) : 0;
     },
 
     /* ---- layout ---- */
@@ -1104,21 +1176,26 @@ export default (Alpine: Alpine) => {
     sectionDone(index: number): number {
       const section = options.sections?.[index];
       if (!section) return 0;
-      return this.mode === 'owner' ? section.done : section.ids.filter((id) => this.mine[id]).length;
+      const ticks = this.mode === 'owner' ? this.owner : this.mine;
+      return section.ids.filter((id) => ticks[id]).length;
     },
 
     sectionTotal(index: number): number {
       return options.sections?.[index]?.ids.length ?? 0;
     },
 
-    /** Ticks (or unticks) every item of one section in the reader's own progress. Unticking asks first. */
+    /**
+     * Ticks (or unticks) every item of one section - the reader's own progress, or the owner's when
+     * the admin is connected. Unticking asks first.
+     */
     async setSection(index: number, done: boolean) {
       const section = options.sections?.[index];
-      if (this.mode !== 'mine' || !section) return;
+      const owner = this.mode === 'owner';
+      if (!section || (owner && !this.canEdit)) return;
       const ticked = this.sectionDone(index);
       if (!done && ticked > 0) {
         const ok = await dialog.confirm(`Untick ${ticked === 1 ? 'the 1 item' : `all ${ticked} items`}?`, {
-          text: 'Only your own ticks in this browser are cleared.',
+          text: owner ? 'This changes your published progress, saved to the tracker file.' : 'Only your own ticks in this browser are cleared.',
           confirmText: 'Untick',
           icon: 'warning',
         });
@@ -1129,6 +1206,10 @@ export default (Alpine: Alpine) => {
         else delete this.mine[id];
       }
       this.persist();
+      if (owner) {
+        this.setOwner(Object.fromEntries(section.ids.map((id) => [id, done])));
+        return;
+      }
     },
 
     persistUi() {
@@ -1157,11 +1238,14 @@ export default (Alpine: Alpine) => {
     },
 
     isDone(itemId: string, ownerDone: boolean): boolean {
-      return this.mode === 'owner' ? ownerDone : Boolean(this.mine[itemId]);
+      return this.mode === 'owner' ? (this.owner[itemId] ?? ownerDone) : Boolean(this.mine[itemId]);
     },
 
     toggle(itemId: string) {
-      if (this.mode !== 'mine') return;
+      if (this.mode === 'owner') {
+        if (this.canEdit) this.setOwner({ [itemId]: !this.owner[itemId] });
+        return;
+      }
       this.mine[itemId] = !this.mine[itemId];
       this.persist();
     },

@@ -1061,7 +1061,7 @@ export default (Alpine: Alpine) => {
     total,
     storageKey: `questlog:tracker:${trackerId}`,
     /* Layout preferences (columns, collapsed sections); the author's defaults apply until the reader changes them. */
-    ui: { cols: 0, collapsed: {} as Record<string, boolean> },
+    ui: { cols: 0, collapsed: {} as Record<string, boolean>, hideDone: false },
 
     init() {
       try {
@@ -1070,7 +1070,7 @@ export default (Alpine: Alpine) => {
         const mode = localStorage.getItem(this.storageKey + ':mode');
         if (mode === 'mine') this.mode = 'mine';
         const ui = JSON.parse(localStorage.getItem(this.storageKey + ':ui') ?? 'null');
-        if (ui && typeof ui === 'object') this.ui = { cols: Number(ui.cols) || 0, collapsed: ui.collapsed ?? {} };
+        if (ui && typeof ui === 'object') this.ui = { cols: Number(ui.cols) || 0, collapsed: ui.collapsed ?? {}, hideDone: Boolean(ui.hideDone) };
       } catch {
         /* storage unavailable (private mode etc.) - fall back to owner view */
       }
@@ -1156,6 +1156,11 @@ export default (Alpine: Alpine) => {
       this.persistUi();
     },
 
+    toggleHideDone() {
+      this.ui.hideDone = !this.ui.hideDone;
+      this.persistUi();
+    },
+
     isCollapsed(index: number): boolean {
       return this.ui.collapsed[index] ?? Boolean(options.collapsed);
     },
@@ -1201,15 +1206,15 @@ export default (Alpine: Alpine) => {
         });
         if (!ok) return;
       }
+      if (owner) {
+        this.setOwner(Object.fromEntries(section.ids.map((id) => [id, done])));
+        return;
+      }
       for (const id of section.ids) {
         if (done) this.mine[id] = true;
         else delete this.mine[id];
       }
       this.persist();
-      if (owner) {
-        this.setOwner(Object.fromEntries(section.ids.map((id) => [id, done])));
-        return;
-      }
     },
 
     persistUi() {

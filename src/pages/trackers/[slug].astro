@@ -138,6 +138,10 @@ const jsonLd = breadcrumbJsonLd(Astro.site, [
             ))}
           </span>
         </span>
+        <label class="inline-flex cursor-pointer items-center gap-2">
+          <input type="checkbox" class="size-4 rounded border-zinc-600 bg-zinc-950 accent-amber-400" :checked="ui.hideDone" @change="toggleHideDone()" />
+          Hide checked
+        </label>
         {d.sections.length > 1 && (
           <span class="inline-flex items-center gap-2">
             Sections
@@ -193,7 +197,7 @@ const jsonLd = breadcrumbJsonLd(Astro.site, [
                 </div>
                 <ul id={`section-${sIndex + 1}-items`} class="tracker-items divide-y divide-zinc-800/80" :class={`cols > 1 && 'divide-y-0'`} :data-cols="cols" {...(d.checklistCollapsed ? { 'x-cloak': true } : {})} x-show={`!isCollapsed(${sIndex})`}>
                   {section.items.map((item) => (
-                    <li>
+                    <li x-show={`!(ui.hideDone && isDone(${JSON.stringify(item.id)}, ${item.done}))`}>
                       <label
                         class="flex cursor-default items-start gap-3 px-4 py-3 transition"
                         :class="mode === 'mine' || canEdit ? 'cursor-pointer hover:bg-zinc-800/40' : ''"
@@ -226,6 +230,9 @@ const jsonLd = breadcrumbJsonLd(Astro.site, [
                       </label>
                     </li>
                   ))}
+                  <li class="col-span-full px-4 py-3 text-sm text-zinc-500" x-show={`ui.hideDone && sectionTotal(${sIndex}) > 0 && sectionDone(${sIndex}) === sectionTotal(${sIndex})`} x-cloak>
+                    Everything here is checked.
+                  </li>
                 </ul>
               </section>
             ))
